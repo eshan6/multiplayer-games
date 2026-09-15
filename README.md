@@ -172,9 +172,28 @@ so the more distant player is not charged for their packet's trip home. Verified
 live: two clients at 15ms and 170ms one-way, tapping at the same real moment,
 both measure within 3ms of each other and are paid identically.
 
+### Turning the clock off
+
+The 20-second limit is a **toggle on the category screen**, set per match. With
+it off, a question stays open until you have both answered — useful when you
+want to think, or when one of you is doing three things at once.
+
+**Speed scoring still applies either way.** Answering sooner still pays more;
+it just stops being a race against a deadline. The bonus decays over the same
+20-second span, so past that you score the floor rather than being cut off.
+
+`timing.untimedBackstopMs` (5 minutes) is a safety valve, not a game rule:
+without it, one of you walking away mid-question would freeze the match
+forever. Make it as generous as you like — the config refuses to start if it is
+shorter than the timed window, since switching the clock off must never give
+you *less* time.
+
+`timing.defaultTimed` sets which way the toggle starts.
+
 ### Timing
 
-`answerWindowMs` (20s) is the fair per-question clock. The rest are mechanism:
+`answerWindowMs` (20s) is the fair per-question clock, and the span the speed
+bonus decays over whether or not the clock is enforced. The rest are mechanism:
 `ackTimeoutMs` caps how long a stalled client can hold up the start,
 `maxLatencyGraceMs` caps the allowance for an answer in flight, and
 `disconnectGraceMs` (4 minutes) is how long a dropped player has to come back.

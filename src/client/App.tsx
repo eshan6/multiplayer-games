@@ -19,6 +19,8 @@ interface Catalogue {
   categories: CategoryMeta[];
   mixes: Record<MixName, Record<Difficulty, number>>;
   questionsPerMatch: number;
+  answerWindowMs: number;
+  defaultTimed: boolean;
   /** The server's speed-bonus curve, so the live counter matches what it scores. */
   speed: SpeedConfig;
 }
@@ -208,10 +210,10 @@ export default function App() {
     else setError(res.error);
   };
 
-  const handleStart = async (categoryId: string, mix: MixName) => {
+  const handleStart = async (categoryId: string, mix: MixName, timed: boolean) => {
     setBusy(true);
     setError(null);
-    const res = await request<{ ok: true }>('match:start', { categoryId, mix });
+    const res = await request<{ ok: true }>('match:start', { categoryId, mix, timed });
     setBusy(false);
     if (!res.ok) setError(res.error);
   };
@@ -276,6 +278,8 @@ export default function App() {
         onStart={handleStart}
         busy={busy}
         error={error}
+        answerWindowMs={catalogue.answerWindowMs}
+        defaultTimed={catalogue.defaultTimed}
       />,
     );
   }

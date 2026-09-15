@@ -136,12 +136,14 @@ export function attachSockets(
       const slot = room?.slotForSocket(socket.id);
       if (!room || !slot) return reply?.(fail('You are not in a room.'));
 
-      const raw = payload as { categoryId?: unknown; mix?: unknown };
+      const raw = payload as { categoryId?: unknown; mix?: unknown; timed?: unknown };
       const categoryId = typeof raw?.categoryId === 'string' ? raw.categoryId : '';
       const mix = raw?.mix;
       if (!SUPPORTED_MIXES.includes(mix as MixName)) return reply?.(fail('Pick a difficulty.'));
+      // An older client that does not send the flag gets the configured default.
+      const timed = typeof raw?.timed === 'boolean' ? raw.timed : config.timing.defaultTimed;
 
-      const res = room.startMatch(categoryId, mix as MixName, Date.now());
+      const res = room.startMatch(categoryId, mix as MixName, timed, Date.now());
       reply?.(res.ok ? ok({ ok: true as const }) : fail(res.error));
     });
 

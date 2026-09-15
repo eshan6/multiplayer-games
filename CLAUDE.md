@@ -93,6 +93,22 @@ clock on connect, necessarily before they have one, so those first
 measurements would otherwise be dropped and the player would run on the
 default estimate for the opening questions.
 
+## The per-question timer is optional
+
+Chosen per match on the category screen (`match:start` carries `timed`). With
+it off, a question closes **only once both players have answered** — so
+`timing.untimedBackstopMs` exists as a safety valve, not a game rule: without
+it one player walking away would freeze the match forever. Config validation
+rejects a backstop shorter than the timed window, since switching the timer
+off must never give players *less* time.
+
+**Speed scoring is unaffected by the toggle**, by design. The bonus decays over
+`timing.answerWindowMs` either way; untimed, you simply score the floor past
+that point instead of being cut off. `ArmedPayload.durationMs` is always the
+SCORING window, never the close window — the client draws its live value from
+it, so conflating the two would make the untimed counter decay over five
+minutes instead of twenty seconds.
+
 ## Speed scoring
 
 A correct answer is worth `scoring.correct` on the buzzer and

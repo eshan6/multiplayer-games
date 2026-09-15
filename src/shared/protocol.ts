@@ -77,6 +77,8 @@ export interface RoomView {
   questionNumber: number;
   questionsPerMatch: number;
   suddenDeathRound: number;
+  /** Whether this match is running with the per-question timer on. */
+  timed: boolean;
   /** Set while phase === 'paused'. */
   pausedReason: string | null;
   pauseExpiresAt: number | null;
@@ -86,9 +88,17 @@ export interface ArmedPayload {
   questionId: string;
   /** Server wall-clock ms at which BOTH clients reveal and the timer starts. */
   armAt: number;
-  /** Server wall-clock ms at which the window closes. */
+  /**
+   * Server wall-clock ms at which the question closes. When `timed` is false
+   * this is the backstop rather than a game deadline — the question really
+   * closes once both players have answered, and this only stops one player
+   * walking away from freezing the match.
+   */
   deadlineAt: number;
+  /** The scoring window: how long the speed bonus takes to decay to zero. */
   durationMs: number;
+  /** False when the per-question timer is switched off for this match. */
+  timed: boolean;
 }
 
 export interface AnswerRecord {
@@ -157,7 +167,7 @@ export interface ClientEvents {
     ack: (res: Result<{ code: string; slot: PlayerSlot }>) => void,
   ) => void;
   'match:start': (
-    payload: { categoryId: string; mix: MixName },
+    payload: { categoryId: string; mix: MixName; timed: boolean },
     ack: (res: Result<{ ok: true }>) => void,
   ) => void;
   'question:ack': (payload: { questionId: string }) => void;
