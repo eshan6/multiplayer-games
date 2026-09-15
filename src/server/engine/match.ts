@@ -70,7 +70,10 @@ interface HistoryRow {
   question: BankQuestion;
   index: number;
   suddenDeath: boolean;
-  picks: Record<PlayerSlot, { choice: number | null; correct: boolean; delta: number }>;
+  picks: Record<
+    PlayerSlot,
+    { choice: number | null; correct: boolean; delta: number; elapsedMs: number | null }
+  >;
 }
 
 export interface MatchOptions {
@@ -294,6 +297,19 @@ export class Match {
     }
   }
 
+  /**
+   * Reaction time for a submission: from the shared reveal instant to the
+   * answer landing, MINUS that player's own one-way latency.
+   *
+   * Without the correction, speed scoring would charge the more distant player
+   * for their packet's trip home on every single question — a systematic bias
+   * of exactly the kind the arm-instant synchronisation exists to remove.
+   */
+  private reactionMs(slot: PlayerSlot, sub: Submission | undefined, armAt: number | null): number | null {
+    if (!sub || armAt === null) return null;
+    return Math.max(0, sub.receivedAt - armAt - Math.max(0, this.latency(slot)));
+  }
+
   private closeQuestion(now: number): Effect[] {
     const live = this.live!;
     const answer = live.bank.answer;
@@ -303,15 +319,17 @@ export class Match {
     const records = SLOTS.map((slot) => {
       const sub = live.submissions[slot];
       const choice = sub?.choice ?? null;
-      const scored = scoreAnswer(this.config, difficulty, choice, answer);
+      const elapsedMs = this.reactionMs(slot, sub, live.armAt);
+      const scored = scoreAnswer(this.config, difficulty, choice, answer, elapsedMs);
       this.scores[slot] += scored.delta;
-      picks[slot] = { choice, correct: scored.correct, delta: scored.delta };
+      picks[slot] = { choice, correct: scored.correct, delta: scored.delta, elapsedMs };
       return {
         slot,
         choice,
         correct: scored.correct,
         delta: scored.delta,
-        elapsedMs: sub && live.armAt !== null ? Math.max(0, sub.receivedAt - live.armAt) : null,
+        speedPoints: scored.speedPoints,
+        elapsedMs,
       };
     });
 

@@ -132,9 +132,11 @@ longer or shorter than 20.
 
 ```json
 "scoring": {
-  "correct":  { "easy": 10, "medium": 15, "hard": 20 },
-  "wrong":    { "easy": -5, "medium": -7, "hard": -10 },
-  "noAnswer": { "easy": 0,  "medium": 0,  "hard": 0 }
+  "correct":    { "easy": 10, "medium": 15, "hard": 20 },
+  "speedBonus": { "easy": 6,  "medium": 9,  "hard": 12 },
+  "wrong":      { "easy": -5, "medium": -7, "hard": -10 },
+  "noAnswer":   { "easy": 0,  "medium": 0,  "hard": 0 },
+  "speed":      { "fullBonusMs": 1000, "curve": "linear" }
 }
 ```
 
@@ -142,6 +144,33 @@ Negative marking is deliberate and validated: `wrong` must be zero or negative.
 At these numbers a blind 1-in-4 guess is worth **−1.25 / −1.50 / −2.50** points
 by tier, so guessing is always worse than abstaining. The server prints these
 expected values at boot.
+
+**Answer sooner, score more.** A correct answer is worth `correct` on the
+buzzer and `correct + speedBonus` answered instantly, decaying between the two
+— so at these numbers a hard question pays **+20 to +32**.
+
+Two things about the shape are deliberate:
+
+- **The bonus sits on top of the floor, not decaying down to zero.** A slow
+  correct answer must still clearly beat abstaining; a decay-to-zero curve
+  would make a correct answer at 19s worth the same as not answering, which
+  would be absurd.
+- **`fullBonusMs` pays the whole bonus for the first second.** You have to
+  *read* the question, and the gap between 300ms and 900ms is recognition, not
+  speed.
+
+Speed never applies to a wrong answer, so guessing fast earns nothing and the
+expected value of a guess is unchanged.
+
+`curve` is `linear` (a straight ramp) or `ease-out` (holds value longer early,
+then falls away sharply at the end). Use `ease-out` if you want the first few
+seconds to matter more than they currently do.
+
+**Latency does not affect it.** Speed is scored on reaction time, measured from
+the shared reveal instant with each player's own one-way latency subtracted —
+so the more distant player is not charged for their packet's trip home. Verified
+live: two clients at 15ms and 170ms one-way, tapping at the same real moment,
+both measure within 3ms of each other and are paid identically.
 
 ### Timing
 

@@ -12,8 +12,13 @@ import type {
   RoomView,
 } from '../shared/protocol.js';
 import { CategoryMark, hueFor } from './categories.js';
-import { Countdown, DuelBar } from './components.js';
+import { Countdown, DuelBar, type SpeedConfig } from './components.js';
 import { serverNow } from './net.js';
+
+/** "2.4s" — one decimal is the resolution a person can actually feel. */
+function seconds(ms: number | null): string {
+  return ms === null ? '' : `${(ms / 1000).toFixed(1)}s`;
+}
 
 /* Literal values rather than `var(--slot-a)`: color-mix() resolves a chained
    custom property unreliably, which left the winner's plate untinted. */
@@ -301,6 +306,7 @@ export function Play({
   reveal,
   myChoice,
   deltas,
+  speed,
   onAnswer,
 }: {
   view: RoomView;
@@ -310,6 +316,7 @@ export function Play({
   reveal: RevealPayload | null;
   myChoice: number | null;
   deltas: Partial<Record<PlayerSlot, { value: number; key: number }>>;
+  speed: SpeedConfig | null;
   onAnswer: (choice: number) => void;
 }) {
   // The question is held face-down until the server's shared instant arrives.
@@ -374,7 +381,13 @@ export function Play({
               duel bar, rather than floating between the question and the
               options where it competes with both. */}
           {armed && !revealed ? (
-            <Countdown armAt={armed.armAt} deadlineAt={armed.deadlineAt} paused={paused} />
+            <Countdown
+              armAt={armed.armAt}
+              deadlineAt={armed.deadlineAt}
+              paused={paused}
+              stake={question.stake}
+              speed={speed ?? undefined}
+            />
           ) : (
             <p className="reveal-caption">{revealed ? revealCaption(reveal, you) : ''}</p>
           )}
@@ -383,8 +396,12 @@ export function Play({
             <div className="question-meta">
               {question.suddenDeath ? <span className="sudden-tag">Sudden death</span> : null}
               <span className={`tier-tag t-${question.difficulty}`}>{question.difficulty}</span>
+              {/* The range alone; the live counter above already shows that
+                  sooner is worth more, so saying it here is redundant and
+                  pushes the note onto a second line. */}
               <span className="stake-note">
-                +{question.stake.correct} right, <em>{question.stake.wrong} wrong</em>, 0 if you leave it
+                +{question.stake.correct}–{question.stake.fastest} right,{' '}
+                <em>{question.stake.wrong} wrong</em>, 0 if you leave it
               </span>
             </div>
             <h2 className="question-text">{question.question}</h2>
@@ -397,9 +414,7 @@ export function Play({
             {question.options.map((opt, i) => {
               const isRight = revealed && reveal.answer === i;
               const iPickedIt = myChoice === i;
-              const pickers = revealed
-                ? reveal.answers.filter((r) => r.choice === i).map((r) => r.slot)
-                : [];
+              const pickers = revealed ? reveal.answers.filter((r) => r.choice === i) : [];
               // Mark any wrong pick, theirs as well as yours — the cost of a
               // wrong answer should be visible on both sides of the duel. Only
               // yours shakes.
@@ -424,9 +439,14 @@ export function Play({
                   <span className="option-key">{'ABCD'[i]}</span>
                   <span className="option-label">{opt}</span>
                   {pickers.length ? (
-                    <span className="picked-by" aria-hidden="true">
-                      {pickers.map((s) => (
-                        <i key={s} className={`by-${s}`} />
+                    <span className="picked-by">
+                      {pickers.map((r) => (
+                        <span key={r.slot} className="picked-tag">
+                          <i className={`by-${r.slot}`} aria-hidden="true" />
+                          {/* Reaction time is the whole point of speed scoring —
+                              showing it is what lets them argue about it. */}
+                          {r.elapsedMs !== null ? <b>{seconds(r.elapsedMs)}</b> : null}
+                        </span>
                       ))}
                     </span>
                   ) : null}
@@ -572,6 +592,9 @@ export function Summary({
                       <i />
                       {pick.choice === null ? 'skip' : 'ABCD'[pick.choice]}
                       {pick.delta !== 0 ? ` ${signed(pick.delta)}` : ''}
+                      {pick.correct && pick.elapsedMs !== null ? (
+                        <em className="row-time">{seconds(pick.elapsedMs)}</em>
+                      ) : null}
                     </span>
                   );
                 })}

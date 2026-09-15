@@ -30,7 +30,7 @@ no login, instant rooms) for capacity nobody needs.
 4. **The server decides everything.** Question order, the clock, correctness,
    scoring. Clients send a choice index and a timestamp; the timestamp is
    telemetry only and must never influence scoring, because a client can lie
-   about it.
+   about it. Speed is timed by the server's own receipt clock.
 
 ## Layout
 
@@ -84,6 +84,35 @@ offset (`src/client/net.ts`), because two phones do not agree on what time it is
 
 If you change any of this, the test that must keep passing is
 "schedules the reveal past the slower player" in `tests/match.test.ts`.
+
+**Latency measurement is load-bearing, not incidental.** It sizes the answer
+grace, schedules the arm instant, AND corrects the speed bonus. A socket's
+latency is tracked in `socket.ts` independently of room membership and adopted
+by `Room.primeLatency` the moment it takes a seat — because clients sync their
+clock on connect, necessarily before they have one, so those first
+measurements would otherwise be dropped and the player would run on the
+default estimate for the opening questions.
+
+## Speed scoring
+
+A correct answer is worth `scoring.correct` on the buzzer and
+`correct + speedBonus` answered instantly, decaying between the two. Three
+invariants, each with a test:
+
+- **The bonus is added on top of the floor, never decayed down to zero.** A
+  slow correct answer must still beat abstaining.
+- **Speed never applies to a wrong answer.** Guessing fast earns nothing, so
+  the negative expected value of a guess is unchanged.
+- **It is scored on reaction time, not on receipt time.** `Match.reactionMs`
+  subtracts the player's own one-way latency, so the more distant player is not
+  charged for their packet's trip home on every question. Removing that
+  subtraction reintroduces exactly the systematic bias the arm-instant
+  synchronisation exists to eliminate.
+
+The client mirrors the curve in `components.tsx` to draw the live counter. No
+latency correction is needed there and that is not an oversight: the question
+appears at `armAt`, so a tap at local time T reaches the server at `T + owd`
+and scores `(T + owd) - armAt - owd`. The trip home cancels.
 
 ## Repeat avoidance
 

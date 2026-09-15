@@ -16,8 +16,13 @@ export interface GameConfig {
   difficultyMixes: Record<MixName, TierCounts>;
   scoring: {
     correct: TierCounts;
+    speedBonus: TierCounts;
     wrong: TierCounts;
     noAnswer: TierCounts;
+    speed: {
+      fullBonusMs: number;
+      curve: 'linear' | 'ease-out';
+    };
   };
   timing: {
     answerWindowMs: number;
@@ -103,10 +108,22 @@ export function validateConfig(raw: unknown): GameConfig {
   }
 
   const scoringRaw = requireObject(root.scoring, 'scoring');
+  const speedRaw = requireObject(scoringRaw.speed, 'scoring.speed');
+  if (speedRaw.curve !== 'linear' && speedRaw.curve !== 'ease-out') {
+    throw new ConfigError(
+      `scoring.speed.curve must be 'linear' or 'ease-out', got ${JSON.stringify(speedRaw.curve)}`,
+    );
+  }
+  const curve: 'linear' | 'ease-out' = speedRaw.curve;
   const scoring = {
     correct: requireTierCounts(scoringRaw.correct, 'scoring.correct'),
+    speedBonus: requireTierCounts(scoringRaw.speedBonus, 'scoring.speedBonus', { min: 0 }),
     wrong: requireTierCounts(scoringRaw.wrong, 'scoring.wrong'),
     noAnswer: requireTierCounts(scoringRaw.noAnswer, 'scoring.noAnswer'),
+    speed: {
+      fullBonusMs: requireInt(speedRaw.fullBonusMs, 'scoring.speed.fullBonusMs', { min: 0 }),
+      curve,
+    },
   };
   for (const tier of DIFFICULTIES) {
     if (scoring.correct[tier] <= 0) {
@@ -136,6 +153,15 @@ export function validateConfig(raw: unknown): GameConfig {
       max: 25,
     }),
   };
+
+  // Cross-check: a full-bonus window at or beyond the answer window would pay
+  // every answer the maximum and silently disable speed scoring altogether.
+  if (scoring.speed.fullBonusMs >= timing.answerWindowMs) {
+    throw new ConfigError(
+      `scoring.speed.fullBonusMs (${scoring.speed.fullBonusMs}) must be shorter than ` +
+        `timing.answerWindowMs (${timing.answerWindowMs}), or every answer pays the full bonus`,
+    );
+  }
 
   const sdRaw = requireObject(root.suddenDeath, 'suddenDeath');
   const sdMix = requireTierCounts(sdRaw.mix, 'suddenDeath.mix', { min: 0 });

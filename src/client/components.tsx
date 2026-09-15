@@ -141,23 +141,65 @@ function RollingScore({
   );
 }
 
+export interface SpeedConfig {
+  fullBonusMs: number;
+  curve: 'linear' | 'ease-out';
+}
+
+/**
+ * What a correct answer is worth right now, mirroring the server's curve.
+ *
+ * No latency correction is needed here and that is not an oversight: the
+ * question appears on screen at armAt, so if the player taps at local time T
+ * the packet reaches the server at T + owd and the server scores
+ * (T + owd) - armAt - owd = T - armAt. The trip home cancels, and this number
+ * is exactly what they will be awarded.
+ */
+function liveValue(
+  stake: { correct: number; fastest: number },
+  speed: SpeedConfig,
+  windowMs: number,
+  elapsedMs: number,
+): number {
+  const bonus = stake.fastest - stake.correct;
+  const elapsed = Math.max(0, elapsedMs);
+  let factor: number;
+  if (elapsed <= speed.fullBonusMs) {
+    factor = 1;
+  } else {
+    const span = windowMs - speed.fullBonusMs;
+    const remaining = span <= 0 ? 1 : Math.max(0, 1 - (elapsed - speed.fullBonusMs) / span);
+    factor = speed.curve === 'ease-out' ? remaining * remaining : remaining;
+  }
+  return stake.correct + Math.round(bonus * factor);
+}
+
 /**
  * The per-question clock.
  *
  * Driven off serverNow() every frame rather than a CSS transition, so it tracks
- * the server's real deadline instead of drifting away from it. The numeral is
- * withheld until the last stretch — an always-visible timer is noise for 12
- * seconds and then panic for 8.
+ * the server's real deadline instead of drifting away from it.
+ *
+ * One slot, two phases. Early on it shows what a correct answer is worth RIGHT
+ * NOW, ticking down — without that the speed bonus is invisible and nobody
+ * plays for it. In the last stretch it switches to the seconds remaining,
+ * because by then the bonus is nearly spent and the clock is the thing that
+ * matters. An always-visible timer would be noise for twelve seconds and then
+ * panic for eight.
  */
 export function Countdown({
   armAt,
   deadlineAt,
   paused,
+  stake,
+  speed,
   onExpire,
 }: {
   armAt: number;
   deadlineAt: number;
   paused: boolean;
+  stake?: { correct: number; fastest: number };
+  speed?: SpeedConfig;
   onExpire?: () => void;
 }) {
   const railRef = useRef<HTMLElement | null>(null);
@@ -191,18 +233,31 @@ export function Countdown({
 
   const seconds = Math.ceil(remaining / 1000);
   const urgent = remaining <= 5000;
+  const showClock = remaining <= 8000;
+
+  const totalMs = Math.max(1, deadlineAt - armAt);
+  const worth =
+    stake && speed ? liveValue(stake, speed, totalMs, totalMs - remaining) : null;
 
   return (
     <div
       className={`countdown${urgent ? ' is-urgent' : ''}`}
       role="timer"
       aria-live="off"
-      aria-label={`${seconds} seconds left`}
+      aria-label={
+        showClock ? `${seconds} seconds left` : `A correct answer is worth ${worth ?? ''} right now`
+      }
     >
       <div className="countdown-rail">
         <i ref={railRef as React.RefObject<HTMLElement>} style={{ width: '100%' }} />
       </div>
-      <span className="countdown-num">{remaining <= 8000 ? seconds : ''}</span>
+      {showClock ? (
+        <span className="countdown-num">{seconds}</span>
+      ) : worth !== null ? (
+        <span className="countdown-worth">+{worth}</span>
+      ) : (
+        <span className="countdown-num" />
+      )}
     </div>
   );
 }

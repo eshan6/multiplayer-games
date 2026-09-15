@@ -12,13 +12,15 @@ import type {
   RoomView,
 } from '../shared/protocol.js';
 import { Landing, Lobby, Play, Setup, Summary } from './screens.js';
-import { Toast } from './components.js';
+import { Toast, type SpeedConfig } from './components.js';
 import { clearSeat, loadSeat, request, saveSeat, socket, syncClock } from './net.js';
 
 interface Catalogue {
   categories: CategoryMeta[];
   mixes: Record<MixName, Record<Difficulty, number>>;
   questionsPerMatch: number;
+  /** The server's speed-bonus curve, so the live counter matches what it scores. */
+  speed: SpeedConfig;
 }
 
 export default function App() {
@@ -177,6 +179,10 @@ export default function App() {
     setYou(data.slot);
     nameRef.current = name;
     saveSeat({ ...data, name });
+    // Re-measure now that we hold a seat. The sync done at connect time had no
+    // player to attach to server-side, and latency now feeds the speed bonus,
+    // not just the answer grace.
+    void syncClock(3);
   };
 
   const handleCreate = async (name: string) => {
@@ -283,6 +289,7 @@ export default function App() {
       reveal={reveal}
       myChoice={myChoice}
       deltas={deltas}
+      speed={catalogue?.speed ?? null}
       onAnswer={handleAnswer}
     />,
   );
