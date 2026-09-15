@@ -442,16 +442,19 @@ export function Play({
   );
 }
 
+/* Kept to one short line: the caption sits in the clock's slot, so a second
+   line shoves the whole board down at the reveal. The points are already
+   flying off the scoreboard as a delta chip, so they are not repeated here. */
 function revealCaption(reveal: RevealPayload, you: PlayerSlot | null): string {
   const mine = reveal.answers.find((r) => r.slot === you);
   const theirs = reveal.answers.find((r) => r.slot !== you);
   if (!mine || !theirs) return '';
 
-  if (mine.correct && theirs.correct) return 'Both of you had it.';
-  if (mine.correct) return `You got it, they didn't. ${signed(mine.delta)} to you.`;
-  if (theirs.correct) return `They got it, you didn't. ${signed(mine.delta)} to you.`;
-  if (mine.choice === null && theirs.choice === null) return 'Neither of you answered. No damage done.';
-  return 'Both wrong. That one cost you both.';
+  if (mine.correct && theirs.correct) return 'Both of you had it';
+  if (mine.correct) return "You got it. They didn't.";
+  if (theirs.correct) return "They got it. You didn't.";
+  if (mine.choice === null && theirs.choice === null) return 'Nobody answered';
+  return 'Both wrong';
 }
 
 function signed(n: number): string {

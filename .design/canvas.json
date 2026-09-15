@@ -1,0 +1,25 @@
+{
+  "artboards": [
+    { "file": "Categories.dc.html", "x": 0, "y": 0, "w": 390, "h": 844, "title": "Pick your ground" },
+    { "file": "Main.dc.html", "x": 490, "y": 0, "w": 390, "h": 844, "title": "Question live" },
+    { "file": "Reveal.dc.html", "x": 980, "y": 0, "w": 390, "h": 844, "title": "Reveal" },
+    { "file": "Summary.dc.html", "x": 1470, "y": 0, "w": 390, "h": 844, "title": "Final score" }
+  ],
+  "annotations": [
+    {
+      "id": "direction",
+      "x": 0,
+      "y": -210,
+      "w": 560,
+      "text": "STANDOFF — late-night broadcast quiz\n\nThe fun of a game SHOW, not a cartoon. Four devices carry it:\n\n1. Physical chiclets. Everything pressable sits on a hard bottom edge and travels down into it. The most game-feeling affordance available, and it costs no whimsy.\n2. Scoreboard type. Big Shoulders Display for anything glanced at; Archivo for anything read.\n3. Atmosphere. Grain, vignette, lit surfaces. Flatness was what made the old pass feel like a utility.\n4. Heat. Magenta is reserved for urgency only — the last five seconds and sudden death. It never decorates."
+    },
+    {
+      "id": "colour-rule",
+      "x": 980,
+      "y": -210,
+      "w": 420,
+      "text": "Colour discipline, unchanged and load-bearing:\n\nThe two player colours are fixed to the SEAT, not to \"you\" — so both phones agree when the players are on the phone to each other. Marigold is always seat A, sky is always seat B.\n\nGreen and red mean correct and wrong and nothing else. They never appear as decoration."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

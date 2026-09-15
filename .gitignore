@@ -7,3 +7,6 @@ dist/
 .env
 .env.local
 *.log
+
+# Generated design canvas (re-seeded from the .dc.html sources)
+.design/standoff-redesign.html

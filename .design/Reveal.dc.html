@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400..900&family=Big+Shoulders+Display:wght@500..900&display=swap">
+  <style>
+    body { margin: 0; background: #06091a; }
+    a { color: #ffc233; } a:hover { color: #ffd868; }
+    .bsd { font-family: 'Big Shoulders Display', 'Arial Narrow', sans-serif; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #06091a; font-family: Archivo, sans-serif; color: #eff2ff;">
+
+  <div style="position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 130% 70% at 50% -12%, rgba(77,171,255,0.12), transparent 62%), radial-gradient(ellipse 110% 55% at 50% 112%, rgba(255,194,51,0.08), transparent 62%);"></div>
+  <div style="position: absolute; inset: 0; pointer-events: none; opacity: 0.4; background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.09'/%3E%3C/svg%3E&quot;);"></div>
+
+  <div style="position: relative; display: flex; flex-direction: column; height: 844px; padding: 20px 16px; gap: 12px;">
+
+    <!-- SCOREBOARD, mid-swing: the loss chip is larger than a gain chip would be -->
+    <div style="position: relative; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; padding: 10px 13px; background: linear-gradient(180deg, #101740, #0b1026); border: 2px solid #28336b; border-radius: 16px; box-shadow: 0 4px 0 #05081a, inset 0 1px 0 rgba(255,255,255,0.07); overflow: hidden;">
+      <span class="bsd" style="position: absolute; top: 7px; left: 15px; font-size: 32px; font-weight: 900; color: #ff3b5c; text-shadow: 0 0 18px rgba(255,59,92,0.6);">-10</span>
+      <span class="bsd" style="position: absolute; top: 7px; right: 15px; font-size: 23px; font-weight: 900; color: #00e58c; text-shadow: 0 0 18px rgba(0,229,140,0.5);">+20</span>
+
+      <div style="display: flex; flex-direction: column; gap: 1px; min-width: 0;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #ffc233;">
+          <span style="width: 10px; height: 10px; border-radius: 50%; border: 2px solid #ffc233; background: #ffc233; box-shadow: 0 0 12px #ffc233; flex-shrink: 0;"></span>
+          <span style="font-size: 13px; font-weight: 700; color: #eff2ff; white-space: nowrap;">Anya (you)</span>
+        </div>
+        <span class="bsd" style="font-size: 40px; line-height: 0.92; font-weight: 900; color: #ffc233; text-shadow: 0 0 22px rgba(255,194,51,0.4);">35</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0;">
+        <span class="bsd" style="font-size: 17px; font-weight: 800; color: #606ea8; letter-spacing: 0.04em;">7/20</span>
+        <div style="width: 48px; height: 4px; border-radius: 4px; background: #05081a; position: relative;">
+          <span style="position: absolute; top: 0; bottom: 0; left: 12px; width: 4px; border-radius: 4px; background: #4dabff;"></span>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 1px; min-width: 0; align-items: flex-end;">
+        <div style="display: flex; flex-direction: row-reverse; align-items: center; gap: 6px; color: #4dabff;">
+          <span style="width: 10px; height: 10px; border-radius: 50%; border: 2px solid #4dabff; background: #4dabff; box-shadow: 0 0 12px #4dabff; flex-shrink: 0;"></span>
+          <span style="font-size: 13px; font-weight: 700; color: #98a4d4; white-space: nowrap;">Bharat</span>
+        </div>
+        <span class="bsd" style="font-size: 40px; line-height: 0.92; font-weight: 900; color: #4dabff; text-shadow: 0 0 22px rgba(77,171,255,0.4);">58</span>
+      </div>
+    </div>
+
+    <!-- The caption occupies the clock's slot exactly, so nothing jumps -->
+    <p class="bsd" style="margin: 0; font-size: 23px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; color: #98a4d4; text-align: center; height: 30px; line-height: 30px; white-space: nowrap; overflow: hidden;">They got it. You didn't.</p>
+
+    <div style="margin: auto 0; display: flex; flex-direction: column; gap: 13px; padding: 22px 20px; border-radius: 16px; background: radial-gradient(ellipse 90% 70% at 50% 0%, rgba(77,171,255,0.09), transparent 70%), linear-gradient(180deg, #101740, #0b1026); border: 2px solid #28336b; box-shadow: 0 5px 0 #05081a, inset 0 1px 0 rgba(255,255,255,0.07);">
+      <div style="display: flex; align-items: center; gap: 9px; flex-wrap: wrap;">
+        <span class="bsd" style="font-size: 17px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; padding: 3px 11px 1px; border-radius: 20px; border: 2px solid #ff3b5c; color: #ff3b5c;">hard</span>
+        <span style="font-size: 13px; font-weight: 700; color: #606ea8;">+20 right, <em style="font-style: normal; color: #ff3b5c;">-10 wrong</em>, 0 if you leave it</span>
+      </div>
+      <h2 style="margin: 0; font-size: 27px; font-weight: 700; line-height: 1.2; letter-spacing: -0.018em;">In which year did Superman first appear in comics?</h2>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 11px; padding-bottom: 5px; flex-shrink: 0;">
+
+      <div style="position: relative; display: flex; align-items: center; gap: 13px; min-height: 66px; padding: 13px 15px; border-radius: 16px; background: linear-gradient(180deg, #1c2550, #141b3d); border: 2px solid #28336b; box-shadow: 0 5px 0 #05081a; opacity: 0.35;">
+        <span class="bsd" style="flex-shrink: 0; width: 30px; height: 30px; border-radius: 8px; background: #05081a; color: #98a4d4; font-size: 20px; font-weight: 800; display: grid; place-items: center; padding-top: 2px;">A</span>
+        <span style="font-size: 16.5px; font-weight: 600;">1948</span>
+      </div>
+
+      <!-- your miss: struck through, deep red, marked not shouted -->
+      <div style="position: relative; display: flex; align-items: center; gap: 13px; min-height: 66px; padding: 13px 15px; border-radius: 16px; background: linear-gradient(180deg, #5c1024, #3a0817); border: 2px solid #ff3b5c; box-shadow: 0 5px 0 #250008, 0 0 0 2px #ff3b5c;">
+        <span class="bsd" style="flex-shrink: 0; width: 30px; height: 30px; border-radius: 8px; background: #05081a; color: #98a4d4; font-size: 20px; font-weight: 800; display: grid; place-items: center; padding-top: 2px;">B</span>
+        <span style="font-size: 16.5px; font-weight: 600; text-decoration: line-through; text-decoration-color: #ff3b5c; text-decoration-thickness: 3px;">1928</span>
+        <span style="position: absolute; right: 12px; display: flex; gap: 5px;">
+          <i style="width: 12px; height: 12px; border-radius: 50%; background: #ffc233; box-shadow: 0 0 10px rgba(255,194,51,0.8);"></i>
+        </span>
+      </div>
+
+      <!-- the correct answer arrives rather than appears -->
+      <div style="position: relative; display: flex; align-items: center; gap: 13px; min-height: 66px; padding: 13px 15px; border-radius: 16px; background: linear-gradient(180deg, #16603f, #0d3f2a); border: 2px solid #00e58c; box-shadow: 0 5px 0 #04200f, 0 0 0 2px #00e58c, 0 6px 34px -4px #00e58c;">
+        <span class="bsd" style="flex-shrink: 0; width: 30px; height: 30px; border-radius: 8px; background: #00e58c; color: #02231a; font-size: 20px; font-weight: 800; display: grid; place-items: center; padding-top: 2px;">C</span>
+        <span style="font-size: 16.5px; font-weight: 600;">1938</span>
+        <span style="position: absolute; right: 12px; display: flex; gap: 5px;">
+          <i style="width: 12px; height: 12px; border-radius: 50%; background: #4dabff; box-shadow: 0 0 10px rgba(77,171,255,0.8);"></i>
+        </span>
+      </div>
+
+      <div style="position: relative; display: flex; align-items: center; gap: 13px; min-height: 66px; padding: 13px 15px; border-radius: 16px; background: linear-gradient(180deg, #1c2550, #141b3d); border: 2px solid #28336b; box-shadow: 0 5px 0 #05081a; opacity: 0.35;">
+        <span class="bsd" style="flex-shrink: 0; width: 30px; height: 30px; border-radius: 8px; background: #05081a; color: #98a4d4; font-size: 20px; font-weight: 800; display: grid; place-items: center; padding-top: 2px;">D</span>
+        <span style="font-size: 16.5px; font-weight: 600;">1961</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
