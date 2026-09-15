@@ -18,6 +18,7 @@ function harness(opts: {
   seed?: number;
   config?: ReturnType<typeof makeConfig>;
   bank?: ReturnType<typeof makeBank>;
+  timed?: boolean;
 } = {}) {
   const config = opts.config ?? realConfig();
   const bank = opts.bank ?? realBank();
@@ -29,6 +30,7 @@ function harness(opts: {
     bank,
     categoryId: opts.categoryId ?? 'science',
     mix: opts.mix ?? 'balanced',
+    timed: opts.timed ?? true,
     seen: new Map(),
     rng: mulberry32(opts.seed ?? 7),
     latency: (slot) => latency[slot],
@@ -383,6 +385,115 @@ describe('speed scoring across the network', () => {
     h.submit('b', q.id, 1);
     const reveal = pick(h.log, 'reveal')[0]!.payload;
     expect(reveal.answers.every((r) => r.elapsedMs === 3980)).toBe(true);
+  });
+});
+
+describe('the per-question timer switched off', () => {
+  it('does not close the question when the timed window would have expired', () => {
+    const h = harness({ timed: false });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+
+    expect(armed.timed).toBe(false);
+    // Well past the 20s window a timed match would have closed on.
+    h.now = armed.armAt + 60_000;
+    expect(pick(h.match.tick(h.now), 'reveal')).toHaveLength(0);
+    // ...and an answer is still accepted.
+    expect(pick(h.submit('a', q.id, 0), 'accepted')).toHaveLength(1);
+  });
+
+  it('closes as soon as both have answered, however long that took', () => {
+    const h = harness({ timed: false });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+
+    h.now = armed.armAt + 45_000;
+    h.submit('a', q.id, 0);
+    expect(pick(h.log, 'reveal')).toHaveLength(0); // still waiting on B
+    const effects = h.submit('b', q.id, 1);
+    expect(pick(effects, 'reveal')).toHaveLength(1);
+  });
+
+  it('still keeps a backstop so one player walking away cannot freeze the match', () => {
+    const h = harness({ timed: false });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+
+    h.now = armed.armAt + 4000;
+    h.submit('a', q.id, 0); // B never answers
+    h.now = armed.deadlineAt + h.config.timing.maxLatencyGraceMs + 10;
+    const reveal = pick(h.match.tick(h.now), 'reveal')[0]!.payload;
+    expect(reveal.answers.find((r) => r.slot === 'b')!.choice).toBeNull();
+  });
+
+  it('gives more time than a timed match, never less', () => {
+    const timedH = harness({ timed: true });
+    const untimedH = harness({ timed: false });
+    const windowOf = (h: ReturnType<typeof harness>) => {
+      const q = pick(h.start(), 'deliver')[0]!.question;
+      h.ack('a', q.id);
+      const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+      return armed.deadlineAt - armed.armAt;
+    };
+    expect(windowOf(untimedH)).toBeGreaterThan(windowOf(timedH));
+  });
+
+  it('keeps scoring on speed — sooner still pays more with no clock running', () => {
+    const h = harness({ timed: false, latency: { a: 20, b: 20 }, seed: 11 });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+
+    h.now = armed.armAt + 1200;
+    h.submit('a', q.id, 0);
+    h.now = armed.armAt + 11_000;
+    h.submit('b', q.id, 0);
+
+    const reveal = pick(h.log, 'reveal')[0]!.payload;
+    const a = reveal.answers.find((r) => r.slot === 'a')!;
+    const b = reveal.answers.find((r) => r.slot === 'b')!;
+    if (a.correct) {
+      expect(a.speedPoints).toBeGreaterThan(b.speedPoints);
+      expect(a.delta).toBeGreaterThan(b.delta);
+    } else {
+      expect(a.speedPoints).toBe(0);
+    }
+  });
+
+  it('reports the scoring window, not the backstop, as the decay span', () => {
+    const h = harness({ timed: false });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+    // durationMs drives the client's live value; it must stay the speed window.
+    expect(armed.durationMs).toBe(h.config.timing.answerWindowMs);
+    expect(armed.deadlineAt - armed.armAt).toBe(h.config.timing.untimedBackstopMs);
+  });
+
+  it('scores an answer past the decay window at the floor, not below it', () => {
+    const h = harness({ timed: false, latency: { a: 20, b: 20 }, seed: 11 });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+
+    h.now = armed.armAt + 90_000; // long past the 20s scoring window
+    h.submit('a', q.id, 0);
+    h.submit('b', q.id, 0);
+    const reveal = pick(h.log, 'reveal')[0]!.payload;
+    for (const r of reveal.answers) {
+      expect(r.speedPoints).toBe(0);
+      if (r.correct) expect(r.delta).toBeGreaterThan(0);
+    }
+  });
+
+  it('marks the armed payload as timed when the timer is on', () => {
+    const h = harness({ timed: true });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    expect(pick(h.ack('b', q.id), 'armed')[0]!.payload.timed).toBe(true);
   });
 });
 

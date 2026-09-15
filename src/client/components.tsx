@@ -190,6 +190,8 @@ function liveValue(
 export function Countdown({
   armAt,
   deadlineAt,
+  durationMs,
+  timed,
   paused,
   stake,
   speed,
@@ -197,6 +199,9 @@ export function Countdown({
 }: {
   armAt: number;
   deadlineAt: number;
+  /** The scoring window — the same whether or not the timer is on. */
+  durationMs: number;
+  timed: boolean;
   paused: boolean;
   stake?: { correct: number; fastest: number };
   speed?: SpeedConfig;
@@ -213,13 +218,17 @@ export function Countdown({
   useEffect(() => {
     if (paused) return;
     let raf = 0;
-    const total = Math.max(1, deadlineAt - armAt);
+    // Timed: the rail is the clock. Untimed: there is no clock to show, so the
+    // rail tracks the SCORING window instead — what drains is the bonus, which
+    // is the only thing still running down.
+    const total = Math.max(1, timed ? deadlineAt - armAt : durationMs);
 
     const tick = () => {
       const left = Math.max(0, deadlineAt - serverNow());
       setRemaining(left);
       if (railRef.current) {
-        railRef.current.style.transform = `scaleX(${left / total})`;
+        const bar = timed ? left : Math.max(0, total - (serverNow() - armAt));
+        railRef.current.style.transform = `scaleX(${Math.min(1, bar / total)})`;
       }
       if (left <= 0 && !fired.current) {
         fired.current = true;
@@ -229,19 +238,23 @@ export function Countdown({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [armAt, deadlineAt, paused, onExpire]);
+  }, [armAt, deadlineAt, durationMs, timed, paused, onExpire]);
 
   const seconds = Math.ceil(remaining / 1000);
-  const urgent = remaining <= 5000;
-  const showClock = remaining <= 8000;
+  // With the timer off there is no deadline to panic about, so the urgent
+  // state and the seconds clock never appear — the slot stays on the value.
+  const urgent = timed && remaining <= 5000;
+  const showClock = timed && remaining <= 8000;
 
-  const totalMs = Math.max(1, deadlineAt - armAt);
+  const elapsed = Math.max(0, durationMs - Math.max(0, remaining));
   const worth =
-    stake && speed ? liveValue(stake, speed, totalMs, totalMs - remaining) : null;
+    stake && speed
+      ? liveValue(stake, speed, durationMs, timed ? elapsed : serverNow() - armAt)
+      : null;
 
   return (
     <div
-      className={`countdown${urgent ? ' is-urgent' : ''}`}
+      className={`countdown${urgent ? ' is-urgent' : ''}${timed ? '' : ' is-untimed'}`}
       role="timer"
       aria-live="off"
       aria-label={

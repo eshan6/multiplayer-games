@@ -81,6 +81,8 @@ export interface MatchOptions {
   bank: QuizBank;
   categoryId: string;
   mix: MixName;
+  /** False runs the match with no per-question time limit. */
+  timed: boolean;
   seen: SeenMap;
   rng: Rng;
   /** One-way latency estimate in ms for a slot. Used for arm scheduling and answer grace. */
@@ -90,6 +92,7 @@ export interface MatchOptions {
 export class Match {
   readonly categoryId: string;
   readonly mix: MixName;
+  readonly timed: boolean;
   readonly selectionNotes: SelectionNote[];
 
   private readonly config: GameConfig;
@@ -120,6 +123,7 @@ export class Match {
     this.latency = opts.latency;
     this.categoryId = opts.categoryId;
     this.mix = opts.mix;
+    this.timed = opts.timed;
     this.seen = new Map(opts.seen);
 
     const result = selectQuestions({
@@ -227,7 +231,13 @@ export class Match {
     // so the arm message has landed on both ends before it fires.
     const worstTrip = Math.max(...SLOTS.map((s) => this.latency(s)));
     const armAt = now + worstTrip + this.config.timing.armBufferMs;
-    const deadlineAt = armAt + this.config.timing.answerWindowMs;
+    // Timed: a real deadline. Untimed: a backstop only — the question closes
+    // when both have answered, and this exists so one player walking away
+    // cannot freeze the match forever.
+    const closeAfter = this.timed
+      ? this.config.timing.answerWindowMs
+      : this.config.timing.untimedBackstopMs;
+    const deadlineAt = armAt + closeAfter;
 
     live.armAt = armAt;
     live.deadlineAt = deadlineAt;
@@ -241,7 +251,10 @@ export class Match {
         questionId: live.bank.id,
         armAt,
         deadlineAt,
+        // The SCORING window, not the close window: the speed bonus decays
+        // over the same span whether or not the timer is on.
         durationMs: this.config.timing.answerWindowMs,
+        timed: this.timed,
       },
     };
   }
@@ -473,6 +486,7 @@ export class Match {
             armAt: this.live.armAt,
             deadlineAt: this.live.deadlineAt,
             durationMs: this.config.timing.answerWindowMs,
+            timed: this.timed,
           }
         : null;
     return { question: this.toPublic(this.live), armed };

@@ -71,6 +71,7 @@ function boot() {
       scoring: config.scoring,
       questionsPerMatch: config.questionsPerMatch,
       answerWindowMs: config.timing.answerWindowMs,
+      defaultTimed: config.timing.defaultTimed,
       // The client redraws the decaying value every frame, so it needs the
       // same curve the server scores with.
       speed: config.scoring.speed,

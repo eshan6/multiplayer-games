@@ -25,6 +25,9 @@
   "timing": {
     "$comment": "answerWindowMs is the fair, synchronised per-question clock. It starts only once both clients have acknowledged the (face-down) question AND at a shared wall-clock instant both clients agree on.",
     "answerWindowMs": 20000,
+    "$untimed": "With the per-question timer switched off, a question closes only once BOTH players have answered — so untimedBackstopMs is a safety valve, not a game rule: it stops one player walking away from freezing the match forever. Make it generous. The speed bonus still decays over answerWindowMs either way; past that you simply score the floor instead of being cut off.",
+    "untimedBackstopMs": 300000,
+    "defaultTimed": true,
     "ackTimeoutMs": 4000,
     "armBufferMs": 120,
     "maxLatencyGraceMs": 400,

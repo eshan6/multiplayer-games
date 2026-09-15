@@ -61,6 +61,8 @@ export function makeConfig(overrides: Record<string, unknown> = {}): GameConfig 
     },
     timing: {
       answerWindowMs: 20000,
+      untimedBackstopMs: 300000,
+      defaultTimed: true,
       ackTimeoutMs: 4000,
       armBufferMs: 120,
       maxLatencyGraceMs: 400,

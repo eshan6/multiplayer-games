@@ -182,17 +182,22 @@ export function Setup({
   onStart,
   busy,
   error,
+  answerWindowMs,
+  defaultTimed,
 }: {
   categories: CategoryMeta[];
   mixes: Record<MixName, Record<Difficulty, number>>;
   freshness: Record<string, FreshnessMeta>;
   onRequestFreshness: (categoryId: string) => void;
-  onStart: (categoryId: string, mix: MixName) => void;
+  onStart: (categoryId: string, mix: MixName, timed: boolean) => void;
   busy: boolean;
   error: string | null;
+  answerWindowMs: number;
+  defaultTimed: boolean;
 }) {
   const [picked, setPicked] = useState<string | null>(null);
   const [mix, setMix] = useState<MixName>('balanced');
+  const [timed, setTimed] = useState(defaultTimed);
 
   useEffect(() => {
     for (const c of categories) onRequestFreshness(c.id);
@@ -277,6 +282,26 @@ export function Setup({
                 </button>
               );
             })}
+
+            {/* Switching the clock off does not switch scoring off: answering
+                sooner still pays more, it just stops being a race against a
+                deadline. */}
+            <button
+              className={`toggle-row${timed ? ' is-on' : ''}`}
+              onClick={() => setTimed((t) => !t)}
+              role="switch"
+              aria-checked={timed}
+            >
+              <span className="mix-body">
+                <b>{Math.round(answerWindowMs / 1000)}-second limit</b>
+                <span>
+                  {timed ? 'Answer before the clock runs out' : 'No clock. Take your time.'}
+                </span>
+              </span>
+              <span className="switch" aria-hidden="true">
+                <i />
+              </span>
+            </button>
           </div>
         ) : null}
       </div>
@@ -287,7 +312,7 @@ export function Setup({
         <button
           className="btn btn-primary"
           disabled={!picked || busy}
-          onClick={() => picked && onStart(picked, mix)}
+          onClick={() => picked && onStart(picked, mix, timed)}
         >
           {busy ? 'Dealing…' : chosen ? `Play ${chosen.name}` : 'Pick a category'}
         </button>
@@ -384,6 +409,8 @@ export function Play({
             <Countdown
               armAt={armed.armAt}
               deadlineAt={armed.deadlineAt}
+              durationMs={armed.durationMs}
+              timed={armed.timed}
               paused={paused}
               stake={question.stake}
               speed={speed ?? undefined}

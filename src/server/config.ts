@@ -26,6 +26,8 @@ export interface GameConfig {
   };
   timing: {
     answerWindowMs: number;
+    untimedBackstopMs: number;
+    defaultTimed: boolean;
     ackTimeoutMs: number;
     armBufferMs: number;
     maxLatencyGraceMs: number;
@@ -73,6 +75,13 @@ function requireInt(value: unknown, path: string, opts: { min?: number; max?: nu
   }
   if (opts.max !== undefined && value > opts.max) {
     throw new ConfigError(`${path} must be <= ${opts.max}, got ${value}`);
+  }
+  return value;
+}
+
+function requireBoolean(value: unknown, path: string): boolean {
+  if (typeof value !== 'boolean') {
+    throw new ConfigError(`${path} must be true or false, got ${JSON.stringify(value)}`);
   }
   return value;
 }
@@ -139,6 +148,10 @@ export function validateConfig(raw: unknown): GameConfig {
   const timingRaw = requireObject(root.timing, 'timing');
   const timing = {
     answerWindowMs: requireInt(timingRaw.answerWindowMs, 'timing.answerWindowMs', { min: 1000 }),
+    untimedBackstopMs: requireInt(timingRaw.untimedBackstopMs, 'timing.untimedBackstopMs', {
+      min: 10000,
+    }),
+    defaultTimed: requireBoolean(timingRaw.defaultTimed, 'timing.defaultTimed'),
     ackTimeoutMs: requireInt(timingRaw.ackTimeoutMs, 'timing.ackTimeoutMs', { min: 0 }),
     armBufferMs: requireInt(timingRaw.armBufferMs, 'timing.armBufferMs', { min: 0, max: 5000 }),
     maxLatencyGraceMs: requireInt(timingRaw.maxLatencyGraceMs, 'timing.maxLatencyGraceMs', {
@@ -153,6 +166,15 @@ export function validateConfig(raw: unknown): GameConfig {
       max: 25,
     }),
   };
+
+  // An untimed question must never close sooner than a timed one would.
+  if (timing.untimedBackstopMs <= timing.answerWindowMs) {
+    throw new ConfigError(
+      `timing.untimedBackstopMs (${timing.untimedBackstopMs}) must be longer than ` +
+        `timing.answerWindowMs (${timing.answerWindowMs}) — otherwise switching the timer off ` +
+        `would give players LESS time, not more`,
+    );
+  }
 
   // Cross-check: a full-bonus window at or beyond the answer window would pay
   // every answer the maximum and silently disable speed scoring altogether.
