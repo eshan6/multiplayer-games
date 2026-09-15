@@ -1,0 +1,53 @@
+{
+  "$comment": "All tunable game rules live here. Nothing in src/ hardcodes these numbers. Edit, restart, done. See README 'Tuning the config'.",
+
+  "questionsPerMatch": 20,
+
+  "difficultyMixes": {
+    "casual": { "easy": 12, "medium": 6, "hard": 2 },
+    "balanced": { "easy": 6, "medium": 9, "hard": 5 },
+    "tough": { "easy": 2, "medium": 6, "hard": 12 }
+  },
+
+  "scoring": {
+    "correct": { "easy": 10, "medium": 15, "hard": 20 },
+    "wrong": { "easy": -5, "medium": -7, "hard": -10 },
+    "noAnswer": { "easy": 0, "medium": 0, "hard": 0 }
+  },
+
+  "timing": {
+    "$comment": "answerWindowMs is the fair, synchronised per-question clock. It starts only once both clients have acknowledged the (face-down) question AND at a shared wall-clock instant both clients agree on.",
+    "answerWindowMs": 20000,
+    "ackTimeoutMs": 4000,
+    "armBufferMs": 120,
+    "maxLatencyGraceMs": 400,
+    "revealDurationMs": 3500,
+    "interQuestionMs": 900,
+    "disconnectGraceMs": 240000,
+    "clockSyncSamples": 5
+  },
+
+  "suddenDeath": {
+    "$comment": "Played one question at a time from the same category until the tie breaks. Mix is sampled from this weighting; questions used in the main 20 are never reused inside the same match.",
+    "maxRounds": 15,
+    "mix": { "easy": 0, "medium": 1, "hard": 0 }
+  },
+
+  "selection": {
+    "$comment": "tierShortfallPolicy decides what happens when a tier cannot be filled with UNSEEN questions. 'prefer-fresh' spills into an adjacent tier's unseen pool first (keeps questions new, bends the difficulty mix). 'prefer-difficulty' recycles already-seen questions at the correct tier first (keeps the mix exact, repeats questions). Business hard has only 41 questions, so a 'tough' Business match hits this after 3 matches.",
+    "tierShortfallPolicy": "prefer-fresh",
+    "fallbackOrder": {
+      "hard": ["medium", "easy"],
+      "medium": ["hard", "easy"],
+      "easy": ["medium", "hard"]
+    }
+  },
+
+  "room": {
+    "codeLength": 4,
+    "codeAlphabet": "ACDEFGHJKLMNPQRTUVWXY34679",
+    "$comment": "Alphabet omits characters that are ambiguous when read aloud over a call or typed on a phone keyboard: B/8, I/1/L, O/0/Q, S/5, Z/2.",
+    "maxRooms": 200,
+    "idleRoomTtlMs": 7200000
+  }
+}

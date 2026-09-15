@@ -1,0 +1,31 @@
+# Render — the zero-cost fallback.
+#
+# Two honest caveats on the free plan, neither of which breaks the game:
+#
+#   1. No persistent disk. Free instances get ephemeral storage only, so the
+#      pair's repeat-avoidance history resets whenever the instance restarts or
+#      redeploys. Matches still play correctly; you just may see a question
+#      again sooner than you otherwise would. Attaching a paid disk and setting
+#      DATA_DIR to its mount path fixes it.
+#   2. Free instances sleep after ~15 minutes idle and take ~30s to wake. Open
+#      the page and wait for it to load before sharing the room code.
+#
+# Render does support WebSockets on the free plan, so the real-time layer works.
+
+services:
+  - type: web
+    name: standoff
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: frankfurt
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      # Ephemeral on the free plan. Point this at a mounted disk on a paid plan
+      # to make the pair's question history durable.
+      - key: DATA_DIR
+        value: /tmp/standoff-data
