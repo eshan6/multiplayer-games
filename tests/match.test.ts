@@ -289,7 +289,100 @@ describe('scoring across a full match', () => {
     h.submit('a', q.id, 0);
     h.submit('b', q.id, 1);
     const reveal = pick(h.log, 'reveal')[0]!.payload;
-    expect(reveal.answers.find((r) => r.slot === 'a')!.elapsedMs).toBe(3000);
+    // 3000ms on the wall, less A's own 10ms trip home.
+    expect(reveal.answers.find((r) => r.slot === 'a')!.elapsedMs).toBe(2990);
+  });
+});
+
+describe('speed scoring across the network', () => {
+  /** Both players tap at the same real instant; only their distance differs. */
+  function simultaneousTap(latency: { a: number; b: number }) {
+    const h = harness({ latency, seed: 11 });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+
+    // Each answer lands at the shared tap moment plus that player's trip home.
+    const tapAt = armed.armAt + 2000;
+    h.now = tapAt + latency.a;
+    h.submit('a', q.id, 0);
+    h.now = tapAt + latency.b;
+    h.submit('b', q.id, 0);
+
+    h.now = armed.deadlineAt + 500;
+    const reveal = pick(h.log, 'reveal')[0]?.payload ?? pick(h.match.tick(h.now), 'reveal')[0]!.payload;
+    return reveal;
+  }
+
+  it('measures the same reaction time for both, however far apart they are', () => {
+    const reveal = simultaneousTap({ a: 15, b: 190 });
+    const a = reveal.answers.find((r) => r.slot === 'a')!;
+    const b = reveal.answers.find((r) => r.slot === 'b')!;
+    expect(a.elapsedMs).toBe(2000);
+    expect(b.elapsedMs).toBe(2000);
+  });
+
+  it('pays both the identical speed bonus for the same reaction', () => {
+    const reveal = simultaneousTap({ a: 15, b: 190 });
+    const a = reveal.answers.find((r) => r.slot === 'a')!;
+    const b = reveal.answers.find((r) => r.slot === 'b')!;
+    // Same pick, same real timing: the 175ms of distance must not separate them.
+    expect(a.delta).toBe(b.delta);
+    expect(a.speedPoints).toBe(b.speedPoints);
+  });
+
+  it('still rewards whoever genuinely answered sooner', () => {
+    const h = harness({ latency: { a: 20, b: 20 }, seed: 11 });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+
+    h.now = armed.armAt + 1200; // A is quick
+    h.submit('a', q.id, 0);
+    h.now = armed.armAt + 11000; // B takes their time
+    h.submit('b', q.id, 0);
+
+    const reveal = pick(h.log, 'reveal')[0]!.payload;
+    const a = reveal.answers.find((r) => r.slot === 'a')!;
+    const b = reveal.answers.find((r) => r.slot === 'b')!;
+    // Same choice, so either both are right or both are wrong.
+    if (a.correct) {
+      expect(a.delta).toBeGreaterThan(b.delta);
+      expect(a.speedPoints).toBeGreaterThan(b.speedPoints);
+    } else {
+      // A wrong answer is flat: speed neither helps nor hurts.
+      expect(a.delta).toBe(b.delta);
+      expect(a.speedPoints).toBe(0);
+      expect(b.speedPoints).toBe(0);
+    }
+  });
+
+  it('never reports a negative reaction time when latency overshoots', () => {
+    // A wildly over-estimated latency must clamp at zero, not pay a negative bonus.
+    const h = harness({ latency: { a: 5000, b: 20 }, seed: 11 });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+    h.now = armed.armAt + 100;
+    h.submit('a', q.id, 0);
+    h.now = armed.armAt + 100;
+    h.submit('b', q.id, 0);
+    const reveal = pick(h.log, 'reveal')[0]!.payload;
+    for (const r of reveal.answers) {
+      expect(r.elapsedMs).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it('carries the reaction time into the end-of-match breakdown', () => {
+    const h = harness({ latency: { a: 20, b: 20 }, seed: 11 });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+    h.now = armed.armAt + 4000;
+    h.submit('a', q.id, 0);
+    h.submit('b', q.id, 1);
+    const reveal = pick(h.log, 'reveal')[0]!.payload;
+    expect(reveal.answers.every((r) => r.elapsedMs === 3980)).toBe(true);
   });
 });
 

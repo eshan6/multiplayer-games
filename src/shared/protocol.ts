@@ -37,8 +37,12 @@ export interface PublicQuestion {
   difficulty: Difficulty;
   question: string;
   options: string[];
-  /** Points at stake, so the UI can show the risk before you commit. */
-  stake: { correct: number; wrong: number };
+  /**
+   * Points at stake, so the UI can show the risk before you commit.
+   * `correct` is the floor (answering on the buzzer), `fastest` the maximum
+   * (answering instantly). A correct answer always lands between the two.
+   */
+  stake: { correct: number; fastest: number; wrong: number };
   /** True for sudden-death questions played past the main 20. */
   suddenDeath: boolean;
 }
@@ -92,8 +96,16 @@ export interface AnswerRecord {
   /** null means they ran out of time. */
   choice: number | null;
   correct: boolean;
+  /** Total points applied, base plus speed bonus. */
   delta: number;
-  /** Server-measured ms from arm to receipt. null if no answer. */
+  /** The speed component of `delta` alone. 0 on a wrong or missed answer. */
+  speedPoints: number;
+  /**
+   * Reaction time in ms: from the shared reveal instant to the answer, with
+   * the player's own network latency subtracted. This is what speed is scored
+   * on, so a more distant player is not charged for their trip home.
+   * null if they never answered.
+   */
   elapsedMs: number | null;
 }
 
@@ -115,7 +127,10 @@ export interface MatchSummaryRow {
   answer: number;
   difficulty: Difficulty;
   suddenDeath: boolean;
-  picks: Record<PlayerSlot, { choice: number | null; correct: boolean; delta: number }>;
+  picks: Record<
+    PlayerSlot,
+    { choice: number | null; correct: boolean; delta: number; elapsedMs: number | null }
+  >;
 }
 
 export interface MatchResult {

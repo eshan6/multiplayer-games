@@ -37,6 +37,15 @@ export function attachSockets(
   };
   const registry = new RoomRegistry(config, bank, store, emitter);
 
+  /**
+   * One-way latency per socket, kept independently of room membership.
+   *
+   * A client syncs its clock as soon as it connects — necessarily before it
+   * has a seat — so those measurements have no player to attach to yet. Held
+   * here, they are adopted the moment the socket takes a seat.
+   */
+  const latencyBySocket = new Map<string, number>();
+
   io.on('connection', (socket: Socket) => {
     /**
      * NTP-style clock sync. The client records its own send and receive times
@@ -54,10 +63,15 @@ export function attachSockets(
     });
 
     socket.on('latency:report', (roundTripMs: unknown) => {
+      if (typeof roundTripMs !== 'number' || !Number.isFinite(roundTripMs) || roundTripMs < 0) return;
+      // Always record against the socket, seated or not.
+      const oneWay = Math.min(roundTripMs / 2, 2000);
+      const prior = latencyBySocket.get(socket.id);
+      latencyBySocket.set(socket.id, prior === undefined ? oneWay : prior * 0.7 + oneWay * 0.3);
+
       const room = registry.findBySocket(socket.id);
       const slot = room?.slotForSocket(socket.id);
-      if (!room || !slot || typeof roundTripMs !== 'number') return;
-      room.recordLatency(slot, roundTripMs);
+      if (room && slot) room.recordLatency(slot, roundTripMs);
     });
 
     socket.on('room:create', (payload: unknown, ack: unknown) => {
@@ -72,6 +86,7 @@ export function attachSockets(
       if (!seat) return reply?.(fail('That room is full.'));
 
       socket.join(`room:${room.code}`);
+      room.primeLatency(seat.slot, latencyBySocket.get(socket.id));
       reply?.(ok({ code: room.code, token: seat.token, slot: seat.slot }));
       room.broadcastState();
     });
@@ -91,6 +106,7 @@ export function attachSockets(
       if (!seat) return reply?.(fail('That room already has two players.'));
 
       socket.join(`room:${room.code}`);
+      room.primeLatency(seat.slot, latencyBySocket.get(socket.id));
       reply?.(ok({ code: room.code, token: seat.token, slot: seat.slot }));
       room.broadcastState();
     });
@@ -109,6 +125,7 @@ export function attachSockets(
       if (!slot) return reply?.(fail('That seat is no longer yours.'));
 
       socket.join(`room:${room.code}`);
+      room.primeLatency(slot, latencyBySocket.get(socket.id));
       room.reattach(slot, socket.id, Date.now());
       reply?.(ok({ code: room.code, slot }));
     });
@@ -168,6 +185,7 @@ export function attachSockets(
     });
 
     socket.on('disconnect', () => {
+      latencyBySocket.delete(socket.id);
       registry.findBySocket(socket.id)?.detach(socket.id, Date.now());
     });
   });

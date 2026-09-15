@@ -10,9 +10,16 @@
   },
 
   "scoring": {
+    "$comment": "A correct answer is worth 'correct' at the buzzer and 'correct + speedBonus' if you answer instantly, decaying between the two. The floor matters: a slow correct answer must still beat abstaining, so the bonus is added on top rather than decayed down to zero.",
     "correct": { "easy": 10, "medium": 15, "hard": 20 },
+    "speedBonus": { "easy": 6, "medium": 9, "hard": 12 },
     "wrong": { "easy": -5, "medium": -7, "hard": -10 },
-    "noAnswer": { "easy": 0, "medium": 0, "hard": 0 }
+    "noAnswer": { "easy": 0, "medium": 0, "hard": 0 },
+    "speed": {
+      "$comment": "fullBonusMs pays the whole bonus for answers inside it — you have to read the question first, and 300ms vs 900ms is recognition, not speed. After that the bonus decays to zero at the deadline. 'linear' is a straight ramp; 'ease-out' holds value longer early and drops away fast at the end.",
+      "fullBonusMs": 1000,
+      "curve": "linear"
+    }
   },
 
   "timing": {

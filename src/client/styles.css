@@ -1045,6 +1045,20 @@ input {
   line-height: 1;
 }
 
+/* What a correct answer is worth right now, ticking down. Green because it is
+   a reward, not a threat — the clock turns magenta when it becomes one. */
+.countdown-worth {
+  font-family: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  font-size: 30px;
+  min-width: 3.2ch;
+  text-align: right;
+  line-height: 1;
+  color: var(--right);
+  text-shadow: 0 0 16px rgba(0, 229, 140, 0.55);
+}
+
 .countdown.is-urgent .countdown-num {
   color: var(--heat);
   text-shadow: 0 0 20px rgba(255, 46, 151, 0.8);
@@ -1233,13 +1247,30 @@ input {
   position: absolute;
   right: 12px;
   display: flex;
-  gap: 5px;
+  gap: 9px;
+  align-items: center;
+}
+
+.picked-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.picked-tag b {
+  font-family: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--chalk-dim);
+  line-height: 1;
 }
 
 .picked-by i {
   width: 12px;
   height: 12px;
   border-radius: 50%;
+  flex-shrink: 0;
   animation: dot-in 300ms var(--ease-snap) backwards;
 }
 
@@ -1484,6 +1515,13 @@ input {
   width: 9px;
   height: 9px;
   border-radius: 50%;
+}
+
+.row-time {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--chalk-faint);
+  margin-left: 2px;
 }
 
 .row-pick.by-a i { background: var(--slot-a); }

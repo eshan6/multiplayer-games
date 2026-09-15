@@ -54,8 +54,10 @@ export function makeConfig(overrides: Record<string, unknown> = {}): GameConfig 
     },
     scoring: {
       correct: { easy: 10, medium: 15, hard: 20 },
+      speedBonus: { easy: 6, medium: 9, hard: 12 },
       wrong: { easy: -5, medium: -7, hard: -10 },
       noAnswer: { easy: 0, medium: 0, hard: 0 },
+      speed: { fullBonusMs: 1000, curve: 'linear' },
     },
     timing: {
       answerWindowMs: 20000,
