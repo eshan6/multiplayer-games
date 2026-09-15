@@ -1,0 +1,1376 @@
+/*
+  Standoff — two-player quiz duel.
+
+  Type: one family, Archivo, worked across its width axis. Display type runs
+  expanded (wdth 118-125) and heavy; body runs normal width. No second family,
+  no monospace for numerals — Archivo's tabular figures do that job.
+
+  Colour: deep navy ink. The two player colours are fixed to the SEAT, not to
+  "you", so both phones agree when the players are talking to each other.
+  Green and red are reserved exclusively for correct and wrong; they never
+  appear as decoration.
+*/
+
+:root {
+  --ink-900: #0a1424;
+  --ink-850: #0c1a2d;
+  --ink-800: #0f1d33;
+  --ink-750: #132542;
+  --ink-700: #16294a;
+  --ink-600: #21375c;
+  --ink-500: #33507f;
+
+  --chalk: #eef2f8;
+  --chalk-dim: #90a3c1;
+  --chalk-faint: #5b6f92;
+
+  --slot-a: #ffb627;
+  --slot-b: #5aa9ff;
+  --right: #3ddc97;
+  --wrong: #ff4d6d;
+
+  --gutter: 16px;
+  --radius: 14px;
+  --radius-sm: 9px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-snap: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --dur-fast: 140ms;
+  --dur-base: 240ms;
+  --dur-slow: 420ms;
+
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--ink-900);
+  color: var(--chalk);
+  /* If Archivo is blocked or slow, fall through to the grotesques closest to
+     it in proportion rather than to a default serif or Times. */
+  font-family: Archivo, 'Helvetica Neue', 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+  font-variation-settings: 'wdth' 100;
+  font-size: 17px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior: none;
+  /* Kill the double-tap zoom delay; every interaction here is a single tap. */
+  touch-action: manipulation;
+}
+
+#root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+input {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--slot-a);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ---------------------------------------------------------------- type scale */
+
+.display {
+  font-variation-settings: 'wdth' 122;
+  font-weight: 800;
+  letter-spacing: -0.022em;
+  line-height: 0.94;
+}
+
+.numeral {
+  font-variation-settings: 'wdth' 118;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* --------------------------------------------------------------- app shell */
+
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: max(20px, env(safe-area-inset-top)) var(--gutter)
+    max(20px, env(safe-area-inset-bottom));
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ------------------------------------------------------------------ landing */
+
+.landing {
+  justify-content: center;
+  gap: 34px;
+}
+
+.wordmark {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.wordmark h1 {
+  margin: 0;
+  font-size: clamp(52px, 17vw, 76px);
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  line-height: 0.86;
+}
+
+/* The two dots ARE the product: two players, one instant. They are the only
+   decorative mark in the app, so they carry the page-load moment. */
+.duel-dots {
+  display: flex;
+  gap: 7px;
+  padding-bottom: 12px;
+}
+
+.duel-dots span {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  animation: dot-in var(--dur-slow) var(--ease-snap) backwards;
+}
+
+.duel-dots span:nth-child(1) {
+  background: var(--slot-a);
+  animation-delay: 120ms;
+}
+
+.duel-dots span:nth-child(2) {
+  background: var(--slot-b);
+  animation-delay: 220ms;
+}
+
+@keyframes dot-in {
+  from {
+    transform: scale(0) translateY(10px);
+    opacity: 0;
+  }
+}
+
+.landing-lede {
+  margin: 0;
+  max-width: 30ch;
+  font-size: 19px;
+  line-height: 1.5;
+  color: var(--chalk-dim);
+}
+
+.landing-lede b {
+  color: var(--chalk);
+  font-weight: 600;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.field label {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--chalk-dim);
+}
+
+.field input {
+  background: var(--ink-800);
+  border: 1.5px solid var(--ink-600);
+  border-radius: var(--radius-sm);
+  padding: 15px 16px;
+  font-size: 17px;
+  font-weight: 500;
+  transition: border-color var(--dur-fast) ease;
+  width: 100%;
+}
+
+.field input::placeholder {
+  color: var(--chalk-faint);
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--slot-a);
+}
+
+.field input.code-input {
+  font-variation-settings: 'wdth' 118;
+  font-weight: 800;
+  font-size: 30px;
+  letter-spacing: 0.22em;
+  text-align: center;
+  text-transform: uppercase;
+  padding: 16px 12px 16px 20px;
+}
+
+.btn {
+  border-radius: var(--radius-sm);
+  padding: 17px 20px;
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) ease,
+    opacity var(--dur-fast) ease;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.975);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--slot-a);
+  color: var(--ink-900);
+}
+
+.btn-ghost {
+  background: var(--ink-800);
+  border: 1.5px solid var(--ink-600);
+  color: var(--chalk);
+}
+
+.btn-row {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.divider-or {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--chalk-faint);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.divider-or::before,
+.divider-or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--ink-700);
+}
+
+.error-note {
+  margin: 0;
+  color: var(--wrong);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* -------------------------------------------------------------------- lobby */
+
+.lobby {
+  justify-content: center;
+  gap: 30px;
+  text-align: center;
+  align-items: center;
+}
+
+.code-display {
+  display: flex;
+  gap: 9px;
+}
+
+.code-display b {
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: clamp(46px, 15vw, 64px);
+  line-height: 1;
+  background: var(--ink-800);
+  border: 1.5px solid var(--ink-600);
+  border-radius: var(--radius-sm);
+  width: 1.32em;
+  padding: 12px 0;
+  animation: dot-in var(--dur-slow) var(--ease-snap) backwards;
+}
+
+.code-display b:nth-child(1) { animation-delay: 40ms; }
+.code-display b:nth-child(2) { animation-delay: 90ms; }
+.code-display b:nth-child(3) { animation-delay: 140ms; }
+.code-display b:nth-child(4) { animation-delay: 190ms; }
+
+.lobby h2 {
+  margin: 0;
+  font-size: 26px;
+}
+
+.lobby p {
+  margin: 0;
+  color: var(--chalk-dim);
+  max-width: 32ch;
+}
+
+.waiting-pulse {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.waiting-pulse i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--slot-b);
+  animation: breathe 1.3s ease-in-out infinite;
+}
+
+.waiting-pulse i:nth-child(2) { animation-delay: 0.18s; }
+.waiting-pulse i:nth-child(3) { animation-delay: 0.36s; }
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.25; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+/* ------------------------------------------------------------ category grid */
+
+.setup-head {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 20px;
+}
+
+.setup-head h2 {
+  margin: 0;
+  font-size: 30px;
+}
+
+.setup-head p {
+  margin: 0;
+  color: var(--chalk-dim);
+  font-size: 15.5px;
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 11px;
+}
+
+/*
+  Each plate is identified by its drawn mark, not by a chip in a box: the mark
+  is rendered oversized and clipped by the plate, so the ten plates read as ten
+  different objects rather than one card component repeated.
+*/
+.plate {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--ink-800);
+  border: 1.5px solid var(--ink-700);
+  padding: 15px 14px 13px;
+  min-height: 116px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 3px;
+  text-align: left;
+  transition:
+    border-color var(--dur-fast) ease,
+    transform var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) ease;
+}
+
+.plate:active {
+  transform: scale(0.972);
+}
+
+.plate.is-picked {
+  border-color: var(--plate-hue);
+  background: color-mix(in srgb, var(--plate-hue) 13%, var(--ink-800));
+}
+
+.plate-mark {
+  position: absolute;
+  top: -26px;
+  right: -26px;
+  width: 86px;
+  height: 86px;
+  color: var(--plate-hue);
+  opacity: 0.34;
+  transition: opacity var(--dur-base) ease, transform var(--dur-base) var(--ease-out);
+}
+
+/* The mark is drawn oversized and clipped, which means it runs behind a
+   two-line title. This fades the plate's lower half back to the surface colour
+   so the name always sits on solid ground. */
+.plate::after {
+  content: '';
+  position: absolute;
+  inset: 38% 0 0;
+  background: linear-gradient(to bottom, transparent, var(--ink-800) 62%);
+  pointer-events: none;
+  transition: background var(--dur-fast) ease;
+}
+
+.plate.is-picked::after {
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--plate-hue) 13%, var(--ink-800)) 62%
+  );
+}
+
+.plate.is-picked .plate-mark {
+  opacity: 0.7;
+  transform: scale(1.06) rotate(-4deg);
+}
+
+/* Above the scrim; the mark stays below it. */
+.plate-name {
+  font-size: 16.5px;
+  font-weight: 700;
+  line-height: 1.16;
+  letter-spacing: -0.012em;
+  position: relative;
+  z-index: 1;
+}
+
+/* Freshness lives here, unobtrusive: a hairline that shortens as the pair
+   works through a category, with the number only as a quiet caption. */
+.plate-fresh {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  /* Held clear of the title so the rail reads as a meter, not an underline. */
+  margin-top: 7px;
+  z-index: 1;
+}
+
+.fresh-rail {
+  height: 3px;
+  width: 78%;
+  background: var(--ink-600);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.fresh-rail i {
+  display: block;
+  height: 100%;
+  background: var(--plate-hue);
+  border-radius: 2px;
+  transform-origin: left;
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+
+.plate-fresh span {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--chalk-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------ mix selection */
+
+.mix-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 22px;
+}
+
+.mix-option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 15px;
+  border-radius: var(--radius-sm);
+  background: var(--ink-800);
+  border: 1.5px solid var(--ink-700);
+  text-align: left;
+  transition: border-color var(--dur-fast) ease, background var(--dur-fast) ease;
+}
+
+.mix-option.is-picked {
+  border-color: var(--slot-a);
+  background: color-mix(in srgb, var(--slot-a) 11%, var(--ink-800));
+}
+
+.mix-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.mix-body b {
+  display: block;
+  font-size: 16.5px;
+  font-weight: 700;
+}
+
+.mix-body span {
+  font-size: 13.5px;
+  color: var(--chalk-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A tiny stacked bar showing the easy/medium/hard split. It is the mix, drawn. */
+.mix-bar {
+  display: flex;
+  width: 52px;
+  height: 26px;
+  border-radius: 5px;
+  overflow: hidden;
+  flex-shrink: 0;
+  gap: 1.5px;
+}
+
+.mix-bar i {
+  display: block;
+  height: 100%;
+}
+
+.mix-bar i.t-easy { background: var(--right); }
+.mix-bar i.t-medium { background: var(--slot-a); }
+.mix-bar i.t-hard { background: var(--wrong); }
+
+.setup-footer {
+  margin-top: auto;
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.thin-warning {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--slot-a);
+  background: color-mix(in srgb, var(--slot-a) 10%, transparent);
+  border-left: 2px solid var(--slot-a);
+  padding: 9px 12px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+/* ---------------------------------------------------------------- duel bar */
+
+.duel-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: var(--ink-850);
+  border: 1.5px solid var(--ink-700);
+  border-radius: var(--radius);
+  position: relative;
+  overflow: hidden;
+}
+
+.duel-side {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.duel-side.side-b {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.duel-who {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.side-b .duel-who {
+  flex-direction: row-reverse;
+}
+
+.duel-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--chalk-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.duel-name.is-you {
+  color: var(--chalk);
+}
+
+/* The lock lamp: hollow while thinking, filled the instant they commit.
+   It never says WHAT they picked. */
+.lock-lamp {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  flex-shrink: 0;
+  transition: background var(--dur-fast) ease, transform var(--dur-fast) var(--ease-snap);
+}
+
+.lock-lamp.is-locked {
+  background: currentColor;
+  transform: scale(1.32);
+}
+
+.lock-lamp.is-offline {
+  border-style: dashed;
+  opacity: 0.5;
+}
+
+.side-a .duel-who { color: var(--slot-a); }
+.side-b .duel-who { color: var(--slot-b); }
+
+.duel-score {
+  font-size: 27px;
+  line-height: 1;
+  font-variation-settings: 'wdth' 118;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  transition: color var(--dur-base) ease;
+}
+
+.side-a .duel-score { color: var(--slot-a); }
+.side-b .duel-score { color: var(--slot-b); }
+
+/* Losses read louder than gains: a wrong answer flashes the score red and the
+   delta chip is bigger. Negative marking should be felt, not read. */
+.duel-score.flash-loss {
+  animation: flash-loss 620ms ease-out;
+}
+
+.duel-score.flash-gain {
+  animation: flash-gain 480ms ease-out;
+}
+
+@keyframes flash-loss {
+  0% { color: var(--wrong); transform: translateY(0) scale(1.14); }
+  35% { color: var(--wrong); transform: translateY(4px) scale(1.14); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes flash-gain {
+  0% { color: var(--right); transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+.delta-chip {
+  position: absolute;
+  top: 8px;
+  font-variation-settings: 'wdth' 118;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  animation: delta-rise 1150ms var(--ease-out) forwards;
+}
+
+.delta-chip.is-loss {
+  color: var(--wrong);
+  font-size: 25px;
+}
+
+.delta-chip.is-gain {
+  color: var(--right);
+  font-size: 19px;
+}
+
+.delta-chip.at-a { left: 14px; }
+.delta-chip.at-b { right: 14px; }
+
+@keyframes delta-rise {
+  0% { opacity: 0; transform: translateY(12px); }
+  22% { opacity: 1; transform: translateY(0); }
+  70% { opacity: 1; transform: translateY(-6px); }
+  100% { opacity: 0; transform: translateY(-22px); }
+}
+
+/* The divider slides toward whoever is behind, so the gap is spatial. */
+.duel-gap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  padding: 0 2px;
+}
+
+.duel-gap-rail {
+  width: 46px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--ink-600);
+  position: relative;
+  overflow: hidden;
+}
+
+.duel-gap-rail i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--chalk);
+  transition: left var(--dur-slow) var(--ease-out), background var(--dur-base) ease;
+}
+
+.duel-progress {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--chalk-faint);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------- play area */
+
+.play {
+  gap: 12px;
+}
+
+.hold-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--chalk-dim);
+}
+
+.hold-state b {
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--chalk);
+}
+
+.hold-state p {
+  margin: 0;
+  font-size: 15px;
+  max-width: 28ch;
+  text-align: center;
+}
+
+/* Takes the slack between the clock and the options, and centres the question
+   in it, so a one-line question and a three-line question both sit optically
+   in the same place instead of leaving a void above the thumb zone. */
+.question-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 11px;
+  padding: 2px 0;
+  min-height: 0;
+}
+
+.question-meta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.tier-tag {
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1.5px solid currentColor;
+}
+
+.tier-tag.t-easy { color: var(--right); }
+.tier-tag.t-medium { color: var(--slot-a); }
+.tier-tag.t-hard { color: var(--wrong); }
+
+.stake-note {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--chalk-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.stake-note em {
+  font-style: normal;
+  color: var(--wrong);
+}
+
+.sudden-tag {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--ink-900);
+  background: var(--wrong);
+  padding: 3px 9px;
+  border-radius: 20px;
+  animation: breathe 1.5s ease-in-out infinite;
+}
+
+.question-text {
+  margin: 0;
+  font-size: clamp(21px, 5.6vw, 27px);
+  font-variation-settings: 'wdth' 112;
+  font-weight: 700;
+  line-height: 1.22;
+  letter-spacing: -0.018em;
+  text-wrap: balance;
+}
+
+/* ---------------------------------------------------------------- countdown */
+
+.countdown {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  height: 22px;
+}
+
+.countdown-rail {
+  flex: 1;
+  height: 3px;
+  background: var(--ink-700);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.countdown-rail i {
+  display: block;
+  height: 100%;
+  background: var(--chalk-dim);
+  transform-origin: left;
+  border-radius: 3px;
+  /* Width is driven per-frame in JS; no transition or it lags the real clock. */
+}
+
+.countdown.is-urgent .countdown-rail i {
+  background: var(--wrong);
+}
+
+.countdown-num {
+  font-variation-settings: 'wdth' 118;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  font-size: 19px;
+  min-width: 2ch;
+  text-align: right;
+  color: var(--chalk-dim);
+}
+
+.countdown.is-urgent .countdown-num {
+  color: var(--wrong);
+  animation: tick-pulse 1s steps(1) infinite;
+}
+
+@keyframes tick-pulse {
+  0% { transform: scale(1.18); }
+  40% { transform: scale(1); }
+}
+
+/* ----------------------------------------------------------------- options */
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  min-height: 62px;
+  padding: 13px 15px;
+  border-radius: var(--radius);
+  background: var(--ink-750);
+  border: 1.5px solid var(--ink-600);
+  text-align: left;
+  overflow: hidden;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    border-color var(--dur-base) ease,
+    background var(--dur-base) ease,
+    opacity var(--dur-base) ease;
+  animation: option-in 260ms var(--ease-out) backwards;
+}
+
+.option:nth-child(1) { animation-delay: 0ms; }
+.option:nth-child(2) { animation-delay: 45ms; }
+.option:nth-child(3) { animation-delay: 90ms; }
+.option:nth-child(4) { animation-delay: 135ms; }
+
+@keyframes option-in {
+  from { opacity: 0; transform: translateY(9px); }
+}
+
+.option:active:not(:disabled) {
+  transform: scale(0.982);
+}
+
+.option-key {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--ink-600);
+  color: var(--chalk-dim);
+  font-size: 13.5px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  transition: background var(--dur-base) ease, color var(--dur-base) ease;
+}
+
+.option-label {
+  font-size: 16.5px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+/* Your locked-in choice: ring in YOUR seat colour, settled with a spring. */
+.option.is-mine {
+  border-color: var(--my-colour);
+  background: color-mix(in srgb, var(--my-colour) 15%, var(--ink-750));
+  animation: lock-settle 320ms var(--ease-snap);
+}
+
+.option.is-mine .option-key {
+  background: var(--my-colour);
+  color: var(--ink-900);
+}
+
+@keyframes lock-settle {
+  0% { transform: scale(1); }
+  38% { transform: scale(0.955); }
+  100% { transform: scale(1); }
+}
+
+.option:disabled {
+  cursor: default;
+}
+
+/* Dim the roads not taken once you have committed.
+   Scoped with :not(.is-revealed) deliberately — without it this selector
+   (0,4,0) outranks the reveal reset below (0,3,0) and leaves the correct
+   answer dimmed at the moment it most needs to be legible. */
+.options.is-locked:not(.is-revealed) .option:not(.is-mine) {
+  opacity: 0.42;
+}
+
+/* --- reveal ------------------------------------------------------------- */
+
+.options.is-revealed .option {
+  opacity: 1;
+}
+
+.option.is-right {
+  border-color: var(--right);
+  background: color-mix(in srgb, var(--right) 17%, var(--ink-750));
+}
+
+.option.is-right .option-key {
+  background: var(--right);
+  color: var(--ink-900);
+}
+
+/* A sweep, left to right, so the correct answer arrives rather than appears. */
+.option.is-right::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--right) 34%, transparent));
+  transform: translateX(-100%);
+  animation: sweep 560ms var(--ease-out) forwards;
+  pointer-events: none;
+}
+
+@keyframes sweep {
+  to { transform: translateX(100%); }
+}
+
+.option.is-wrong-pick {
+  border-color: var(--wrong);
+  background: color-mix(in srgb, var(--wrong) 14%, var(--ink-750));
+}
+
+/* Only your own miss shakes. Theirs is marked, not dramatised. */
+.option.is-my-miss {
+  animation: wrong-shake 300ms ease-out;
+}
+
+.option.is-wrong-pick .option-label {
+  text-decoration: line-through;
+  text-decoration-color: var(--wrong);
+  text-decoration-thickness: 2px;
+}
+
+@keyframes wrong-shake {
+  0%, 100% { transform: translateX(0); }
+  22% { transform: translateX(-4px); }
+  48% { transform: translateX(4px); }
+  74% { transform: translateX(-2px); }
+}
+
+.options.is-revealed .option:not(.is-right):not(.is-wrong-pick) {
+  opacity: 0.38;
+}
+
+/* Who picked what, shown only after the close. */
+.picked-by {
+  position: absolute;
+  right: 12px;
+  display: flex;
+  gap: 4px;
+}
+
+.picked-by i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  animation: dot-in 280ms var(--ease-snap) backwards;
+}
+
+.picked-by i.by-a { background: var(--slot-a); }
+.picked-by i.by-b { background: var(--slot-b); }
+
+.reveal-caption {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--chalk-dim);
+  text-align: center;
+  min-height: 1.4em;
+}
+
+/* --------------------------------------------------------------- paused ---- */
+
+.curtain {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--ink-900) 92%, transparent);
+  backdrop-filter: blur(7px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: var(--gutter);
+  text-align: center;
+  z-index: 40;
+  animation: fade-in var(--dur-base) ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+
+.curtain h3 {
+  margin: 0;
+  font-size: 25px;
+}
+
+.curtain p {
+  margin: 0;
+  color: var(--chalk-dim);
+  max-width: 30ch;
+}
+
+.curtain .countdown-num {
+  font-size: 34px;
+  color: var(--chalk);
+}
+
+/* -------------------------------------------------------------- summary --- */
+
+.summary-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 18px 0 22px;
+  text-align: center;
+}
+
+.verdict {
+  margin: 0;
+  font-size: clamp(34px, 10vw, 46px);
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+  animation: dot-in 500ms var(--ease-snap) backwards;
+}
+
+.verdict.won { color: var(--right); }
+.verdict.lost { color: var(--wrong); }
+.verdict.drew { color: var(--chalk); }
+
+.verdict-note {
+  margin: 0;
+  color: var(--chalk-dim);
+  font-size: 15px;
+}
+
+.final-scores {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.final-score {
+  flex: 1;
+  background: var(--ink-800);
+  border: 1.5px solid var(--ink-700);
+  border-radius: var(--radius);
+  padding: 15px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+}
+
+.final-score.is-winner {
+  border-color: var(--seat-colour);
+  background: color-mix(in srgb, var(--seat-colour) 12%, var(--ink-800));
+}
+
+.final-score b {
+  font-size: 40px;
+  line-height: 1;
+  font-variation-settings: 'wdth' 120;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--seat-colour);
+}
+
+.final-score span {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--chalk-dim);
+  max-width: 14ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.breakdown h3 {
+  margin: 20px 0 4px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  gap: 11px;
+  align-items: start;
+  padding: 11px 13px;
+  background: var(--ink-800);
+  border: 1.5px solid var(--ink-700);
+  border-radius: var(--radius-sm);
+}
+
+.row.is-sudden {
+  border-color: color-mix(in srgb, var(--wrong) 45%, var(--ink-700));
+}
+
+.row-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--chalk-faint);
+  font-variant-numeric: tabular-nums;
+  padding-top: 2px;
+}
+
+.row-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.row-q {
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.32;
+}
+
+.row-answer {
+  font-size: 13px;
+  color: var(--right);
+  font-weight: 600;
+}
+
+.row-picks {
+  display: flex;
+  gap: 5px;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.row-pick {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.row-pick i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.row-pick.by-a i { background: var(--slot-a); }
+.row-pick.by-b i { background: var(--slot-b); }
+.row-pick.gain { color: var(--right); }
+.row-pick.loss { color: var(--wrong); }
+.row-pick.zero { color: var(--chalk-faint); }
+
+.summary-footer {
+  position: sticky;
+  bottom: 0;
+  padding: 14px 0 max(14px, env(safe-area-inset-bottom));
+  /* Solid, not a gradient: a gradient here let the last breakdown row show
+     through the freshness caption. The fade is a separate strip above it. */
+  background: var(--ink-900);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.summary-footer::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 26px;
+  background: linear-gradient(to top, var(--ink-900), transparent);
+  pointer-events: none;
+}
+
+.fresh-after {
+  margin: 0;
+  font-size: 13px;
+  color: var(--chalk-faint);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- toast ---- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: max(22px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  background: var(--ink-700);
+  border: 1.5px solid var(--ink-500);
+  color: var(--chalk);
+  padding: 11px 17px;
+  border-radius: 30px;
+  font-size: 14.5px;
+  font-weight: 600;
+  z-index: 60;
+  max-width: calc(100vw - 32px);
+  text-align: center;
+  animation: toast-in var(--dur-base) var(--ease-out);
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+}
+
+.conn-dot {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  right: 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--slot-a);
+  background: var(--ink-800);
+  border: 1px solid var(--ink-600);
+  padding: 3px 9px;
+  border-radius: 20px;
+  z-index: 50;
+}
+
+.scroller {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* --------------------------------------------------------- reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+@media (min-width: 600px) {
+  .category-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

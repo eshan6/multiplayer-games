@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.data/
+*.tmp
+*-tmp.mjs
+.DS_Store
+.env
+.env.local
+*.log

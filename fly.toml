@@ -1,0 +1,54 @@
+# Fly.io — the recommended target. Real WebSockets, and a persistent volume is
+# available on the free allowance, so repeat-avoidance history survives a
+# redeploy. Deploy with:
+#
+#   fly launch --no-deploy --copy-config
+#   fly volumes create standoff_data --size 1 --region fra
+#   fly deploy
+#
+# Pick a region between the two players: fra (Frankfurt) or cdg (Paris) splits
+# an India/Germany pair far better than a US region would.
+
+app = "standoff-quiz"
+primary_region = "fra"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "3000"
+  DATA_DIR = "/data"
+
+[[mounts]]
+  source = "standoff_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  # Keep one machine warm. A cold start would drop the WebSocket mid-match, and
+  # the disconnect grace exists for flaky phones, not for a sleeping server.
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 200
+    soft_limit = 150
+
+# A single machine is deliberate: rooms live in memory, so two machines behind
+# a load balancer would strand the two players in separate rooms. If you ever
+# need more than one, move the room registry into Redis first.
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+
+[checks.health]
+  type = "http"
+  port = 3000
+  path = "/api/health"
+  interval = "30s"
+  timeout = "5s"
+  grace_period = "10s"
