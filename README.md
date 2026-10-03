@@ -182,6 +182,16 @@ want to think, or when one of you is doing three things at once.
 it just stops being a race against a deadline. The bonus decays over the same
 20-second span, so past that you score the floor rather than being cut off.
 
+**There's a Pass button**, because with no clock a question waits for you both
+— so one of you not knowing an answer would otherwise stall the whole match.
+Passing scores zero, exactly like running out of time does in a timed match,
+and never counts as wrong. It locks in like an answer, and your opponent only
+sees that you've committed, not that you passed.
+
+It appears only with the timer off. In a timed match, letting the clock run out
+is already the pass, and a button there would let one player end the question
+early and rob the other of their remaining seconds.
+
 `timing.untimedBackstopMs` (5 minutes) is a safety valve, not a game rule:
 without it, one of you walking away mid-question would freeze the match
 forever. Make it as generous as you like — the config refuses to start if it is

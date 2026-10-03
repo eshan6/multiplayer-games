@@ -102,6 +102,17 @@ it one player walking away would freeze the match forever. Config validation
 rejects a backstop shorter than the timed window, since switching the timer
 off must never give players *less* time.
 
+**Passing exists only when the timer is off** (`answer:skip`, `Match.skip`).
+Timed, running the clock down *is* the pass and the question closes on its own
+— accepting one there would let a player end the question early and deny the
+other their full window, so the engine refuses it. Untimed there is no clock,
+so without a pass one player who does not know the answer blocks the match
+entirely. A pass scores as no answer (zero) and never as wrong, or it would
+stop being strictly better than guessing and the negative marking would lose
+its meaning. It locks like an answer: a decision not to answer is still a
+decision. `Submission.choice === null` is the skip; `submissions[slot] !==
+undefined` is still what "has committed" means.
+
 **Speed scoring is unaffected by the toggle**, by design. The bonus decays over
 `timing.answerWindowMs` either way; untimed, you simply score the floor past
 that point instead of being cut off. `ArmedPayload.durationMs` is always the

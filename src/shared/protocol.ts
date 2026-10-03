@@ -172,6 +172,8 @@ export interface ClientEvents {
   ) => void;
   'question:ack': (payload: { questionId: string }) => void;
   'answer:submit': (payload: { questionId: string; choice: number; clientSentAt: number }) => void;
+  /** Pass on a question without answering. Only accepted with the timer off. */
+  'answer:skip': (payload: { questionId: string }) => void;
   'match:rematch': (ack: (res: Result<{ ok: true }>) => void) => void;
   'freshness:get': (
     payload: { categoryId: string },
@@ -184,7 +186,8 @@ export interface ServerEvents {
   'room:state': (view: RoomView) => void;
   'question:deliver': (q: PublicQuestion) => void;
   'question:armed': (p: ArmedPayload) => void;
-  'answer:accepted': (p: { questionId: string; choice: number }) => void;
+  /** `choice: null` confirms a skip rather than an answer. */
+  'answer:accepted': (p: { questionId: string; choice: number | null }) => void;
   'question:reveal': (p: RevealPayload) => void;
   'match:over': (r: MatchResult) => void;
   'match:reset': () => void;

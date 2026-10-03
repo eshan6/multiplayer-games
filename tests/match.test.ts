@@ -388,6 +388,12 @@ describe('speed scoring across the network', () => {
   });
 });
 
+/** The losing delta on a reveal where someone answered wrong, else null. */
+function scoreOfWrongAnswer(reveal: RevealPayload): number | null {
+  const wrong = reveal.answers.find((r) => r.choice !== null && !r.correct);
+  return wrong ? wrong.delta : null;
+}
+
 describe('the per-question timer switched off', () => {
   it('does not close the question when the timed window would have expired', () => {
     const h = harness({ timed: false });
@@ -489,11 +495,150 @@ describe('the per-question timer switched off', () => {
     }
   });
 
+  it('lets a player pass, and closes once the other answers', () => {
+    const h = harness({ timed: false });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+    h.now = armed.armAt + 3000;
+
+    const skipped = pick(h.match.skip('a', q.id, h.now), 'accepted');
+    expect(skipped).toHaveLength(1);
+    expect(skipped[0]!.choice).toBeNull();
+    expect(pick(h.log, 'reveal')).toHaveLength(0); // still waiting on B
+
+    const effects = h.submit('b', q.id, 0);
+    expect(pick(effects, 'reveal')).toHaveLength(1);
+  });
+
+  it('closes immediately when both players pass', () => {
+    const h = harness({ timed: false });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+    h.now = armed.armAt + 1000;
+
+    h.match.skip('a', q.id, h.now);
+    const reveal = pick(h.match.skip('b', q.id, h.now), 'reveal')[0]!.payload;
+    expect(reveal.answers.every((r) => r.choice === null)).toBe(true);
+    expect(reveal.scores).toEqual({ a: 0, b: 0 });
+  });
+
+  it('scores a pass at zero, never as wrong', () => {
+    const h = harness({ timed: false });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+    h.now = armed.armAt + 1000;
+
+    h.match.skip('a', q.id, h.now);
+    h.submit('b', q.id, 0);
+    const reveal = pick(h.log, 'reveal')[0]!.payload;
+    const passed = reveal.answers.find((r) => r.slot === 'a')!;
+    expect(passed.delta).toBe(0);
+    expect(passed.correct).toBe(false);
+    expect(passed.speedPoints).toBe(0);
+    // Passing must stay strictly better than guessing wrong.
+    const wrongDelta = scoreOfWrongAnswer(reveal);
+    if (wrongDelta !== null) expect(passed.delta).toBeGreaterThan(wrongDelta);
+  });
+
+  it('reports no reaction time for a pass', () => {
+    const h = harness({ timed: false });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+    h.now = armed.armAt + 7000;
+    h.match.skip('a', q.id, h.now);
+    h.submit('b', q.id, 0);
+    const reveal = pick(h.log, 'reveal')[0]!.payload;
+    expect(reveal.answers.find((r) => r.slot === 'a')!.elapsedMs).toBeNull();
+  });
+
+  it('locks a pass — you cannot pass then answer', () => {
+    const h = harness({ timed: false });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+    h.now = armed.armAt + 1000;
+
+    h.match.skip('a', q.id, h.now);
+    expect(pick(h.submit('a', q.id, 1), 'accepted')).toHaveLength(0);
+    expect(h.match.lockedSlots.a).toBe(true);
+  });
+
+  it('cannot pass twice', () => {
+    const h = harness({ timed: false });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+    h.now = armed.armAt + 1000;
+    expect(pick(h.match.skip('a', q.id, h.now), 'accepted')).toHaveLength(1);
+    expect(pick(h.match.skip('a', q.id, h.now), 'accepted')).toHaveLength(0);
+  });
+
+  it('cannot pass after already answering', () => {
+    const h = harness({ timed: false });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+    h.now = armed.armAt + 1000;
+    h.submit('a', q.id, 2);
+    expect(pick(h.match.skip('a', q.id, h.now), 'accepted')).toHaveLength(0);
+    const reveal = pick(h.submit('b', q.id, 0), 'reveal')[0]!.payload;
+    expect(reveal.answers.find((r) => r.slot === 'a')!.choice).toBe(2);
+  });
+
   it('marks the armed payload as timed when the timer is on', () => {
     const h = harness({ timed: true });
     const q = pick(h.start(), 'deliver')[0]!.question;
     h.ack('a', q.id);
     expect(pick(h.ack('b', q.id), 'armed')[0]!.payload.timed).toBe(true);
+  });
+});
+
+describe('passing is untimed-only', () => {
+  it('refuses a pass when the clock is on', () => {
+    const h = harness({ timed: true });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+    h.now = armed.armAt + 1000;
+
+    // Timed, letting the clock run out IS the pass — accepting one here would
+    // let a player end the question early and deny the other their full window.
+    expect(h.match.skip('a', q.id, h.now)).toHaveLength(0);
+    expect(h.match.lockedSlots.a).toBe(false);
+    // ...and they can still answer normally.
+    expect(pick(h.submit('a', q.id, 0), 'accepted')).toHaveLength(1);
+  });
+
+  it('refuses a pass while the match is paused', () => {
+    const h = harness({ timed: false });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+    h.now = armed.armAt + 1000;
+    h.match.pause(h.now);
+    expect(h.match.skip('a', q.id, h.now)).toHaveLength(0);
+  });
+
+  it('refuses a pass before the shared start instant', () => {
+    const h = harness({ timed: false });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+    h.now = armed.armAt - 50;
+    expect(h.match.skip('a', q.id, h.now)).toHaveLength(0);
+  });
+
+  it('refuses a pass for a question that is not live', () => {
+    const h = harness({ timed: false });
+    const q = pick(h.start(), 'deliver')[0]!.question;
+    h.ack('a', q.id);
+    const armed = pick(h.ack('b', q.id), 'armed')[0]!.payload;
+    h.now = armed.armAt + 1000;
+    expect(h.match.skip('a', 'SCI-9999', h.now)).toHaveLength(0);
   });
 });
 

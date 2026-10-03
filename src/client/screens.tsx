@@ -330,9 +330,11 @@ export function Play({
   armed,
   reveal,
   myChoice,
+  mySkipped,
   deltas,
   speed,
   onAnswer,
+  onSkip,
 }: {
   view: RoomView;
   you: PlayerSlot | null;
@@ -340,9 +342,11 @@ export function Play({
   armed: ArmedPayload | null;
   reveal: RevealPayload | null;
   myChoice: number | null;
+  mySkipped: boolean;
   deltas: Partial<Record<PlayerSlot, { value: number; key: number }>>;
   speed: SpeedConfig | null;
   onAnswer: (choice: number) => void;
+  onSkip: () => void;
 }) {
   // The question is held face-down until the server's shared instant arrives.
   // Both phones flip at the same moment on the server's clock, so the faster
@@ -363,7 +367,7 @@ export function Play({
   }, [armed, question]);
 
   const revealed = reveal !== null && reveal.questionId === question?.id;
-  const locked = myChoice !== null;
+  const locked = myChoice !== null || mySkipped;
   const paused = view.phase === 'paused';
 
   if (!question) {
@@ -480,6 +484,22 @@ export function Play({
                 </button>
               );
             })}
+
+            {/* Only with the clock off. Timed, running the clock down IS the
+                skip and the question closes on its own; untimed there is no
+                clock, so without this one player who does not know the answer
+                blocks the match entirely. */}
+            {armed && !armed.timed && !revealed ? (
+              <button
+                className={`skip-btn${mySkipped ? ' is-skipped' : ''}`}
+                onClick={onSkip}
+                disabled={locked || paused}
+              >
+                {/* Kept to one line. Who is still deciding is already on the
+                    duel bar's lock lamp, so this only confirms the action. */}
+                {mySkipped ? 'Passed' : 'Pass (0 points)'}
+              </button>
+            ) : null}
           </div>
         </>
       )}

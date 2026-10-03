@@ -34,6 +34,8 @@ export default function App() {
   const [reveal, setReveal] = useState<RevealPayload | null>(null);
   const [result, setResult] = useState<MatchResult | null>(null);
   const [myChoice, setMyChoice] = useState<number | null>(null);
+  /** Committed to not answering. Distinct from myChoice === null, which is "undecided". */
+  const [mySkipped, setMySkipped] = useState(false);
   const [freshness, setFreshness] = useState<Record<string, FreshnessMeta>>({});
   const [deltas, setDeltas] = useState<Partial<Record<PlayerSlot, { value: number; key: number }>>>({});
   const [busy, setBusy] = useState(false);
@@ -100,6 +102,7 @@ export default function App() {
         setArmed(null);
         setReveal(null);
         setMyChoice(null);
+        setMySkipped(false);
       }
     };
 
@@ -108,6 +111,7 @@ export default function App() {
       setArmed(null);
       setReveal(null);
       setMyChoice(null);
+      setMySkipped(false);
       setResult(null);
       // Confirm receipt immediately. The server will not start anyone's clock
       // until both ends have said this, so the slower phone costs nobody time.
@@ -116,8 +120,9 @@ export default function App() {
 
     const onArmed = (payload: ArmedPayload) => setArmed(payload);
 
-    const onAccepted = (payload: { questionId: string; choice: number }) => {
-      setMyChoice(payload.choice);
+    const onAccepted = (payload: { questionId: string; choice: number | null }) => {
+      if (payload.choice === null) setMySkipped(true);
+      else setMyChoice(payload.choice);
     };
 
     const onReveal = (payload: RevealPayload) => {
@@ -147,6 +152,7 @@ export default function App() {
       setArmed(null);
       setReveal(null);
       setMyChoice(null);
+      setMySkipped(false);
       setBusy(false);
     };
 
@@ -219,7 +225,7 @@ export default function App() {
   };
 
   const handleAnswer = (choice: number) => {
-    if (!question || myChoice !== null) return;
+    if (!question || myChoice !== null || mySkipped) return;
     // Optimistic: the option locks under the thumb straight away. The server
     // still decides, and answer:accepted confirms; a rejected answer simply
     // never confirms and the reveal shows it as unanswered.
@@ -229,6 +235,12 @@ export default function App() {
       choice,
       clientSentAt: Date.now(),
     });
+  };
+
+  const handleSkip = () => {
+    if (!question || myChoice !== null || mySkipped) return;
+    setMySkipped(true);
+    socket.emit('answer:skip', { questionId: question.id });
   };
 
   const handleRematch = async () => {
@@ -292,9 +304,11 @@ export default function App() {
       armed={armed}
       reveal={reveal}
       myChoice={myChoice}
+      mySkipped={mySkipped}
       deltas={deltas}
       speed={catalogue?.speed ?? null}
       onAnswer={handleAnswer}
+      onSkip={handleSkip}
     />,
   );
 }

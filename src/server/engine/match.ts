@@ -41,7 +41,7 @@ export type MatchPhase = 'delivering' | 'armed' | 'reveal' | 'finished';
 export type Effect =
   | { type: 'deliver'; question: PublicQuestion }
   | { type: 'armed'; payload: ArmedPayload }
-  | { type: 'accepted'; slot: PlayerSlot; questionId: string; choice: number }
+  | { type: 'accepted'; slot: PlayerSlot; questionId: string; choice: number | null }
   | { type: 'reveal'; payload: RevealPayload }
   | { type: 'over'; result: MatchResult }
   | { type: 'notice'; level: 'info' | 'warn'; message: string }
@@ -49,7 +49,8 @@ export type Effect =
   | { type: 'seen'; questionIds: string[]; at: number };
 
 interface Submission {
-  choice: number;
+  /** null means the player deliberately skipped rather than answered. */
+  choice: number | null;
   receivedAt: number;
   clientSentAt: number;
 }
@@ -290,6 +291,36 @@ export class Match {
     return effects;
   }
 
+  /**
+   * Pass on a question without answering it.
+   *
+   * Only exists with the timer off. Timed, running the clock down IS the skip,
+   * and the question closes on its own; untimed there is no clock, so without
+   * this one player who does not know the answer blocks the match entirely.
+   *
+   * It scores as no answer (zero), never as wrong — passing must stay strictly
+   * better than guessing, or the negative marking stops meaning anything. And
+   * it locks like an answer does: a decision not to answer is still a decision.
+   */
+  skip(slot: PlayerSlot, questionId: string, now: number): Effect[] {
+    if (this.timed) return [];
+    if (this.pausedAt !== null) return [];
+    const live = this.live;
+    if (!live || live.bank.id !== questionId) return [];
+    if (this.phase !== 'armed' || live.deadlineAt === null || live.armAt === null) return [];
+    if (live.submissions[slot] !== undefined) return [];
+    if (now < live.armAt) return [];
+    if (now > live.deadlineAt + this.graceFor(slot)) return [];
+
+    live.submissions[slot] = { choice: null, receivedAt: now, clientSentAt: 0 };
+
+    const effects: Effect[] = [{ type: 'accepted', slot, questionId, choice: null }];
+    if (SLOTS.every((s) => live.submissions[s] !== undefined)) {
+      effects.push(...this.closeQuestion(now));
+    }
+    return effects;
+  }
+
   // -------------------------------------------------------------------- clock
 
   tick(now: number): Effect[] {
@@ -319,7 +350,8 @@ export class Match {
    * of exactly the kind the arm-instant synchronisation exists to remove.
    */
   private reactionMs(slot: PlayerSlot, sub: Submission | undefined, armAt: number | null): number | null {
-    if (!sub || armAt === null) return null;
+    // A skip has no reaction time worth reporting — nothing was answered.
+    if (!sub || sub.choice === null || armAt === null) return null;
     return Math.max(0, sub.receivedAt - armAt - Math.max(0, this.latency(slot)));
   }
 
