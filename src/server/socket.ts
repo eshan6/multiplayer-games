@@ -168,6 +168,14 @@ export function attachSockets(
       room.submit(slot, raw.questionId, raw.choice, clientSentAt, Date.now());
     });
 
+    socket.on('answer:skip', (payload: unknown) => {
+      const room = registry.findBySocket(socket.id);
+      const slot = room?.slotForSocket(socket.id);
+      const questionId = (payload as { questionId?: unknown })?.questionId;
+      if (!room || !slot || typeof questionId !== 'string') return;
+      room.skip(slot, questionId, Date.now());
+    });
+
     socket.on('match:rematch', (ack: unknown) => {
       const reply = callable(ack);
       const room = registry.findBySocket(socket.id);
