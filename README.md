@@ -305,14 +305,22 @@ does mean a player *could* drop deliberately to buy thinking time.
 
 ## A note on the question bank
 
-The bank was audited before any code was written. It is clean: 2808 questions,
-no duplicate ids, no duplicate question text, every option set four distinct
-strings, every answer index in range, and all ten declared category counts
-matching the actual rows. Answer positions are properly shuffled (705/704/701/698
-across indices 0–3).
+Every edition is audited before it ships. The current one (v2) is clean: 2802
+questions, no duplicate ids, no duplicate question text, every option set four
+distinct strings, every answer index in range, and all ten declared category
+counts matching the actual rows. Answer positions are properly shuffled
+(703/703/700/696 across indices 0–3).
 
-One thing worth knowing: **the longest option is the correct answer 32.6% of the
-time**, against a 25% baseline. A player who notices has a real edge, and it
+**Question ids are not stable between editions.** v2 reused 2796 of its 2802
+ids for completely different questions, so the "already seen" history that
+keys on those ids would have hidden brand-new questions. The server records
+which edition its history was written against and discards it when a different
+one loads, saying so in the boot log. Bump `version` in the bank whenever its
+content moves.
+
+One thing worth knowing: **the longest option is the correct answer 30.8% of the
+time**, against a 25% baseline (v1 was 32.6%, so v2 narrowed the tell without
+closing it). A player who notices has a real edge, and it
 shows up most in `tough` matches where both of you are guessing. It cannot be
 fixed without editing the bank, which is off limits — so it is documented here
 instead. No code compensates for it, because inventing a game rule to paper over
