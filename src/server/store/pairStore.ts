@@ -17,10 +17,19 @@ import { dirname, resolve } from 'node:path';
 type CategoryHistory = Record<string, Record<string, number>>;
 interface StoreShape {
   version: 1;
+  /**
+   * The quiz bank this history was recorded against.
+   *
+   * History keys on question id, and a new bank edition can REUSE an id for a
+   * completely different question — bank v2 did exactly that for 2796 of its
+   * 2802 ids. Carrying the history across that would suppress brand-new
+   * questions as "already seen", which is worse than having no history at all.
+   */
+  bankVersion: number;
   pairs: Record<string, CategoryHistory>;
 }
 
-const EMPTY: StoreShape = { version: 1, pairs: {} };
+const EMPTY: StoreShape = { version: 1, bankVersion: 0, pairs: {} };
 
 export function pairIdFor(nameA: string, nameB: string): string {
   const envPin = process.env.PAIR_ID?.trim();
@@ -36,8 +45,11 @@ export class PairStore {
 
   constructor(
     private readonly path: string,
+    /** Edition of the loaded bank. History from another edition is discarded. */
+    private readonly bankVersion: number,
     private readonly flushDelayMs = 400,
   ) {
+    this.data.bankVersion = bankVersion;
     this.load();
   }
 
@@ -46,7 +58,19 @@ export class PairStore {
     try {
       const parsed = JSON.parse(readFileSync(this.path, 'utf8')) as StoreShape;
       if (parsed && typeof parsed === 'object' && parsed.pairs && typeof parsed.pairs === 'object') {
-        this.data = { version: 1, pairs: parsed.pairs };
+        const storedFor = typeof parsed.bankVersion === 'number' ? parsed.bankVersion : 0;
+        if (storedFor !== this.bankVersion) {
+          // Ids are not stable across bank editions, so the history means
+          // nothing here. Drop it rather than hide fresh questions behind it.
+          console.warn(
+            `[store] history was recorded against quiz bank v${storedFor} but v${this.bankVersion} ` +
+              `is loaded; discarding it. Question ids are reused between editions, so keeping it ` +
+              `would mark new questions as already seen.`,
+          );
+          this.dirty = true;
+          return;
+        }
+        this.data = { version: 1, bankVersion: this.bankVersion, pairs: parsed.pairs };
       }
     } catch (err) {
       // A corrupt history file must not stop two people playing. Start fresh

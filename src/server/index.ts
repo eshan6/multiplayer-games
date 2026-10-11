@@ -52,7 +52,7 @@ function boot() {
     );
   }
 
-  const store = new PairStore(process.env.STORE_PATH ?? defaultStorePath());
+  const store = new PairStore(process.env.STORE_PATH ?? defaultStorePath(), bank.version);
 
   const app = express();
   app.disable('x-powered-by');

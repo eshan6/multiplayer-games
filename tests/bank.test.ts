@@ -75,7 +75,8 @@ describe('the shipped quiz_bank.json', () => {
   const bank = realBank();
 
   it('loads and validates', () => {
-    expect(bank.questions.length).toBe(2808);
+    expect(bank.version).toBe(2);
+    expect(bank.questions.length).toBe(2802);
     expect(bank.categories).toHaveLength(10);
   });
 
@@ -96,11 +97,11 @@ describe('the shipped quiz_bank.json', () => {
     expect(indexed).toBe(bank.questions.length);
   });
 
-  it('matches the category counts the brief specified', () => {
+  it('matches the shipped category counts', () => {
     const actual = Object.fromEntries(bank.categories.map((c) => [c.id, c.count]));
     expect(actual).toEqual({
       popculture: 318,
-      science: 305,
+      science: 299,
       mind: 291,
       business: 284,
       wildcards: 275,
@@ -110,6 +111,14 @@ describe('the shipped quiz_bank.json', () => {
       games: 260,
       tech: 255,
     });
+  });
+
+  it('holds enough hard questions in every category for a tough match', () => {
+    // A tough match wants 12 hard. Any category below that silently fills down
+    // from an adjacent tier, so it is worth knowing the moment it happens.
+    for (const c of bank.categories) {
+      expect(c.hard, `${c.id} hard tier`).toBeGreaterThanOrEqual(12);
+    }
   });
 
   it('still has business hard as the thinnest tier in the bank', () => {

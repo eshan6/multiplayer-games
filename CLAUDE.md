@@ -36,7 +36,7 @@ no login, instant rooms) for capacity nobody needs.
 
 ```
 config/rules.json        every tunable game rule
-data/quiz_bank.json      2808 questions, read-only, the single source of truth
+data/quiz_bank.json      2802 questions (edition v2), read-only, the single source of truth
 src/shared/protocol.ts   the wire contract (shared by client and server)
 src/server/
   index.ts               boot: validate config + bank, then listen
@@ -157,12 +157,22 @@ always takes oldest-seen first.
 
 **Business hard is the pressure case**: 41 questions, 12 per `tough` match, so
 exactly 3 distinct tough Business matches before the tier is exhausted. There is
-a test pinning that number.
+a test pinning that number. Tech hard (47) is the next thinnest, also 3. A test
+asserts every category holds at least 12 hard, so a future edition that drops
+one below the tough mix fails loudly instead of silently filling down.
+
+**Question ids are NOT stable across bank editions.** Bank v2 reused 2796 of
+its 2802 ids for completely different questions. Repeat-avoidance history keys
+on id, so `PairStore` records the `bankVersion` it was written against and
+discards the history when a different edition loads — keeping it would mark
+brand-new questions as already seen. If you ship a new bank, bump its
+`version`; leaving it unchanged while content moves is the failure mode this
+guard exists to catch.
 
 ## Known property of the bank, not a bug
 
-The longest option is the correct answer 32.6% of the time against a 25%
-baseline. A player who notices this has a real edge. It cannot be fixed without
+The longest option is the correct answer 30.8% of the time against a 25%
+baseline (it was 32.6% in v1, so v2 narrowed it without closing it). A player who notices this has a real edge. It cannot be fixed without
 editing the bank, which rule 1 forbids. Do not "compensate" for it in selection
 or scoring — that would be inventing game rules to paper over data.
 
