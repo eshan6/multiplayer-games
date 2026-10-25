@@ -348,3 +348,13 @@ ruin a match:
   immutable, latency grace granted and capped, sudden death, draws when the
   category runs dry, and pause/resume preserving exact time remaining.
 - **Leakage** — the serialised pre-reveal payload contains no `"answer"` key.
+
+---
+
+## Also in this repo: Frontline 1944
+
+[`games/frontline-1944/`](games/frontline-1944/) is a separate, fully offline
+2D WWII trench-warfare strategy game in the style of *Warfare 1917*. It is a
+single self-contained `index.html`, so open it in a browser to play. It shares
+no code with Standoff and is not part of its build. See its
+[README](games/frontline-1944/README.md).
