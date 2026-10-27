@@ -65,6 +65,18 @@ silently before day one, how quickly publics lose patience, and how many deaths
 the world can absorb. A win earns one to three stars depending on the death
 toll.
 
+## Look
+
+The visual design follows Plague Inc and Rebel Inc. A natural, satellite-toned
+world map (each region shaded by its climate, on a deep blue ocean) sits under
+dark gunmetal chrome with steel hairline bezels, angled title tabs and bold
+condensed capitals. Decisions arrive as paper dispatches. The palette is fixed:
+four signal colours, each with exactly one meaning everywhere. **Red** is the
+pathogen (cases, deaths, danger), **blue** is the response (research, vaccine,
+your actions and selections), **green** is stability (trust, Authority, good
+news) and **gold** is money (funding, economy, caution). The tokens live at the
+top of the `<style>` block and in the `PAL` object in the UI script.
+
 ## Controls
 
 | Action | Mouse / keyboard | Touch |
