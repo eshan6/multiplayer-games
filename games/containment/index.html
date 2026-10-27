@@ -658,7 +658,7 @@ const DIFFICULTY = {
     id: 'hardened', name: 'Hardened',
     blurb: 'Silent spread before day one, an adversary that reads your strategy, and no margin for waste.',
     funding: 11, authority: 7, income: .9, auth: 1, research: 1, evo: 1.3, aiSharp: 4, silentSeeds: 2,
-    detect: 6, trustDecay: 1.25, deathLimit: 1, eventHarm: 1.3, hoard: 1.25, bubble: .85,
+    detect: 6, trustDecay: 1.25, deathLimit: 1.1, eventHarm: 1.3, hoard: 1.25, bubble: .85,
   },
 };
 
@@ -679,8 +679,8 @@ const PATHOGENS = [
   {
     id: 'flu', name: 'Pandemic Influenza', kind: 'Respiratory virus', mode: 'respiratory', drug: 'antiviral',
     blurb: 'Short incubation, explosive winters, and a genome that drifts. Vaccines come quickly; keeping them current does not.',
-    R0: 2.4, inc: 2, inf: 4.5, ifr: .006, hosp: .035, asym: .28, season: .42, heatPen: .35, coldPen: 0,
-    vax: 1.55, waning: 1 / 420, evo: 1.35, air: 1.1, land: 1, sea: .5, maskEff: 1, traceEff: .6, panic: 1, deathScale: 1,
+    R0: 2.4, inc: 2, inf: 4.5, ifr: .006, hosp: .035, asym: .28, season: .42, heatPen: .25, coldPen: 0,
+    vax: 1.55, waning: 1 / 420, evo: 1.35, air: 1.1, land: 1, sea: .5, maskEff: 1, traceEff: .6, panic: 1, deathScale: .8,
     seed: 80, unlockedBy: null,
   },
   {
@@ -1811,8 +1811,9 @@ class Game {
     for (const r of this.R) {
       const N = r.meta.pop;
       w += N;
-      if (r.st.cumInf > 0) coverage += N;
-      else { if (r.meta.heat < .4) coldFree += N; if (r.meta.heat > .6) hotFree += N; }
+      // 'Covered' means genuinely widespread, so the adversary goes lethal late, the way a Plague Inc player would.
+      if (r.st.cumInf > N * .01) coverage += N;
+      if (r.st.cumInf < 1) { if (r.meta.heat < .4) coldFree += N; if (r.meta.heat > .6) hotFree += N; }
       det += this.reportFrac(r) * N;
       let keep = 1; for (const id in r.st.m) { const m = MEASURE[id]; if (m.eff) keep *= 1 - m.eff; }
       if (r.st.m.masks != null || r.st.m.distancing != null) maskShare += N;
@@ -2276,6 +2277,7 @@ const DOTS = geoIdx.map(k => MAP.regions[k].dots);
 const AREA = geoIdx.map(k => MAP.regions[k].a);
 const P_SPHERE = new Path2D(MAP.sphere), P_GRAT = new Path2D(MAP.grat), P_NEUTRAL = new Path2D(MAP.neutral);
 const P_BORDERS = new Path2D(MAP.borders), P_INNER = new Path2D(MAP.inner);
+const P_LAND = new Path2D(); PATHS.forEach(p => P_LAND.addPath(p));
 
 // ---------------------------------------------------------------------------
 //  Map
@@ -2372,11 +2374,13 @@ function drawBase() {
   b.strokeStyle = 'rgba(120,170,210,.07)'; b.lineWidth = lw; b.stroke(P_GRAT);
   b.strokeStyle = 'rgba(120,170,210,.12)'; b.lineWidth = 1.2 * lw; b.stroke(P_SPHERE);
   b.fillStyle = '#25333f'; b.fill(P_NEUTRAL);
-  // Faint coastal glow.
-  b.save(); b.shadowColor = 'rgba(80,150,190,.18)'; b.shadowBlur = 10 * dpr;
-  if (g) for (const r of g.R) { b.fillStyle = regionFill(g, r); b.fill(PATHS[r.i]); }
-  else for (let i = 0; i < PATHS.length; i++) { b.fillStyle = LAND; b.fill(PATHS[i]); }
+  // Faint coastal glow: one blurred pass for all land, since blur is the expensive part.
+  // Skipped mid-gesture to keep panning smooth on phones.
+  const moving = (drag && moved > 6) || pinch;
+  b.save(); if (!moving) { b.shadowColor = 'rgba(80,150,190,.18)'; b.shadowBlur = 10 * dpr; }
+  b.fillStyle = LAND; b.fill(P_LAND);
   b.restore();
+  if (g) for (const r of g.R) { const f = regionFill(g, r); if (f !== LAND) { b.fillStyle = f; b.fill(PATHS[r.i]); } }
   if (g && UI.picking && UI.hover >= 0) { b.fillStyle = 'rgba(65,211,196,.35)'; b.fill(PATHS[UI.hover]); }
   b.strokeStyle = 'rgba(6,14,21,.45)'; b.lineWidth = .7 * lw; b.stroke(P_INNER);
   b.strokeStyle = '#0a1620'; b.lineWidth = 1.3 * lw; b.stroke(P_BORDERS);
@@ -2621,8 +2625,8 @@ canvas.addEventListener('pointermove', e => {
 const endPtr = e => {
   const wasTap = ptrs.size === 1 && moved <= 6 && !pinch;
   ptrs.delete(e.pointerId);
-  if (ptrs.size < 2) pinch = null;
-  if (ptrs.size === 0) drag = null;
+  if (ptrs.size < 2 && pinch) { pinch = null; baseDirty = true; }
+  if (ptrs.size === 0) { if (drag && moved > 6) baseDirty = true; drag = null; }
   if (wasTap && e.type === 'pointerup') tap(e.clientX, e.clientY);
 };
 canvas.addEventListener('pointerup', endPtr);

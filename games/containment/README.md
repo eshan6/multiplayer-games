@@ -6,6 +6,8 @@ region of the world, and you run the global response: find it, slow it, treat
 it and vaccinate against it before it outruns you. The pathogen adapts to
 whatever you do.
 
+![A response in progress: lockdowns, flight suspensions and the vaccine race](shots/desktop-region.png)
+
 Like [Frontline 1944](../frontline-1944/), the whole game is one
 self-contained file, `index.html`. It needs no assets, no dependencies, no build
 step and no network. The map is embedded vector data, everything is drawn on a
