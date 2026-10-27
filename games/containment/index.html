@@ -42,6 +42,7 @@
   --sans:Roboto,system-ui,-apple-system,"Segoe UI","Helvetica Neue",Arial,sans-serif;
   --bottom-h:96px;
   --cut:10px;
+  color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--c0);color:var(--ink);overflow:hidden;
@@ -3562,8 +3563,17 @@ $('#worldBtn').addEventListener('click', () => { Audio.fx('tap'); openWorld(); }
 $('#menuBtn').addEventListener('click', () => { Audio.fx('tap'); openOv('pause'); syncToggles(); });
 $('#pHelp').addEventListener('click', () => openOv('help'));
 $('#pQuit').addEventListener('click', () => { save(); toTitle(); });
-$('#pRestart').addEventListener('click', () => {
-  if (!confirm('Abandon this game? It cannot be resumed.')) return;
+// Two taps instead of confirm(): some hosts (embedded viewers) suppress native dialogs.
+let abandonArmed = 0;
+$('#pRestart').addEventListener('click', e => {
+  const b = e.currentTarget;
+  if (Date.now() - abandonArmed > 3000) {
+    abandonArmed = Date.now();
+    b.textContent = 'Tap again to abandon';
+    setTimeout(() => { b.textContent = 'Abandon this game'; }, 3000);
+    return;
+  }
+  abandonArmed = 0; b.textContent = 'Abandon this game';
   store.del('save'); toTitle();
 });
 // After the game the fog lifts: show the true epidemic.
