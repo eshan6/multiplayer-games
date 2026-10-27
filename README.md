@@ -358,3 +358,12 @@ ruin a match:
 single self-contained `index.html`, so open it in a browser to play. It shares
 no code with Standoff and is not part of its build. See its
 [README](games/frontline-1944/README.md).
+
+## Also in this repo: Containment
+
+[`games/containment/`](games/containment/) is a separate, fully offline
+pandemic-response strategy game in the style of *Plague Inc.* and *Rebel Inc.*,
+played from the other side: you lead the world's response while the pathogen
+adapts to you. It is a single self-contained `index.html` that works on laptops
+and phones. It shares no code with Standoff and is not part of its build. See
+its [README](games/containment/README.md).
