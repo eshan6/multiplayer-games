@@ -2461,9 +2461,14 @@ function insets() {
   const top = playing ? 54 : 0;
   return { top, bottom };
 }
+// Android's WebView can report a 0x0 window while the app starts or rotates. Nothing is
+// drawn until a real size arrives, and a fit asked for meanwhile waits for it.
+let pendingFit = null;
 function resize() {
   dpr = Math.min(2, window.devicePixelRatio || 1);
-  cw = window.innerWidth; ch = window.innerHeight;
+  cw = window.innerWidth || document.documentElement.clientWidth;
+  ch = window.innerHeight || document.documentElement.clientHeight;
+  if (!cw || !ch) return;
   canvas.width = base.width = Math.round(cw * dpr);
   canvas.height = base.height = Math.round(ch * dpr);
   const { top, bottom } = insets();
@@ -2472,8 +2477,11 @@ function resize() {
   view.max = Math.max(8, view.min * 20);
   clampView();
   baseDirty = true;
+  if (pendingFit) fitWorld(pendingFit.focus);
 }
 function fitWorld(focus) {
+  if (!cw || !ch) { pendingFit = { focus }; return; }
+  pendingFit = null;
   const { top, bottom } = insets();
   const ah = Math.max(120, ch - top - bottom);
   // Phones in portrait get a taller map they pan across, rather than a sliver.
@@ -2683,6 +2691,7 @@ function bubblePos(b) {
 }
 
 function drawFrame(now) {
+  if (!base.width || !base.height) return;
   if (baseDirty) drawBase();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.drawImage(base, 0, 0);
@@ -3452,7 +3461,13 @@ function ambientTraffic(g, dt) {
   }
 }
 let lastT = performance.now(), saveT = 0;
+// The next frame is booked first, so one bad frame can never stop the game.
+let frameErr = false;
 function frame(now) {
+  requestAnimationFrame(frame);
+  try { tick(now); } catch (e) { if (!frameErr) { frameErr = true; console.error(e); } }
+}
+function tick(now) {
   const dt = Math.min(.25, (now - lastT) / 1000); lastT = now;
   const g = UI.g;
   if (UI.phase === 'play' && g) {
@@ -3482,7 +3497,6 @@ function frame(now) {
   }
   if (UI.phase === 'play' || UI.phase === 'over') tickerFrame(dt);
   drawFrame(now);
-  requestAnimationFrame(frame);
 }
 function dayHints(g) {
   if (g.s.bubbles.length) hint('bubble');
@@ -3689,10 +3703,13 @@ window.addEventListener('keydown', e => {
   else if (k === '+' || k === '=') zoomAt(cw / 2, ch / 2, 1.25);
   else if (k === '-') zoomAt(cw / 2, ch / 2, .8);
 });
-window.addEventListener('resize', () => { clearTimeout(UI.resizeT); UI.resizeT = setTimeout(() => { resize(); if (OPEN.has('world')) renderWorld(); }, 60); });
+const onResize = () => { clearTimeout(UI.resizeT); UI.resizeT = setTimeout(() => { resize(); if (OPEN.has('world')) renderWorld(); }, 60); };
+window.addEventListener('resize', onResize);
+// A WebView that lays out late does not always fire 'resize'.
+if (window.ResizeObserver) new ResizeObserver(onResize).observe(document.documentElement);
 // Going to the background saves and silences the game; coming back resumes the sound.
 function appPause() { save(); try { if (Audio.ctx && Audio.ctx.state === 'running') Audio.ctx.suspend(); } catch {} }
-function appResume() { try { if (Audio.ctx && Audio.ctx.state === 'suspended') Audio.ctx.resume(); } catch {} baseDirty = true; }
+function appResume() { try { if (Audio.ctx && Audio.ctx.state === 'suspended') Audio.ctx.resume(); } catch {} resize(); baseDirty = true; }
 document.addEventListener('visibilitychange', () => { if (document.hidden) appPause(); else appResume(); });
 // The Android app calls these from its lifecycle and its back button.
 window.__containmentApp = {
