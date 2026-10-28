@@ -38,6 +38,7 @@
   --fund:var(--gold); --econ:var(--gold); --auth:var(--green); --trust:var(--green); --good:var(--green);
   --hot-1:var(--gold); --hot-2:var(--gold); --hot-3:var(--red); --bad:var(--red);
   --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
+  --safe-l:env(safe-area-inset-left,0px); --safe-r:env(safe-area-inset-right,0px);
   --cond:"Roboto Condensed","sans-serif-condensed","Bahnschrift SemiCondensed","Bahnschrift","DIN Condensed","Arial Narrow","Helvetica Neue",sans-serif;
   --sans:Roboto,system-ui,-apple-system,"Segoe UI","Helvetica Neue",Arial,sans-serif;
   --bottom-h:96px;
@@ -209,7 +210,7 @@ body.playing #hud{display:block}
 .ov{position:fixed;inset:0;z-index:20;display:none;background:rgba(6,9,12,.74);backdrop-filter:blur(2px)}
 .ov.on{display:flex}
 .sheet{margin:auto;display:flex;flex-direction:column;overflow:hidden;max-height:calc(100% - 24px);background:linear-gradient(#141d23,#0d1317)}
-.sheet>header{display:flex;align-items:center;gap:12px;padding:0 10px 0 0;border-bottom:1px solid var(--bevel);background:#0b1014;min-height:52px}
+.sheet>header{flex:none;display:flex;align-items:center;gap:12px;padding:0 10px 0 0;border-bottom:1px solid var(--bevel);background:#0b1014;min-height:52px}
 /* Each screen's title sits on an angled tab, the Plague Inc panel signature. */
 .sheet>header h2{margin:0;flex:none;align-self:stretch;display:flex;align-items:center;padding:0 40px 0 18px;background:var(--c3);
   font:700 24px/1 var(--cond);letter-spacing:.07em;text-transform:uppercase;clip-path:polygon(0 0,100% 0,calc(100% - 22px) 100%,0 100%)}
@@ -259,7 +260,7 @@ body.playing #hud{display:block}
 .wtabs{display:flex;gap:2px;padding:8px 12px 0;border-bottom:1px solid var(--line);overflow-x:auto;background:#0d1317}
 .wtabs button{padding:10px 16px 9px;color:var(--ink-3);font:700 13px/1 var(--cond);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;border-bottom:2px solid transparent}
 .wtabs button.on{color:var(--ink);background:var(--c2);border-bottom-color:var(--blue)}
-.wbody{flex:1;overflow-y:auto;padding:16px;touch-action:pan-y;overscroll-behavior:contain}
+.wbody{flex:1;min-height:0;overflow-y:auto;padding:16px;touch-action:pan-y;overscroll-behavior:contain}
 .charts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .chart{background:#0d1418;border:1px solid var(--line);border-radius:1px;padding:12px 12px 8px}
 .chart h4{margin:0 0 4px;font:700 14px/1.2 var(--cond);letter-spacing:.07em;text-transform:uppercase}
@@ -298,7 +299,7 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
 .phases div.on i{background:var(--blue);box-shadow:none} .phases div.cur{color:var(--ink)}
 
 /* ---------- decision dispatch (paper, after Rebel Inc) ---------- */
-#evt .sheet{width:min(540px,100%);background:linear-gradient(170deg,#f3eddb,var(--paper) 45%,var(--paper-2));border:0;border-radius:1px;color:var(--paper-ink);
+#evt .sheet{overflow-y:auto;width:min(540px,100%);background:linear-gradient(170deg,#f3eddb,var(--paper) 45%,var(--paper-2));border:0;border-radius:1px;color:var(--paper-ink);
   box-shadow:0 30px 80px rgba(0,0,0,.65)}
 #evt .ebody{padding:0 0 4px}
 #evt .kicker{font:700 12px/1 var(--cond);letter-spacing:.1em;text-transform:uppercase;color:#f3d79a;display:flex;align-items:center;gap:7px;
@@ -321,7 +322,7 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
 /* ---------- title & setup ---------- */
 #title{z-index:30;background:radial-gradient(ellipse at 50% 45%,rgba(11,16,20,.66) 0,rgba(11,16,20,.45) 32%,rgba(11,16,20,.15) 62%,rgba(11,16,20,.85) 100%);backdrop-filter:none}
 #title .center{margin:auto;display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px}
-#title h1{margin:0;font:700 clamp(50px,12vw,120px)/.9 var(--cond);letter-spacing:.06em;text-transform:uppercase;color:var(--ink);
+#title h1{margin:0;white-space:nowrap;font:700 clamp(40px,11vw,120px)/.9 var(--cond);letter-spacing:.06em;text-transform:uppercase;color:var(--ink);
   text-shadow:0 2px 0 rgba(0,0,0,.4),0 6px 36px rgba(0,0,0,.85)}
 #title h1 .ring{display:inline-block;position:relative}
 /* The one moving thing on the title: a cordon closing around the O. */
@@ -335,8 +336,8 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
 #title .foot{position:absolute;bottom:calc(14px + var(--safe-b));left:0;right:0;text-align:center;font:600 11px/1 var(--cond);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
 #setup{z-index:31} #help{z-index:40}
 .setup .sheet{width:min(980px,100%);max-height:calc(100% - 24px)}
-.setup .sbody{padding:16px;overflow-y:auto;touch-action:pan-y}
-.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.setup .sbody{padding:16px;overflow-y:auto;touch-action:pan-y;min-height:0;flex:1}
+.pgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .pcard{position:relative;text-align:left;border-radius:1px;padding:14px;background:linear-gradient(#1a252d,#121a20);border:1px solid var(--line);
   display:flex;flex-direction:column;gap:6px;min-height:178px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
 .pcard:hover:not(.locked){border-color:var(--bevel)}
@@ -351,7 +352,7 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
 .pcard.locked p{color:var(--ink-3)}
 .pcard .glyph{position:absolute;right:12px;top:12px;width:40px;height:40px;color:var(--red);opacity:.85}
 .pcard.locked .glyph{color:var(--ink-3)}
-.dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+.dgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:6px}
 .dcard{text-align:left;border-radius:1px;padding:14px;background:linear-gradient(#1a252d,#121a20);border:1px solid var(--line);display:flex;flex-direction:column;gap:7px}
 .dcard.sel{border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue),inset 0 3px 0 var(--blue)}
 .dcard b{font:700 21px/1 var(--cond);letter-spacing:.06em;text-transform:uppercase}
@@ -369,7 +370,7 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
 
 /* ---------- end ---------- */
 #end .sheet{width:min(760px,100%)}
-#end .ebody{padding:20px;overflow-y:auto;touch-action:pan-y}
+#end .ebody{padding:20px;overflow-y:auto;touch-action:pan-y;min-height:0;flex:1}
 #end h2{margin:4px 0 0;font:700 42px/1 var(--cond);letter-spacing:.05em;text-transform:uppercase}
 #end .kicker{font:700 12px/1 var(--cond)!important;letter-spacing:.1em;text-transform:uppercase}
 #end .why{color:var(--ink-2);margin:10px 0 16px;line-height:1.5}
@@ -380,14 +381,14 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
 
 /* ---------- menu, help ---------- */
 #pause .sheet{width:min(380px,100%)}
-#pause .pm{display:flex;flex-direction:column;gap:8px;padding:16px}
+#pause .pm{display:flex;flex-direction:column;gap:8px;padding:16px;overflow-y:auto;min-height:0}
 #pause .pm .btn{width:100%}
 .toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 2px;font:700 13px/1 var(--cond);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2);border-top:1px solid var(--line)}
 .sw2{width:44px;height:24px;border-radius:1px;background:#0a1115;box-shadow:inset 0 0 0 1px var(--bevel);position:relative;transition:background .2s}
 .sw2::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:1px;background:var(--ink-3);transition:transform .2s}
 .sw2.on{background:var(--blue-dk)} .sw2.on::after{transform:translateX(20px);background:var(--ink)}
 #help .sheet{width:min(780px,100%);height:min(720px,100%)}
-#help .hbody{padding:6px 20px 20px;overflow-y:auto;touch-action:pan-y;line-height:1.55;color:var(--ink-2)}
+#help .hbody{min-height:0;flex:1;padding:6px 20px 20px;overflow-y:auto;touch-action:pan-y;line-height:1.55;color:var(--ink-2)}
 #help h3{font:700 16px/1.2 var(--cond);letter-spacing:.08em;text-transform:uppercase;color:var(--ink);margin:20px 0 6px;padding-bottom:5px;border-bottom:1px solid var(--line)}
 #help p{margin:0 0 8px;max-width:64ch}
 #help ul{margin:0 0 8px;padding-left:20px;max-width:64ch}
@@ -428,7 +429,7 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
   .charts{grid-template-columns:1fr}
   .big4{grid-template-columns:1fr 1fr}
   .profile{grid-template-columns:1fr 1fr}
-  .pgrid,.dgrid{grid-template-columns:1fr 1fr}
+  .pgrid,.dgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
   #resp .sheet,#world .sheet,#help .sheet,#end .sheet,.setup .sheet{max-height:100%;height:100%;width:100%;border:0;margin:0}
   #evt .sheet,#pause .sheet{height:auto;margin:auto 10px}
   .sheet>header h2{font-size:21px;padding-right:34px}
@@ -463,13 +464,17 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
   #menuBtn{width:34px;height:34px}
 }
 @media (max-height:500px) and (orientation:landscape){
-  :root{--bottom-h:70px}
+  :root{--bottom-h:76px}
   #bottom{grid-template-columns:140px 1fr 140px;grid-template-rows:1fr}
   .bigbtn{flex-direction:row;align-items:center;justify-content:center;gap:8px;padding:0 10px}
   .bigbtn b{font-size:17px} .bigbtn small{display:none}
   #respBtn .badge{position:relative;right:auto;top:auto}
   #respBtn .badge{min-width:19px;height:19px;line-height:19px;font-size:11px}
-  #top{top:calc(6px + var(--safe-t))}
+  #top{top:calc(6px + var(--safe-t));left:calc(8px + var(--safe-l));right:calc(8px + var(--safe-r))}
+  /* A rotated phone puts its camera cutout on one side: keep controls clear of it. */
+  #bottom{padding-left:calc(10px + var(--safe-l));padding-right:calc(10px + var(--safe-r))}
+  #ticker{left:var(--safe-l);right:var(--safe-r)}
+  .ov.on{padding-left:var(--safe-l);padding-right:var(--safe-r)}
   .chip{padding:4px 8px}
   #clock b{font-size:15px}
   #speeds button{width:28px;height:26px}
@@ -477,19 +482,79 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
   #menuBtn{width:36px;height:36px}
   #mid{grid-column:2;grid-row:1}
   #respBtn{grid-column:1;grid-row:1} #worldBtn{grid-column:3;grid-row:1}
-  #stats .st small{display:none}
-  /* Below the top bar, so Funding and Authority stay visible while imposing measures. */
-  #card{top:calc(48px + var(--safe-t));bottom:auto;max-height:calc(100% - var(--bottom-h) - 86px - var(--safe-t));left:auto;right:10px;width:320px;border-width:1px}
-  #modes{display:flex;top:calc(50px + var(--safe-t));padding:2px}
+  /* Keep the stat labels: numbers alone do not say which is cases and which is deaths. */
+  #bottom{padding-top:6px;padding-bottom:calc(6px + var(--safe-b))}
+  #mid{gap:5px}
+  #stats{gap:6px}
+  .st{padding-left:6px}
+  .st small{font-size:9px;letter-spacing:.04em;overflow:hidden}
+  .st b{font-size:16px;line-height:1.1}
+  .st .mini{margin-top:2px}
+  /* Below the top bar, so Funding and Authority stay visible, and down over the console for room. */
+  #card{top:calc(48px + var(--safe-t));bottom:calc(6px + var(--safe-b));max-height:none;left:auto;right:calc(10px + var(--safe-r));width:330px;border-width:1px;z-index:7}
+  #card header{padding-bottom:6px}
+  #card h2{font-size:18px;padding:7px 28px 6px 14px}
+  #card .members{margin-top:5px;font-size:10.5px}
+  #card .tags{margin-top:5px}
+  #card .body{padding:8px 12px 12px}
+  .kv{gap:6px 12px;margin-bottom:8px} .kv div b{font-size:16px}
+  .meter{margin:6px 0}
+  /* Title: one line of logo, the menu as a row. */
+  #title .center{padding:10px 16px 26px}
+  #title h1{font-size:min(12vw,19vh)}
+  #title .sub{margin:10px 0 16px;font-size:13.5px;max-width:46em}
+  #title .menu{flex-direction:row;flex-wrap:wrap;justify-content:center;width:auto;gap:8px}
+  #title .menu .btn{height:42px;min-width:160px;font-size:14px}
+  #title .foot{bottom:calc(6px + var(--safe-b));font-size:9.5px}
+  /* New game: everything on fewer, denser cards. */
+  .setup .sbody{padding:10px 14px}
+  .h3{margin:10px 0 6px}
+  .pgrid,.dgrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .pcard{min-height:0;padding:9px 11px;gap:3px}
+  .pcard b{font-size:16px} .pcard p{font-size:11.5px;line-height:1.35} .pcard .glyph{width:28px;height:28px;right:9px;top:9px}
+  .pcard .stars{gap:3px 7px;flex-wrap:wrap;font-size:9.5px;margin-top:4px}
+  .pcard b{padding-right:30px}
+  .dcard{padding:9px 11px;gap:5px} .dcard b{font-size:17px} .dcard p{font-size:11.5px;line-height:1.35}
+  .setup footer,#end footer{padding:7px 14px}
+  .btn{height:40px;font-size:14px}
+  /* Decisions: the story on the left, the choices on the right, both scrollable. */
+  #evt .sheet{width:min(900px,calc(100% - 20px));max-height:calc(100% - 16px);margin:auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);overflow:hidden}
+  #evt .ebody{overflow-y:auto;padding-bottom:10px}
+  #evt .kicker{padding:8px 16px}
+  #evt h2{font-size:21px;margin:10px 16px 6px}
+  #evt p{margin:0 16px;font-size:13px;line-height:1.5}
+  #evt .choices{overflow-y:auto;padding:12px 14px;gap:6px;border-left:1px solid #c9bea0}
+  #evt .choice b{padding:7px 10px;font-size:13px}
+  #evt .choice small{padding:6px 10px 8px;font-size:12px}
+  /* Pause: buttons and switches side by side. */
+  #pause .sheet{width:min(640px,calc(100% - 20px));max-height:calc(100% - 16px);margin:auto}
+  #pause .pm{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,auto);grid-auto-flow:column;gap:8px 18px;padding:12px 14px}
+  .toggle{padding:9px 2px}
+  /* World and end screens: wider grids, shorter charts. */
+  .wtabs{padding:4px 10px 0} .wtabs button{padding:8px 12px 7px}
+  .wbody{padding:10px 14px}
+  .big4{grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px} .big4 div{padding:8px 10px} .big4 b{font-size:20px}
+  .charts{grid-template-columns:1fr 1fr;gap:8px} .chart canvas{height:118px}
+  .profile{grid-template-columns:repeat(3,1fr);gap:6px} .profile b{font-size:17px}
+  #end .ebody{padding:12px 16px} #end h2{font-size:30px} #end .why{margin:6px 0 10px} #end .bigstars{margin:4px 0 6px} #end .bigstars svg{width:24px;height:24px}
+  #end .chart canvas{height:110px}
+  #help .hbody{padding:4px 16px 16px}
+  #modes{display:flex;top:calc(50px + var(--safe-t));left:calc(8px + var(--safe-l));padding:2px}
   #modes button{height:27px;padding:0 8px}
   #modes button span.t{display:none}
   #legend{display:none}
-  #hint{top:auto;bottom:calc(var(--bottom-h) + 36px + var(--safe-b))}
+  /* Left of the region card, which takes the right-hand side in landscape. */
+  #hint{top:auto;bottom:calc(var(--bottom-h) + 36px + var(--safe-b));left:calc(12px + var(--safe-l));transform:none;width:min(440px,calc(100% - 380px))}
   .sheet>header{min-height:44px}
   .sheet>header h2{font-size:20px}
   #resp .wrap{grid-template-columns:1fr 280px;grid-template-rows:auto minmax(0,1fr)}
-  #tabs{grid-column:1 / -1;padding:0}
-  #tabs button{padding:7px 10px}
+  /* Set in full here, not inherited from the narrow-screen rules: wider phones (900px+) skip those. */
+  #tabs{grid-column:1 / -1;flex-direction:row;border-right:0;border-bottom:1px solid var(--line);overflow-x:auto;padding:0}
+  #tabs button{padding:7px 10px;flex:none;border-left:0;border-bottom:3px solid transparent}
+  #tabs button.on{border-bottom-color:var(--blue)}
+  #tabs button small{display:none}
+  #hexWrap{padding:8px}
+  #resp .sheet,#world .sheet,#help .sheet,#end .sheet,.setup .sheet{max-height:100%;height:100%;width:100%;border:0;margin:0}
   #detail{border-top:0;border-left:1px solid var(--line);overflow-y:auto;padding:10px 14px}
   #detail h3{font-size:19px}
   #detail p{font-size:13px}

@@ -122,9 +122,13 @@ should lose a fair share of games.
 ## Android app
 
 `android/` wraps the same `index.html` in a small full-screen WebView app
-(`Containment.apk`, about 240 KB, Android 7.0 or later). It adds only what a
+(`Containment.apk`, about 240 KB, Android 7.0 or later). It plays in
+landscape, either way up, like Plague Inc on a phone. The page has its own
+landscape phone layout: a one-row title menu, three-column setup cards, the
+region card down the right-hand side, decisions with the story beside the
+choices, and controls kept clear of the camera cutout. The app adds only what a
 browser tab lacks: immersive full screen with the system bars hidden, the
-screen kept awake while playing, rotation without losing the game, the back
+screen kept awake while playing, turning the phone over without losing the game, the back
 button (it closes the open panel, then opens the pause menu, and quits only
 from the title screen), and pausing the sound when the app goes to the
 background. It ignores the system font size so the layout keeps its
