@@ -118,3 +118,24 @@ node games/containment/tools/simulate.mjs 10 virus regular
 An `idle` player must lose every pathogen on every difficulty. On Recruit a
 `casual` player should usually win. On Hardened even the `expert` script
 should lose a fair share of games.
+
+## Android app
+
+`android/` wraps the same `index.html` in a small full-screen WebView app
+(`Containment.apk`, about 240 KB, Android 7.0 or later). It adds only what a
+browser tab lacks: immersive full screen with the system bars hidden, the
+screen kept awake while playing, rotation without losing the game, the back
+button (it closes the open panel, then opens the pause menu, and quits only
+from the title screen), and pausing the sound when the app goes to the
+background. It ignores the system font size so the layout keeps its
+proportions. Saves and settings stay on the phone.
+
+To install it, download `android/Containment.apk` on the phone, open it and
+allow installs from that app when Android asks.
+
+To rebuild it you need a JDK and two pieces of the Android SDK (build-tools
+and a platform `android.jar`), but not Gradle or Android Studio. See the
+header of `android/build-apk.sh`. `android/make-icons.cjs` renders the
+launcher icons. Keep the signing keystore it creates: Android installs an
+update over an existing copy, keeping the saves, only when the APK is signed
+with the same key.

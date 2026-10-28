@@ -38,7 +38,7 @@
   --fund:var(--gold); --econ:var(--gold); --auth:var(--green); --trust:var(--green); --good:var(--green);
   --hot-1:var(--gold); --hot-2:var(--gold); --hot-3:var(--red); --bad:var(--red);
   --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
-  --cond:"Roboto Condensed","Bahnschrift SemiCondensed","Bahnschrift","DIN Condensed","Arial Narrow","Helvetica Neue",sans-serif;
+  --cond:"Roboto Condensed","sans-serif-condensed","Bahnschrift SemiCondensed","Bahnschrift","DIN Condensed","Arial Narrow","Helvetica Neue",sans-serif;
   --sans:Roboto,system-ui,-apple-system,"Segoe UI","Helvetica Neue",Arial,sans-serif;
   --bottom-h:96px;
   --cut:10px;
@@ -450,11 +450,25 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
   #clock{padding:5px 8px}
   #clock small{font-size:9.5px}
 }
+/* Narrow phones (360px class): the top bar has to fit without pushing the menu off screen. */
+@media (max-width:400px){
+  #top{gap:3px;left:4px;right:4px}
+  .chip{padding:4px 6px}
+  #clock b{font-size:14px}
+  #clock small{font-size:9px;letter-spacing:.03em}
+  #speeds button{width:23px;height:27px}
+  .cur{gap:4px;padding:4px 7px 4px 5px}
+  .cur b{font-size:16px}
+  .cur svg{width:16px;height:16px}
+  #menuBtn{width:34px;height:34px}
+}
 @media (max-height:500px) and (orientation:landscape){
   :root{--bottom-h:70px}
   #bottom{grid-template-columns:140px 1fr 140px;grid-template-rows:1fr}
-  .bigbtn b{font-size:17px}
-  #respBtn .badge{top:5px;right:9px;min-width:19px;height:19px;line-height:19px;font-size:11px}
+  .bigbtn{flex-direction:row;align-items:center;justify-content:center;gap:8px;padding:0 10px}
+  .bigbtn b{font-size:17px} .bigbtn small{display:none}
+  #respBtn .badge{position:relative;right:auto;top:auto}
+  #respBtn .badge{min-width:19px;height:19px;line-height:19px;font-size:11px}
   #top{top:calc(6px + var(--safe-t))}
   .chip{padding:4px 8px}
   #clock b{font-size:15px}
@@ -464,7 +478,8 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
   #mid{grid-column:2;grid-row:1}
   #respBtn{grid-column:1;grid-row:1} #worldBtn{grid-column:3;grid-row:1}
   #stats .st small{display:none}
-  #card{max-height:calc(100% - 20px);top:10px;bottom:auto;left:auto;right:10px;width:320px;border-width:1px}
+  /* Below the top bar, so Funding and Authority stay visible while imposing measures. */
+  #card{top:calc(48px + var(--safe-t));bottom:auto;max-height:calc(100% - var(--bottom-h) - 86px - var(--safe-t));left:auto;right:10px;width:320px;border-width:1px}
   #modes{display:flex;top:calc(50px + var(--safe-t));padding:2px}
   #modes button{height:27px;padding:0 8px}
   #modes button span.t{display:none}
@@ -3610,7 +3625,26 @@ window.addEventListener('keydown', e => {
   else if (k === '-') zoomAt(cw / 2, ch / 2, .8);
 });
 window.addEventListener('resize', () => { clearTimeout(UI.resizeT); UI.resizeT = setTimeout(() => { resize(); if (OPEN.has('world')) renderWorld(); }, 60); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+// Going to the background saves and silences the game; coming back resumes the sound.
+function appPause() { save(); try { if (Audio.ctx && Audio.ctx.state === 'running') Audio.ctx.suspend(); } catch {} }
+function appResume() { try { if (Audio.ctx && Audio.ctx.state === 'suspended') Audio.ctx.resume(); } catch {} baseDirty = true; }
+document.addEventListener('visibilitychange', () => { if (document.hidden) appPause(); else appResume(); });
+// The Android app calls these from its lifecycle and its back button.
+window.__containmentApp = {
+  pause: appPause,
+  resume: appResume,
+  // Returns 'exit' when there is nothing left to close, so the app can quit.
+  back() {
+    if (OPEN.has('evt')) return 'ok'; // a decision has to be made
+    const top = ['help', 'resp', 'world', 'pause', 'setup', 'end'].find(id => OPEN.has(id));
+    if (top) { closeOv(top); if (top === 'end') toTitle(); return 'ok'; }
+    if (UI.phase === 'pick') { $('#pickBack').click(); return 'ok'; }
+    if (UI.sel >= 0) { select(-1); return 'ok'; }
+    if (UI.phase === 'play') { openOv('pause'); syncToggles(); return 'ok'; }
+    if (UI.phase === 'over') { toTitle(); return 'ok'; }
+    return 'exit';
+  },
+};
 window.addEventListener('pagehide', save);
 
 // Boot

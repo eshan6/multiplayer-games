@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The game's chrome colour, so launch and rotation never flash white. -->
+    <color name="chrome">#0B1014</color>
+    <color name="icon_bg">#10171C</color>
+</resources>
