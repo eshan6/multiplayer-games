@@ -38,7 +38,8 @@
   --fund:var(--gold); --econ:var(--gold); --auth:var(--green); --trust:var(--green); --good:var(--green);
   --hot-1:var(--gold); --hot-2:var(--gold); --hot-3:var(--red); --bad:var(--red);
   --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
-  --cond:"Roboto Condensed","Bahnschrift SemiCondensed","Bahnschrift","DIN Condensed","Arial Narrow","Helvetica Neue",sans-serif;
+  --safe-l:env(safe-area-inset-left,0px); --safe-r:env(safe-area-inset-right,0px);
+  --cond:"Roboto Condensed","sans-serif-condensed","Bahnschrift SemiCondensed","Bahnschrift","DIN Condensed","Arial Narrow","Helvetica Neue",sans-serif;
   --sans:Roboto,system-ui,-apple-system,"Segoe UI","Helvetica Neue",Arial,sans-serif;
   --bottom-h:96px;
   --cut:10px;
@@ -188,6 +189,23 @@ body.playing #hud{display:block}
 .m.locked .cost{color:var(--ink-3);font:12px var(--sans)}
 .m:not(.locked):hover{border-color:var(--bevel)}
 .note{font-size:12px;color:var(--ink-3);line-height:1.45}
+/* Deploying: the measure is on, its effect still building. */
+.m.dep{background:linear-gradient(90deg,rgba(58,154,217,.08),var(--c2) 65%);box-shadow:inset 3px 0 0 var(--blue-dk)}
+.m.dep .ic{background:#173246;color:#bfe0f6}
+.m.dep .cost{color:#8cc6ee}
+.m .prog{height:3px;background:#0a1115;margin-top:5px;overflow:hidden}
+.m .prog i{display:block;height:100%;background:var(--blue)}
+.m .cost.gold{color:var(--gold)}
+.m.poor .cost.gold{color:var(--ink-3)}
+.m.team.on .ic{background:var(--blue)}
+.m.team.dep .ic{background:#173246}
+.trendbox{margin:2px 0 10px}
+.trendbox .row{display:flex;justify-content:space-between;align-items:center;font:600 11px/1 var(--cond);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2)}
+.trendbox .tg{font:700 10.5px/1 var(--cond);padding:3px 6px;border-radius:1px}
+.trendbox .tg.hot{background:rgba(214,50,43,.2);color:#ff8a80}
+.trendbox .tg.ok{background:rgba(108,179,62,.16);color:#a9dc85}
+.trendbox .tg.warn{background:rgba(227,168,59,.16);color:#f2c878}
+canvas.trend{display:block;width:100%;height:52px;margin-top:6px;background:#0a1115;box-shadow:inset 0 0 0 1px var(--line)}
 
 /* ---------- toasts & hints ---------- */
 #toasts{position:fixed;left:50%;top:calc(64px + var(--safe-t));transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;z-index:8;pointer-events:none;width:min(92vw,520px)}
@@ -209,7 +227,7 @@ body.playing #hud{display:block}
 .ov{position:fixed;inset:0;z-index:20;display:none;background:rgba(6,9,12,.74);backdrop-filter:blur(2px)}
 .ov.on{display:flex}
 .sheet{margin:auto;display:flex;flex-direction:column;overflow:hidden;max-height:calc(100% - 24px);background:linear-gradient(#141d23,#0d1317)}
-.sheet>header{display:flex;align-items:center;gap:12px;padding:0 10px 0 0;border-bottom:1px solid var(--bevel);background:#0b1014;min-height:52px}
+.sheet>header{flex:none;display:flex;align-items:center;gap:12px;padding:0 10px 0 0;border-bottom:1px solid var(--bevel);background:#0b1014;min-height:52px}
 /* Each screen's title sits on an angled tab, the Plague Inc panel signature. */
 .sheet>header h2{margin:0;flex:none;align-self:stretch;display:flex;align-items:center;padding:0 40px 0 18px;background:var(--c3);
   font:700 24px/1 var(--cond);letter-spacing:.07em;text-transform:uppercase;clip-path:polygon(0 0,100% 0,calc(100% - 22px) 100%,0 100%)}
@@ -251,6 +269,18 @@ body.playing #hud{display:block}
 #detail .owned{color:var(--blue);font:700 13px/1 var(--cond);letter-spacing:.07em;text-transform:uppercase;display:flex;gap:6px;align-items:center}
 #detail .buy{margin-top:auto}
 #detail .buy .btn{width:100%}
+/* Before and after, in numbers: what an upgrade changes as the world stands today. */
+#detail .gain{background:#0d1418;box-shadow:inset 0 0 0 1px var(--line);padding:8px 10px;display:flex;flex-direction:column;gap:5px}
+#detail .gain .gh{font:700 11px/1 var(--cond);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:2px}
+#detail .gr{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;color:var(--ink-2)}
+#detail .gr span{min-width:0}
+#detail .gr b{font:700 14px/1.2 var(--cond);font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
+#detail .gr b i{font-style:normal;color:var(--ink-3);margin:0 5px}
+#detail .gr.up b{color:#bfe0f6}
+#detail .gr.down b{color:#f2c878}
+#detail .rollbox .row{display:flex;justify-content:space-between;font:700 12px/1 var(--cond);letter-spacing:.07em;text-transform:uppercase;color:var(--blue)}
+#detail .rollbox .tr{height:6px;background:#0a1115;margin:6px 0;overflow:hidden}
+#detail .rollbox .tr i{display:block;height:100%;background:var(--blue)}
 .fundline{display:flex;align-items:center;gap:6px;font:700 19px/1 var(--cond);color:var(--gold)}
 .fundline svg{width:20px;height:20px}
 
@@ -259,7 +289,7 @@ body.playing #hud{display:block}
 .wtabs{display:flex;gap:2px;padding:8px 12px 0;border-bottom:1px solid var(--line);overflow-x:auto;background:#0d1317}
 .wtabs button{padding:10px 16px 9px;color:var(--ink-3);font:700 13px/1 var(--cond);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;border-bottom:2px solid transparent}
 .wtabs button.on{color:var(--ink);background:var(--c2);border-bottom-color:var(--blue)}
-.wbody{flex:1;overflow-y:auto;padding:16px;touch-action:pan-y;overscroll-behavior:contain}
+.wbody{flex:1;min-height:0;overflow-y:auto;padding:16px;touch-action:pan-y;overscroll-behavior:contain}
 .charts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .chart{background:#0d1418;border:1px solid var(--line);border-radius:1px;padding:12px 12px 8px}
 .chart h4{margin:0 0 4px;font:700 14px/1.2 var(--cond);letter-spacing:.07em;text-transform:uppercase}
@@ -298,7 +328,7 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
 .phases div.on i{background:var(--blue);box-shadow:none} .phases div.cur{color:var(--ink)}
 
 /* ---------- decision dispatch (paper, after Rebel Inc) ---------- */
-#evt .sheet{width:min(540px,100%);background:linear-gradient(170deg,#f3eddb,var(--paper) 45%,var(--paper-2));border:0;border-radius:1px;color:var(--paper-ink);
+#evt .sheet{overflow-y:auto;width:min(540px,100%);background:linear-gradient(170deg,#f3eddb,var(--paper) 45%,var(--paper-2));border:0;border-radius:1px;color:var(--paper-ink);
   box-shadow:0 30px 80px rgba(0,0,0,.65)}
 #evt .ebody{padding:0 0 4px}
 #evt .kicker{font:700 12px/1 var(--cond);letter-spacing:.1em;text-transform:uppercase;color:#f3d79a;display:flex;align-items:center;gap:7px;
@@ -321,7 +351,7 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
 /* ---------- title & setup ---------- */
 #title{z-index:30;background:radial-gradient(ellipse at 50% 45%,rgba(11,16,20,.66) 0,rgba(11,16,20,.45) 32%,rgba(11,16,20,.15) 62%,rgba(11,16,20,.85) 100%);backdrop-filter:none}
 #title .center{margin:auto;display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px}
-#title h1{margin:0;font:700 clamp(50px,12vw,120px)/.9 var(--cond);letter-spacing:.06em;text-transform:uppercase;color:var(--ink);
+#title h1{margin:0;white-space:nowrap;font:700 clamp(40px,11vw,120px)/.9 var(--cond);letter-spacing:.06em;text-transform:uppercase;color:var(--ink);
   text-shadow:0 2px 0 rgba(0,0,0,.4),0 6px 36px rgba(0,0,0,.85)}
 #title h1 .ring{display:inline-block;position:relative}
 /* The one moving thing on the title: a cordon closing around the O. */
@@ -335,8 +365,8 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
 #title .foot{position:absolute;bottom:calc(14px + var(--safe-b));left:0;right:0;text-align:center;font:600 11px/1 var(--cond);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
 #setup{z-index:31} #help{z-index:40}
 .setup .sheet{width:min(980px,100%);max-height:calc(100% - 24px)}
-.setup .sbody{padding:16px;overflow-y:auto;touch-action:pan-y}
-.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.setup .sbody{padding:16px;overflow-y:auto;touch-action:pan-y;min-height:0;flex:1}
+.pgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .pcard{position:relative;text-align:left;border-radius:1px;padding:14px;background:linear-gradient(#1a252d,#121a20);border:1px solid var(--line);
   display:flex;flex-direction:column;gap:6px;min-height:178px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
 .pcard:hover:not(.locked){border-color:var(--bevel)}
@@ -351,7 +381,7 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
 .pcard.locked p{color:var(--ink-3)}
 .pcard .glyph{position:absolute;right:12px;top:12px;width:40px;height:40px;color:var(--red);opacity:.85}
 .pcard.locked .glyph{color:var(--ink-3)}
-.dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+.dgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:6px}
 .dcard{text-align:left;border-radius:1px;padding:14px;background:linear-gradient(#1a252d,#121a20);border:1px solid var(--line);display:flex;flex-direction:column;gap:7px}
 .dcard.sel{border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue),inset 0 3px 0 var(--blue)}
 .dcard b{font:700 21px/1 var(--cond);letter-spacing:.06em;text-transform:uppercase}
@@ -369,7 +399,7 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
 
 /* ---------- end ---------- */
 #end .sheet{width:min(760px,100%)}
-#end .ebody{padding:20px;overflow-y:auto;touch-action:pan-y}
+#end .ebody{padding:20px;overflow-y:auto;touch-action:pan-y;min-height:0;flex:1}
 #end h2{margin:4px 0 0;font:700 42px/1 var(--cond);letter-spacing:.05em;text-transform:uppercase}
 #end .kicker{font:700 12px/1 var(--cond)!important;letter-spacing:.1em;text-transform:uppercase}
 #end .why{color:var(--ink-2);margin:10px 0 16px;line-height:1.5}
@@ -380,14 +410,14 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
 
 /* ---------- menu, help ---------- */
 #pause .sheet{width:min(380px,100%)}
-#pause .pm{display:flex;flex-direction:column;gap:8px;padding:16px}
+#pause .pm{display:flex;flex-direction:column;gap:8px;padding:16px;overflow-y:auto;min-height:0}
 #pause .pm .btn{width:100%}
 .toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 2px;font:700 13px/1 var(--cond);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2);border-top:1px solid var(--line)}
 .sw2{width:44px;height:24px;border-radius:1px;background:#0a1115;box-shadow:inset 0 0 0 1px var(--bevel);position:relative;transition:background .2s}
 .sw2::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:1px;background:var(--ink-3);transition:transform .2s}
 .sw2.on{background:var(--blue-dk)} .sw2.on::after{transform:translateX(20px);background:var(--ink)}
 #help .sheet{width:min(780px,100%);height:min(720px,100%)}
-#help .hbody{padding:6px 20px 20px;overflow-y:auto;touch-action:pan-y;line-height:1.55;color:var(--ink-2)}
+#help .hbody{min-height:0;flex:1;padding:6px 20px 20px;overflow-y:auto;touch-action:pan-y;line-height:1.55;color:var(--ink-2)}
 #help h3{font:700 16px/1.2 var(--cond);letter-spacing:.08em;text-transform:uppercase;color:var(--ink);margin:20px 0 6px;padding-bottom:5px;border-bottom:1px solid var(--line)}
 #help p{margin:0 0 8px;max-width:64ch}
 #help ul{margin:0 0 8px;padding-left:20px;max-width:64ch}
@@ -428,7 +458,7 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
   .charts{grid-template-columns:1fr}
   .big4{grid-template-columns:1fr 1fr}
   .profile{grid-template-columns:1fr 1fr}
-  .pgrid,.dgrid{grid-template-columns:1fr 1fr}
+  .pgrid,.dgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
   #resp .sheet,#world .sheet,#help .sheet,#end .sheet,.setup .sheet{max-height:100%;height:100%;width:100%;border:0;margin:0}
   #evt .sheet,#pause .sheet{height:auto;margin:auto 10px}
   .sheet>header h2{font-size:21px;padding-right:34px}
@@ -450,12 +480,30 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
   #clock{padding:5px 8px}
   #clock small{font-size:9.5px}
 }
+/* Narrow phones (360px class): the top bar has to fit without pushing the menu off screen. */
+@media (max-width:400px){
+  #top{gap:3px;left:4px;right:4px}
+  .chip{padding:4px 6px}
+  #clock b{font-size:14px}
+  #clock small{font-size:9px;letter-spacing:.03em}
+  #speeds button{width:23px;height:27px}
+  .cur{gap:4px;padding:4px 7px 4px 5px}
+  .cur b{font-size:16px}
+  .cur svg{width:16px;height:16px}
+  #menuBtn{width:34px;height:34px}
+}
 @media (max-height:500px) and (orientation:landscape){
-  :root{--bottom-h:70px}
+  :root{--bottom-h:76px}
   #bottom{grid-template-columns:140px 1fr 140px;grid-template-rows:1fr}
-  .bigbtn b{font-size:17px}
-  #respBtn .badge{top:5px;right:9px;min-width:19px;height:19px;line-height:19px;font-size:11px}
-  #top{top:calc(6px + var(--safe-t))}
+  .bigbtn{flex-direction:row;align-items:center;justify-content:center;gap:8px;padding:0 10px}
+  .bigbtn b{font-size:17px} .bigbtn small{display:none}
+  #respBtn .badge{position:relative;right:auto;top:auto}
+  #respBtn .badge{min-width:19px;height:19px;line-height:19px;font-size:11px}
+  #top{top:calc(6px + var(--safe-t));left:calc(8px + var(--safe-l));right:calc(8px + var(--safe-r))}
+  /* A rotated phone puts its camera cutout on one side: keep controls clear of it. */
+  #bottom{padding-left:calc(10px + var(--safe-l));padding-right:calc(10px + var(--safe-r))}
+  #ticker{left:var(--safe-l);right:var(--safe-r)}
+  .ov.on{padding-left:var(--safe-l);padding-right:var(--safe-r)}
   .chip{padding:4px 8px}
   #clock b{font-size:15px}
   #speeds button{width:28px;height:26px}
@@ -463,18 +511,79 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
   #menuBtn{width:36px;height:36px}
   #mid{grid-column:2;grid-row:1}
   #respBtn{grid-column:1;grid-row:1} #worldBtn{grid-column:3;grid-row:1}
-  #stats .st small{display:none}
-  #card{max-height:calc(100% - 20px);top:10px;bottom:auto;left:auto;right:10px;width:320px;border-width:1px}
-  #modes{display:flex;top:calc(50px + var(--safe-t));padding:2px}
+  /* Keep the stat labels: numbers alone do not say which is cases and which is deaths. */
+  #bottom{padding-top:6px;padding-bottom:calc(6px + var(--safe-b))}
+  #mid{gap:5px}
+  #stats{gap:6px}
+  .st{padding-left:6px}
+  .st small{font-size:9px;letter-spacing:.04em;overflow:hidden}
+  .st b{font-size:16px;line-height:1.1}
+  .st .mini{margin-top:2px}
+  /* Below the top bar, so Funding and Authority stay visible, and down over the console for room. */
+  #card{top:calc(48px + var(--safe-t));bottom:calc(6px + var(--safe-b));max-height:none;left:auto;right:calc(10px + var(--safe-r));width:330px;border-width:1px;z-index:7}
+  #card header{padding-bottom:6px}
+  #card h2{font-size:18px;padding:7px 28px 6px 14px}
+  #card .members{margin-top:5px;font-size:10.5px}
+  #card .tags{margin-top:5px}
+  #card .body{padding:8px 12px 12px}
+  .kv{gap:6px 12px;margin-bottom:8px} .kv div b{font-size:16px}
+  .meter{margin:6px 0}
+  /* Title: one line of logo, the menu as a row. */
+  #title .center{padding:10px 16px 26px}
+  #title h1{font-size:min(12vw,19vh)}
+  #title .sub{margin:10px 0 16px;font-size:13.5px;max-width:46em}
+  #title .menu{flex-direction:row;flex-wrap:wrap;justify-content:center;width:auto;gap:8px}
+  #title .menu .btn{height:42px;min-width:160px;font-size:14px}
+  #title .foot{bottom:calc(6px + var(--safe-b));font-size:9.5px}
+  /* New game: everything on fewer, denser cards. */
+  .setup .sbody{padding:10px 14px}
+  .h3{margin:10px 0 6px}
+  .pgrid,.dgrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .pcard{min-height:0;padding:9px 11px;gap:3px}
+  .pcard b{font-size:16px} .pcard p{font-size:11.5px;line-height:1.35} .pcard .glyph{width:28px;height:28px;right:9px;top:9px}
+  .pcard .stars{gap:3px 7px;flex-wrap:wrap;font-size:9.5px;margin-top:4px}
+  .pcard b{padding-right:30px}
+  .dcard{padding:9px 11px;gap:5px} .dcard b{font-size:17px} .dcard p{font-size:11.5px;line-height:1.35}
+  .setup footer,#end footer{padding:7px 14px}
+  .btn{height:40px;font-size:14px}
+  /* Decisions: the story on the left, the choices on the right, both scrollable. */
+  #evt .sheet{width:min(900px,calc(100% - 20px));max-height:calc(100% - 16px);margin:auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);overflow:hidden}
+  #evt .ebody{overflow-y:auto;padding-bottom:10px}
+  #evt .kicker{padding:8px 16px}
+  #evt h2{font-size:21px;margin:10px 16px 6px}
+  #evt p{margin:0 16px;font-size:13px;line-height:1.5}
+  #evt .choices{overflow-y:auto;padding:12px 14px;gap:6px;border-left:1px solid #c9bea0}
+  #evt .choice b{padding:7px 10px;font-size:13px}
+  #evt .choice small{padding:6px 10px 8px;font-size:12px}
+  /* Pause: buttons and switches side by side. */
+  #pause .sheet{width:min(640px,calc(100% - 20px));max-height:calc(100% - 16px);margin:auto}
+  #pause .pm{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,auto);grid-auto-flow:column;gap:8px 18px;padding:12px 14px}
+  .toggle{padding:9px 2px}
+  /* World and end screens: wider grids, shorter charts. */
+  .wtabs{padding:4px 10px 0} .wtabs button{padding:8px 12px 7px}
+  .wbody{padding:10px 14px}
+  .big4{grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px} .big4 div{padding:8px 10px} .big4 b{font-size:20px}
+  .charts{grid-template-columns:1fr 1fr;gap:8px} .chart canvas{height:118px}
+  .profile{grid-template-columns:repeat(3,1fr);gap:6px} .profile b{font-size:17px}
+  #end .ebody{padding:12px 16px} #end h2{font-size:30px} #end .why{margin:6px 0 10px} #end .bigstars{margin:4px 0 6px} #end .bigstars svg{width:24px;height:24px}
+  #end .chart canvas{height:110px}
+  #help .hbody{padding:4px 16px 16px}
+  #modes{display:flex;top:calc(50px + var(--safe-t));left:calc(8px + var(--safe-l));padding:2px}
   #modes button{height:27px;padding:0 8px}
   #modes button span.t{display:none}
   #legend{display:none}
-  #hint{top:auto;bottom:calc(var(--bottom-h) + 36px + var(--safe-b))}
+  /* Left of the region card, which takes the right-hand side in landscape. */
+  #hint{top:auto;bottom:calc(var(--bottom-h) + 36px + var(--safe-b));left:calc(12px + var(--safe-l));transform:none;width:min(440px,calc(100% - 380px))}
   .sheet>header{min-height:44px}
   .sheet>header h2{font-size:20px}
   #resp .wrap{grid-template-columns:1fr 280px;grid-template-rows:auto minmax(0,1fr)}
-  #tabs{grid-column:1 / -1;padding:0}
-  #tabs button{padding:7px 10px}
+  /* Set in full here, not inherited from the narrow-screen rules: wider phones (900px+) skip those. */
+  #tabs{grid-column:1 / -1;flex-direction:row;border-right:0;border-bottom:1px solid var(--line);overflow-x:auto;padding:0}
+  #tabs button{padding:7px 10px;flex:none;border-left:0;border-bottom:3px solid transparent}
+  #tabs button.on{border-bottom-color:var(--blue)}
+  #tabs button small{display:none}
+  #hexWrap{padding:8px}
+  #resp .sheet,#world .sheet,#help .sheet,#end .sheet,.setup .sheet{max-height:100%;height:100%;width:100%;border:0;margin:0}
   #detail{border-top:0;border-left:1px solid var(--line);overflow-y:auto;padding:10px 14px}
   #detail h3{font-size:19px}
   #detail p{font-size:13px}
@@ -615,9 +724,12 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
       <li>Tap the bubbles that appear on the map: <span style="color:var(--fund)">gold</span> is funding, <span style="color:var(--res)">blue</span> is a research breakthrough, <span style="color:var(--hot-2)">orange</span> is outbreak intelligence that also improves detection, and <span style="color:var(--auth)">violet</span> is Authority.</li>
     </ul>
     <h3>Measures</h3>
-    <p>Tap a region to open it and impose measures: testing, tracing, masks, distancing, school closures, lockdowns, border, port and flight closures, field hospitals and, later, vaccination drives. Every measure slows the spread, but the harsher ones cost economy and patience every day they stay in force. Tired publics comply less, and a public that loses all trust defies you outright. Restrictions in a region with few visible cases cost more trust, because people cannot see why.</p>
+    <p>Tap a region to open it and impose measures: testing, tracing, gathering bans, masks, distancing, school closures, lockdowns, cordons, border, port and flight closures, arrival quarantine, field hospitals, shielding, sick pay and, later, vaccination drives. Every measure slows the spread, but the harsher ones cost economy and patience every day they stay in force. Tired publics comply less, and a public that loses all trust defies you outright. Restrictions in a region with few visible cases cost more trust, because people cannot see why.</p>
+    <p><strong>Nothing happens at once.</strong> A measure takes days to deploy: a flight ban is in force the next day, a lockdown takes three, field hospitals two weeks. Its badge on the map fills as it deploys, and its effect builds with it. The region's case chart marks the day each measure began, so you can see whether it bent the curve.</p>
+    <h3>Field teams</h3>
+    <p>You start with an epidemiology team at headquarters in Geneva; upgrades add medical, vaccination and community teams. Send one from a region's panel for 2 Funding. It travels across the map, takes three days to set up, then works there until you move it: epidemiology teams find hidden cases and sharpen tracing, medical teams add beds and save lives, vaccination teams speed up doses, community teams raise trust and compliance.</p>
     <h3>Upgrades</h3>
-    <p>Open <strong>Response</strong> to fund upgrades in five areas: Detect, Contain, Treat, Vaccine and Society. Each one unlocks the next. Prices rise a little with every upgrade you buy, so you will not get everything.</p>
+    <p>Open <strong>Response</strong> to fund upgrades in five areas: Detect, Contain, Treat, Vaccine and Society. Each shows what it would change today, in numbers. A funded upgrade <strong>rolls out over days</strong>: the rim of its hex fills as its effect builds, and anything that needs it waits until it is in force. Prices rise a little with every upgrade you buy, so you will not get everything.</p>
     <h3>The vaccine</h3>
     <p>Research needs the pathogen's genome first: buy <strong>Genome sequencing</strong> early. Research runs in the labs of wealthy regions, so wrecking their economies slows it. Once approved, doses are limited by factories, by how fast each region can vaccinate, by who trusts the vaccine, and by rich regions buying first unless you fund equitable allocation.</p>
     <h3>The pathogen fights back</h3>
@@ -717,20 +829,20 @@ const DIFFICULTY = {
   recruit: {
     id: 'recruit', name: 'Recruit',
     blurb: 'Generous funding, a slow-witted pathogen and forgiving publics. Learn how the response fits together.',
-    funding: 26, authority: 12, income: 1.4, auth: 1.4, research: 1.3, evo: .45, aiSharp: .5, silentSeeds: 0,
-    detect: 1, trustDecay: .65, deathLimit: 1.8, eventHarm: .65, hoard: .7, bubble: 1.25,
+    funding: 26, authority: 12, income: 1.55, auth: 1.4, research: 1.42, evo: .45, aiSharp: .5, silentSeeds: 0,
+    detect: 1, trustDecay: .65, deathLimit: 1.8, eventHarm: .65, hoard: .7, bubble: 1.25, roll: .5, deploy: .6,
   },
   regular: {
     id: 'regular', name: 'Regular',
     blurb: 'A pathogen that adapts to what you do, and governments that lose patience. A fair fight.',
     funding: 16, authority: 9, income: 1, auth: 1, research: 1, evo: 1, aiSharp: 1.6, silentSeeds: 1,
-    detect: 3, trustDecay: 1, deathLimit: 1.15, eventHarm: 1, hoard: 1, bubble: 1,
+    detect: 3, trustDecay: 1, deathLimit: 1.15, eventHarm: 1, hoard: 1, bubble: 1, roll: 1, deploy: 1,
   },
   hardened: {
     id: 'hardened', name: 'Hardened',
     blurb: 'Silent spread before day one, an adversary that reads your strategy, and no margin for waste.',
     funding: 11, authority: 7, income: .9, auth: 1, research: 1, evo: 1.3, aiSharp: 4, silentSeeds: 2,
-    detect: 6, trustDecay: 1.25, deathLimit: 1.1, eventHarm: 1.3, hoard: 1.25, bubble: .85,
+    detect: 6, trustDecay: 1.25, deathLimit: 1.1, eventHarm: 1.3, hoard: 1.25, bubble: .85, roll: 1.1, deploy: 1,
   },
 };
 
@@ -787,33 +899,46 @@ const PATHOGENS = [
 const PATHOGEN = Object.fromEntries(PATHOGENS.map(p => [p.id, p]));
 
 // ---------------------------------------------------------------------------
-//  Regional measures. Each costs Authority to impose, then costs economy,
-//  patience (fatigue) and trust for as long as it stays in force.
+//  Regional measures. Each costs Authority to impose and takes days to deploy:
+//  its effect builds over that time. While in force it costs economy, patience
+//  (fatigue) and trust; deploying costs part of that already.
 // ---------------------------------------------------------------------------
 const MEASURES = [
-  { id: 'testing', name: 'Mass testing', icon: 'test', unlock: 'd2', cost: 1, econ: .004, harsh: 0,
+  { id: 'testing', name: 'Mass testing', icon: 'test', unlock: 'd2', cost: 1, econ: .004, harsh: 0, days: 7,
     desc: 'Free testing everywhere. Finds far more cases, including silent ones, so they isolate instead of spreading it.' },
-  { id: 'tracing', name: 'Contact tracing', icon: 'trace', unlock: 'd5', cost: 1, econ: .004, harsh: .06,
+  { id: 'tracing', name: 'Contact tracing', icon: 'trace', unlock: 'd5', cost: 1, econ: .004, harsh: .06, days: 10,
     desc: 'Tracers reach every contact of a confirmed case. Powerful while cases are few, swamped once they are not.' },
-  { id: 'masks', name: 'Mask mandate', icon: 'mask', unlock: 'c2', cost: 1, econ: 0, harsh: .15, eff: .16,
-    desc: 'Masks in shops, transport and crowded indoor spaces. Cheap and mild.' },
-  { id: 'distancing', name: 'Social distancing', icon: 'distance', unlock: 'c3', cost: 2, econ: .05, harsh: .3, eff: .24,
+  { id: 'gatherings', name: 'Ban mass gatherings', icon: 'megaphone', unlock: 'c14', cost: 1, econ: .008, harsh: .12, eff: .1, days: 3,
+    desc: 'No festivals, matches, concerts or rallies. A modest brake that most people accept.' },
+  { id: 'masks', name: 'Mask mandate', icon: 'mask', unlock: 'c2', cost: 1, econ: 0, harsh: .15, eff: .16, days: 5,
+    desc: 'Masks in shops, transport and crowded indoor spaces. Cheap and mild, once the masks have reached people.' },
+  { id: 'distancing', name: 'Social distancing', icon: 'distance', unlock: 'c3', cost: 2, econ: .05, harsh: .3, eff: .24, days: 4,
     desc: 'Caps on gatherings, remote work where possible, capacity limits on venues.' },
-  { id: 'schools', name: 'Close schools', icon: 'school', unlock: 'c6', cost: 2, econ: .035, harsh: .42, eff: .14,
+  { id: 'schools', name: 'Close schools', icon: 'school', unlock: 'c6', cost: 2, econ: .035, harsh: .42, eff: .14, days: 2,
     desc: 'Effective, but parents stop working and patience runs out fast.' },
-  { id: 'lockdown', name: 'Lockdown', icon: 'lock', unlock: 'c7', cost: 4, econ: .22, harsh: 1, eff: .6,
+  { id: 'lockdown', name: 'Lockdown', icon: 'lock', unlock: 'c7', cost: 4, econ: .22, harsh: 1, eff: .6, days: 3,
     desc: 'Stay-at-home orders. The strongest brake there is, and the most expensive. Publics will not tolerate it forever.' },
-  { id: 'vector', name: 'Vector control', icon: 'vector', unlock: 'c11', cost: 1, econ: .003, harsh: .04, eff: .55, modes: ['vector'],
-    desc: 'Spraying, drainage and bed nets. Cuts mosquito-borne transmission sharply.' },
-  { id: 'borders', name: 'Close land borders', icon: 'border', unlock: 'c4', cost: 2, econ: .03, harsh: .12,
+  { id: 'cordon', name: 'Cordon sanitaire', icon: 'target', unlock: 'c15', cost: 3, econ: .03, harsh: .45, days: 3,
+    desc: 'Seal off the affected towns and test everyone inside. Crushing against a few clusters, useless against a national epidemic. Also cuts land travel.' },
+  { id: 'vector', name: 'Vector control', icon: 'vector', unlock: 'c11', cost: 1, econ: .003, harsh: .04, eff: .55, days: 12, modes: ['vector'],
+    desc: 'Spraying, drainage and bed nets. Cuts mosquito-borne transmission sharply, once the teams have covered the region.' },
+  { id: 'burials', name: 'Safe burials', icon: 'grave', unlock: 't14', cost: 1, econ: .002, harsh: .15, eff: .3, days: 6, modes: ['contact'],
+    desc: 'Trained teams handle the bodies of the dead. Funerals are a major source of contact spread; families resent the change.' },
+  { id: 'borders', name: 'Close land borders', icon: 'border', unlock: 'c4', cost: 2, econ: .03, harsh: .12, days: 2,
     desc: 'Stops most overland travel in and out of the region.' },
-  { id: 'ports', name: 'Close sea ports', icon: 'ship', unlock: 'c4', cost: 1, econ: .02, harsh: .05,
+  { id: 'ports', name: 'Close sea ports', icon: 'ship', unlock: 'c4', cost: 1, econ: .02, harsh: .05, days: 2,
     desc: 'Holds passenger ships and quarantines crews.' },
-  { id: 'flights', name: 'Suspend flights', icon: 'plane', unlock: 'c5', cost: 3, econ: .01, harsh: .15,
+  { id: 'flights', name: 'Suspend flights', icon: 'plane', unlock: 'c5', cost: 3, econ: .01, harsh: .15, days: 1,
     desc: 'Grounds international flights. Costs more in the big hubs, where aviation is a large part of the economy.' },
-  { id: 'hospital', name: 'Field hospitals', icon: 'hospital', unlock: 't3', cost: 2, econ: 0, harsh: 0,
-    desc: 'Temporary wards add half again to hospital capacity.' },
-  { id: 'vaxdrive', name: 'Vaccination drive', icon: 'syringe', unlock: 'vaccine', cost: 1, econ: 0, harsh: .03,
+  { id: 'travelq', name: 'Arrival quarantine', icon: 'hotel', unlock: 'd12', cost: 2, econ: .004, harsh: .04, days: 4,
+    desc: 'Every arriving traveller is tested and quarantined. Stops most imported infections without grounding the planes.' },
+  { id: 'hospital', name: 'Field hospitals', icon: 'hospital', unlock: 't3', cost: 2, econ: 0, harsh: 0, days: 14,
+    desc: 'Temporary wards add half again to hospital capacity. They take two weeks to build and staff.' },
+  { id: 'shield', name: 'Shield the vulnerable', icon: 'shield', unlock: 't13', cost: 2, econ: .004, harsh: .08, days: 8,
+    desc: 'Protect care homes and the medically vulnerable: deliveries, priority testing, separate staff. A quarter fewer deaths here.' },
+  { id: 'sickpay', name: 'Sick pay guarantee', icon: 'coin', unlock: 's12', cost: 2, econ: .006, harsh: 0, days: 6,
+    desc: 'Nobody loses income for staying home when sick or told to isolate. Confirmed cases isolate far more reliably.' },
+  { id: 'vaxdrive', name: 'Vaccination drive', icon: 'syringe', unlock: 'vaccine', cost: 1, econ: 0, harsh: .03, days: 8,
     desc: 'Puts this region at the front of the queue for doses and opens mass vaccination centres.' },
 ];
 const MEASURE = Object.fromEntries(MEASURES.map(m => [m.id, m]));
@@ -836,76 +961,96 @@ const UPGRADES = [
     desc: 'Links clinics and national labs so unusual clusters are reported within days, not weeks.', fx: { detect: .05, detectThr: .75 } },
   { id: 'd2', tab: 'detect', pos: [1, 0], icon: 'test', cost: 6, req: ['d1'], name: 'PCR diagnostics',
     desc: 'A validated test. Unlocks mass testing in regions.', fx: { detect: .05 } },
-  { id: 'd3', tab: 'detect', pos: [1, 2], icon: 'dna', cost: 6, req: ['d1'], name: 'Genome sequencing',
+  { id: 'd3', tab: 'detect', pos: [1, 1], icon: 'dna', cost: 6, req: ['d1'], name: 'Genome sequencing',
     desc: 'Sequences the pathogen. Vaccine research crawls without it, and variants become visible.', fx: { sequenced: 1, variantDetect: .03 } },
   { id: 'd4', tab: 'detect', pos: [2, 0], icon: 'test', cost: 10, req: ['d2'], name: 'Rapid antigen tests',
     desc: 'Cheap tests anyone can take at home. Better detection everywhere, and mass testing finds more.', fx: { detect: .07, testing: .12 } },
   { id: 'd5', tab: 'detect', pos: [2, 1], icon: 'trace', cost: 9, req: ['d2'], name: 'Contact tracing',
     desc: 'Trained tracers and an exposure app. Unlocks contact tracing in regions.', fx: {} },
-  { id: 'd6', tab: 'detect', pos: [3, 0], icon: 'plane', cost: 8, req: ['d4'], name: 'Airport screening',
-    desc: 'Temperature checks and tests at departure. Catches symptomatic travellers; silent carriers walk through.', fx: { airScreen: .5 } },
   { id: 'd7', tab: 'detect', pos: [2, 2], icon: 'dna', cost: 12, req: ['d3'], name: 'Genomic surveillance',
     desc: 'Routine sequencing of positive samples worldwide. New variants are caught early and their traits revealed.', fx: { variantDetect: .22 } },
-  { id: 'd8', tab: 'detect', pos: [3, 1], icon: 'water', cost: 10, req: ['d4|d7'], name: 'Wastewater monitoring',
+  { id: 'd6', tab: 'detect', pos: [3, 0], icon: 'plane', cost: 8, req: ['d4'], name: 'Airport screening',
+    desc: 'Temperature checks and tests at departure. Catches symptomatic travellers; silent carriers walk through.', fx: { airScreen: .5 } },
+  { id: 'd13', tab: 'detect', pos: [3, 1], icon: 'mic', cost: 9, req: ['d5'], name: 'Digital exposure alerts',
+    desc: 'Phones warn their owners after a close contact with a confirmed case. Contact tracing reaches 40% more people.', fx: { traceBoost: .4 } },
+  { id: 'd8', tab: 'detect', pos: [3, 2], icon: 'water', cost: 10, req: ['d7'], name: 'Wastewater monitoring',
     desc: 'Sewage tells you what testing cannot. Hidden outbreaks are flagged on the map and confirmed sooner.', fx: { wastewater: 1, detectThr: .5 } },
+  { id: 'd12', tab: 'detect', pos: [4, 0], icon: 'hotel', cost: 9, req: ['d6'], name: 'Arrival quarantine',
+    desc: 'Testing and supervised quarantine for travellers. Unlocks arrival quarantine in regions.', fx: {} },
   { id: 'd9', tab: 'detect', pos: [4, 1], icon: 'chart', cost: 14, req: ['d8'], name: 'Epidemic modelling',
     desc: 'Estimates the true size of the epidemic. Unlocks the true infections map and the reproduction number.', fx: { modelling: 1 } },
-  { id: 'd10', tab: 'detect', pos: [3, 2], icon: 'paw', cost: 11, req: ['d7'], name: 'One Health surveillance',
+  { id: 'd10', tab: 'detect', pos: [4, 2], icon: 'paw', cost: 11, req: ['d8'], name: 'One Health surveillance',
     desc: 'Monitors animals and livestock. Without it, an animal reservoir can reseed the pathogen indefinitely.', fx: { oneHealth: 1 } },
-  { id: 'd11', tab: 'detect', pos: [4, 0], icon: 'people', cost: 12, req: ['d6|d9'], name: 'Field epidemiology teams',
-    desc: 'Rapid-response teams for countries with weak health systems. Big detection gains where data is worst.', fx: { detectPoor: .14 } },
+  { id: 'd11', tab: 'detect', pos: [5, 0], icon: 'people', cost: 12, req: ['d12|d9'], name: 'Field epidemiology teams',
+    desc: 'Train investigators for countries with weak health systems. Big detection gains where data is worst, and a second epidemiology team.', fx: { detectPoor: .14, epiTeams: 1 } },
+  { id: 'd14', tab: 'detect', pos: [5, 1], icon: 'flask', cost: 10, req: ['d13|d9'], name: 'Mobile labs',
+    desc: 'Containerised labs that fly with the teams. One more epidemiology team, and every team finds half as many cases again.', fx: { epiTeams: 1, teamDetect: .5 } },
 
   // CONTAIN
   { id: 'c1', tab: 'contain', pos: [0, 1], icon: 'megaphone', cost: 3, name: 'Public health advice',
     desc: 'Hand washing, staying home when sick, covering coughs. A small cut to transmission everywhere.', fx: { beta: .04 } },
+  { id: 'c11', tab: 'contain', pos: [0, 2], icon: 'vector', cost: 6, req: ['c1'], modes: ['vector'], name: 'Vector control',
+    desc: 'Insecticides, larvicides and bed nets. Unlocks vector control in regions.', fx: {} },
+  { id: 'c13', tab: 'contain', pos: [0, 3], icon: 'vector', cost: 14, req: ['c11'], modes: ['vector'], name: 'Wolbachia mosquitoes',
+    desc: 'Release mosquitoes carrying a bacterium that blocks the virus. Mosquito-borne transmission falls by a quarter everywhere.', fx: { vectorBeta: .25 } },
   { id: 'c2', tab: 'contain', pos: [1, 0], icon: 'mask', cost: 6, req: ['c1'], name: 'Mask production',
     desc: 'Factories switch to masks and respirators. Unlocks mask mandates in regions.', fx: {} },
   { id: 'c3', tab: 'contain', pos: [1, 1], icon: 'distance', cost: 6, req: ['c1'], name: 'Distancing guidance',
     desc: 'Evidence-based rules for venues and workplaces. Unlocks social distancing in regions.', fx: {} },
   { id: 'c4', tab: 'contain', pos: [1, 2], icon: 'border', cost: 6, req: ['c1'], name: 'Travel restrictions',
     desc: 'Legal frameworks for closing borders. Unlocks land border and sea port closures.', fx: {} },
-  { id: 'c5', tab: 'contain', pos: [2, 2], icon: 'plane', cost: 8, req: ['c4'], name: 'Flight controls',
-    desc: 'Agreements with airlines and aviation regulators. Unlocks flight suspensions.', fx: {} },
-  { id: 'c6', tab: 'contain', pos: [2, 1], icon: 'school', cost: 7, req: ['c3'], name: 'School protocols',
-    desc: 'Plans for remote learning. Unlocks school closures.', fx: {} },
-  { id: 'c7', tab: 'contain', pos: [3, 1], icon: 'lock', cost: 10, req: ['c6'], name: 'Emergency powers',
-    desc: 'Governments grant temporary powers to restrict movement. Unlocks lockdowns and raises the Authority cap.', fx: { authCap: 10 } },
   { id: 'c8', tab: 'contain', pos: [2, 0], icon: 'hotel', cost: 10, req: ['c2|c3'], name: 'Quarantine centres',
     desc: 'Supported isolation in hotels and clinics. Every confirmed case is far less likely to infect anyone.', fx: { iso: .22 } },
+  { id: 'c6', tab: 'contain', pos: [2, 1], icon: 'school', cost: 7, req: ['c3'], name: 'School protocols',
+    desc: 'Plans for remote learning. Unlocks school closures.', fx: {} },
+  { id: 'c14', tab: 'contain', pos: [2, 2], icon: 'megaphone', cost: 4, req: ['c3|c4'], name: 'Gathering limits',
+    desc: 'Rules for cancelling events. Unlocks bans on mass gatherings in regions.', fx: {} },
+  { id: 'c5', tab: 'contain', pos: [2, 3], icon: 'plane', cost: 8, req: ['c4'], name: 'Flight controls',
+    desc: 'Agreements with airlines and aviation regulators. Unlocks flight suspensions.', fx: {} },
   { id: 'c9', tab: 'contain', pos: [3, 0], icon: 'wind', cost: 10, req: ['c8'], name: 'Ventilation standards',
     desc: 'Filtration and fresh air in public buildings. Masks and distancing work better, and airborne variants lose their edge.', fx: { ventilation: 1 } },
+  { id: 'c7', tab: 'contain', pos: [3, 1], icon: 'lock', cost: 10, req: ['c6'], name: 'Emergency powers',
+    desc: 'Governments grant temporary powers to restrict movement. Unlocks lockdowns and raises the Authority cap.', fx: { authCap: 10 } },
+  { id: 'c15', tab: 'contain', pos: [3, 2], icon: 'target', cost: 9, req: ['c14|c5'], name: 'Cordon sanitaire',
+    desc: 'Legal and logistical plans to seal off a town. Unlocks cordons in regions: crushing against a few clusters.', fx: {} },
+  { id: 'c12', tab: 'contain', pos: [3, 3], icon: 'plane', cost: 12, req: ['c5'], name: 'Travel corridors',
+    desc: 'Tested, quarantined travel between low-risk regions. Flight suspensions and border closures cost half as much economy.', fx: { travelRelief: .5 } },
   { id: 'c10', tab: 'contain', pos: [4, 1], icon: 'target', cost: 14, req: ['c7'], name: 'Targeted lockdowns',
     desc: 'Lock down neighbourhoods, not nations. Lockdowns cost 40% less economy and patience.', fx: { lockRelief: .4 } },
-  { id: 'c11', tab: 'contain', pos: [0, 2], icon: 'vector', cost: 6, req: ['c1'], modes: ['vector'], name: 'Vector control',
-    desc: 'Insecticides, larvicides and bed nets. Unlocks vector control in regions.', fx: {} },
-  { id: 'c13', tab: 'contain', pos: [0, 3], icon: 'vector', cost: 14, req: ['c11'], modes: ['vector'], name: 'Wolbachia mosquitoes',
-    desc: 'Release mosquitoes carrying a bacterium that blocks the virus. Mosquito-borne transmission falls by a quarter everywhere.', fx: { vectorBeta: .25 } },
-  { id: 'c12', tab: 'contain', pos: [3, 2], icon: 'plane', cost: 12, req: ['c5'], name: 'Travel corridors',
-    desc: 'Tested, quarantined travel between low-risk regions. Flight suspensions and border closures cost half as much economy.', fx: { travelRelief: .5 } },
+  { id: 'c16', tab: 'contain', pos: [4, 2], icon: 'clipboard', cost: 12, req: ['c7|c15'], name: 'Rapid response protocols',
+    desc: 'Pre-agreed plans, stockpiles and trained officials in every region. Measures come into force 40% faster.', fx: { deployFast: .4 } },
 
   // TREAT
+  { id: 't14', tab: 'treat', pos: [0, 0], icon: 'grave', cost: 6, req: ['t1'], modes: ['contact'], name: 'Safe burial practices',
+    desc: 'Train and equip burial teams. Unlocks safe burials in regions.', fx: {} },
   { id: 't1', tab: 'treat', pos: [0, 1], icon: 'clipboard', cost: 4, name: 'Clinical guidelines',
     desc: 'Share what works at the bedside. Fewer deaths everywhere.', fx: { ifr: .08 } },
+  { id: 't12', tab: 'treat', pos: [0, 2], icon: 'hospital', cost: 8, req: ['t1'], name: 'Emergency medical teams',
+    desc: 'Doctors and nurses on standby to fly in. Two medical teams to send where hospitals are failing.', fx: { medTeams: 2 } },
   { id: 't2', tab: 'treat', pos: [1, 0], icon: 'oxygen', cost: 8, req: ['t1'], name: 'Oxygen supply',
     desc: 'Medical oxygen plants and cylinders where hospitals have none. Large gains in poorer regions.', fx: { ifr: .06, ifrPoor: .14 } },
   { id: 't3', tab: 'treat', pos: [1, 1], icon: 'hospital', cost: 7, req: ['t1'], name: 'Field hospitals',
     desc: 'Pre-built wards ready to ship. Unlocks field hospitals in regions.', fx: {} },
-  { id: 't4', tab: 'treat', pos: [2, 1], icon: 'bed', cost: 10, req: ['t3'], name: 'Surge capacity',
-    desc: 'Cancel elective surgery, convert wards, recall retired staff. Hospital capacity up 35%.', fx: { cap: .35 } },
   { id: 't5', tab: 'treat', pos: [1, 2], icon: 'pill', cost: 7, req: ['t1'], name: 'Repurposed drugs', drug: true,
     desc: 'Trials of existing drugs find a few that help. Fewer deaths.', fx: { ifrDrug: .08 } },
-  { id: 't6', tab: 'treat', pos: [2, 2], icon: 'pill', cost: 14, req: ['t5'], name: 'Antivirals', drug: true,
-    desc: 'A drug designed against this pathogen. Far fewer deaths, and patients clear the infection sooner.', fx: { ifrDrug: .25, recovery: .1 } },
+  { id: 't15', tab: 'treat', pos: [1, 3], icon: 'truck', cost: 9, req: ['t12'], name: 'Medical stockpiles',
+    desc: 'Beds, ventilators and drugs pre-positioned on every continent. Field hospitals go up three times faster and hold a quarter more beds.', fx: { fieldFast: 1, cap: .04 } },
   { id: 't7', tab: 'treat', pos: [2, 0], icon: 'shield', cost: 9, req: ['t2|t4'], name: 'Protect health workers',
     desc: 'Protective equipment and hazard pay. Overwhelmed hospitals no longer lose staff to burnout and infection.', fx: { staffProtect: 1, cap: .08 } },
-  { id: 't8', tab: 'treat', pos: [3, 2], icon: 'antibody', cost: 16, req: ['t6'], name: 'Monoclonal antibodies', drug: true,
-    desc: 'Engineered antibodies for high-risk patients. Fewer deaths.', fx: { ifrDrug: .15 } },
-  { id: 't9', tab: 'treat', pos: [3, 1], icon: 'pills', cost: 13, req: ['t6'], name: 'Combination therapy',
-    desc: 'Treat with several drugs at once. Halves the effect of drug resistance.', fx: { resistRelief: .5 } },
-  { id: 't10', tab: 'treat', pos: [4, 1], icon: 'cure', cost: 28, req: ['t8', 't9'], name: 'Curative therapy',
-    desc: 'A treatment that clears the infection in days. People stay infectious for far less time.', fx: { recovery: .45, ifrDrug: .15 } },
+  { id: 't4', tab: 'treat', pos: [2, 1], icon: 'bed', cost: 10, req: ['t3'], name: 'Surge capacity',
+    desc: 'Cancel elective surgery, convert wards, recall retired staff. Hospital capacity up 35%.', fx: { cap: .35 } },
+  { id: 't6', tab: 'treat', pos: [2, 2], icon: 'pill', cost: 14, req: ['t5'], name: 'Antivirals', drug: true,
+    desc: 'A drug designed against this pathogen. Far fewer deaths, and patients clear the infection sooner.', fx: { ifrDrug: .25, recovery: .1 } },
   { id: 't11', tab: 'treat', pos: [3, 0], icon: 'clinic', cost: 10, req: ['t7'], name: 'Community clinics',
     desc: 'Primary care for regions with few hospitals. Fewer deaths and better case-finding where wealth is low.', fx: { ifrPoor: .12, detectPoor: .05 } },
+  { id: 't9', tab: 'treat', pos: [3, 1], icon: 'pills', cost: 13, req: ['t6'], name: 'Combination therapy',
+    desc: 'Treat with several drugs at once. Halves the effect of drug resistance.', fx: { resistRelief: .5 } },
+  { id: 't8', tab: 'treat', pos: [3, 2], icon: 'antibody', cost: 16, req: ['t6'], name: 'Monoclonal antibodies', drug: true,
+    desc: 'Engineered antibodies for high-risk patients. Fewer deaths.', fx: { ifrDrug: .15 } },
+  { id: 't13', tab: 'treat', pos: [4, 0], icon: 'shield', cost: 10, req: ['t11'], name: 'Shielding programme',
+    desc: 'Identify the most vulnerable and keep the pathogen away from them. Unlocks shielding in regions.', fx: {} },
+  { id: 't10', tab: 'treat', pos: [4, 1], icon: 'cure', cost: 28, req: ['t8', 't9'], name: 'Curative therapy',
+    desc: 'A treatment that clears the infection in days. People stay infectious for far less time.', fx: { recovery: .45, ifrDrug: .15 } },
 
   // VACCINE
   { id: 'r1', tab: 'research', pos: [0, 1], icon: 'flask', cost: 5, name: 'Research consortium',
@@ -914,44 +1059,58 @@ const UPGRADES = [
     desc: 'A proven vaccine chassis. Research 30% faster.', fx: { research: .3 } },
   { id: 'r3', tab: 'research', pos: [1, 2], icon: 'rna', cost: 16, req: ['r1'], name: 'mRNA platform',
     desc: 'Design a candidate in days. Research 45% faster, and boosters can be updated quickly.', fx: { research: .45, mrna: 1 } },
-  { id: 'r4', tab: 'research', pos: [2, 1], icon: 'trial', cost: 12, req: ['r2|r3'], name: 'Parallel trials',
-    desc: 'Run trial phases side by side, accepting financial risk. Trials move 60% faster.', fx: { trials: .6 } },
-  { id: 'r5', tab: 'research', pos: [3, 1], icon: 'stamp', cost: 10, req: ['r4'], name: 'Emergency authorisation',
-    desc: 'Regulators review data as it arrives. Approval three times faster, but some people will trust the vaccine less.', fx: { review: 2, hesitancy: .06 } },
   { id: 'r6', tab: 'research', pos: [2, 0], icon: 'factory', cost: 12, req: ['r2|r4'], name: 'Manufacturing scale-up',
     desc: 'Build factories before the vaccine is approved. Doubles production.', fx: { prod: 1 } },
+  { id: 'r4', tab: 'research', pos: [2, 1], icon: 'trial', cost: 12, req: ['r2|r3'], name: 'Parallel trials',
+    desc: 'Run trial phases side by side, accepting financial risk. Trials move 60% faster.', fx: { trials: .6 } },
+  { id: 'r10', tab: 'research', pos: [2, 2], icon: 'syringe', cost: 14, req: ['r3|r4'], name: 'Variant-adapted boosters',
+    desc: 'Update the vaccine for new variants. Restores protection after immune escape and halves waning.', fx: { boosters: 1 } },
   { id: 'r7', tab: 'research', pos: [3, 0], icon: 'globe', cost: 20, req: ['r6'], name: 'Global manufacturing',
     desc: 'Licence the vaccine to factories on every continent. Production up another 80%, and more of it stays where it is made.', fx: { prod: .8, equity: .12 } },
+  { id: 'r5', tab: 'research', pos: [3, 1], icon: 'stamp', cost: 10, req: ['r4'], name: 'Emergency authorisation',
+    desc: 'Regulators review data as it arrives. Approval three times faster, but some people will trust the vaccine less.', fx: { review: 2, hesitancy: .06 } },
+  { id: 'r11', tab: 'research', pos: [3, 2], icon: 'shieldplus', cost: 24, req: ['r10'], name: 'Pan-variant vaccine',
+    desc: 'Targets the parts of the pathogen that cannot change. Immune escape loses most of its effect.', fx: { panVariant: 1 } },
   { id: 'r8', tab: 'research', pos: [4, 0], icon: 'truck', cost: 10, req: ['r7|r9'], name: 'Cold chain logistics',
     desc: 'Freezers, trucks and trained vaccinators. Regions with weak health systems vaccinate far faster.', fx: { coldChain: .9 } },
   { id: 'r9', tab: 'research', pos: [4, 1], icon: 'scales', cost: 10, req: ['r5|r7'], name: 'Equitable allocation',
     desc: 'Doses go where the danger is, not where the money is. Rich regions stop hoarding.', fx: { equity: .45, trustPoor: .04 } },
-  { id: 'r10', tab: 'research', pos: [2, 2], icon: 'syringe', cost: 14, req: ['r3|r4'], name: 'Variant-adapted boosters',
-    desc: 'Update the vaccine for new variants. Restores protection after immune escape and halves waning.', fx: { boosters: 1 } },
-  { id: 'r11', tab: 'research', pos: [3, 2], icon: 'shieldplus', cost: 24, req: ['r10'], name: 'Pan-variant vaccine',
-    desc: 'Targets the parts of the pathogen that cannot change. Immune escape loses most of its effect.', fx: { panVariant: 1 } },
+  { id: 'r14', tab: 'research', pos: [4, 2], icon: 'wind', cost: 18, req: ['r11'], name: 'Nasal vaccine',
+    desc: 'A spray that builds immunity where the pathogen gets in. Vaccine protection up six points, and far fewer people fear the needle.', fx: { veBonus: .06, hesitancy: -.03 } },
+  { id: 'r12', tab: 'research', pos: [5, 0], icon: 'syringe', cost: 10, req: ['r8'], name: 'Mobile vaccination teams',
+    desc: 'Vaccinators who go door to door. Two vaccination teams to send where uptake is stuck.', fx: { vaxTeams: 2 } },
+  { id: 'r13', tab: 'research', pos: [5, 1], icon: 'factory', cost: 12, req: ['r9|r8'], name: 'Dose-sparing strategy',
+    desc: 'Smaller and delayed second doses stretch supply 35% further, for slightly weaker protection.', fx: { prod: .35, vePenalty: .03 } },
 
   // SOCIETY
   { id: 's1', tab: 'society', pos: [0, 1], icon: 'mic', cost: 4, name: 'Daily briefings',
     desc: 'Scientists explain what is happening, every day. Trust erodes 15% more slowly.', fx: { trustDecay: .15 } },
+  { id: 's13', tab: 'society', pos: [0, 2], icon: 'clipboard', cost: 6, req: ['s1'], name: 'Crisis coordination office',
+    desc: 'A standing team that turns decisions into action. Every Response programme rolls out 30% faster.', fx: { rollFast: .3 } },
   { id: 's2', tab: 'society', pos: [1, 0], icon: 'chart', cost: 7, req: ['s1'], name: 'Open data dashboard',
     desc: 'Publish every number. Trust recovers higher and misinformation lands softer.', fx: { trustTarget: .05, misinfo: .25 } },
-  { id: 's3', tab: 'society', pos: [1, 2], icon: 'people', cost: 9, req: ['s1'], name: 'Community health workers',
-    desc: 'Local, trusted faces. Better compliance and vaccine uptake in poorer regions.', fx: { compliancePoor: .08, hesitancy: -.04 } },
   { id: 's4', tab: 'society', pos: [1, 1], icon: 'coin', cost: 12, req: ['s1'], name: 'Economic relief',
     desc: 'Cash transfers for those who cannot work. Restrictions tire people 30% less and hurt the economy 15% less.', fx: { fatigueRelief: .3, econRelief: .15 } },
+  { id: 's3', tab: 'society', pos: [1, 2], icon: 'people', cost: 9, req: ['s1'], name: 'Community health workers',
+    desc: 'Local, trusted faces. Better compliance and vaccine uptake in poorer regions.', fx: { compliancePoor: .08, hesitancy: -.04 } },
   { id: 's5', tab: 'society', pos: [2, 0], icon: 'shield', cost: 10, req: ['s2'], name: 'Counter-misinformation',
     desc: 'Rapid rebuttal and platform partnerships. Misinformation waves are far weaker.', fx: { misinfo: .5, compliance: .03 } },
   { id: 's6', tab: 'society', pos: [2, 1], icon: 'house', cost: 14, req: ['s4'], name: 'Furlough schemes',
     desc: 'Pay wages while businesses are closed. Lockdowns cost 30% less economy, and economic pain hurts trust far less.', fx: { lockEcon: .3, econTrust: .5 } },
   { id: 's7', tab: 'society', pos: [2, 2], icon: 'syringe', cost: 10, req: ['s3'], name: 'Vaccine confidence',
     desc: 'Answer every question honestly. Far fewer people refuse the vaccine.', fx: { hesitancy: -.12 } },
+  { id: 's11', tab: 'society', pos: [2, 3], icon: 'handshake', cost: 9, req: ['s3'], name: 'Community engagement teams',
+    desc: 'Local organisers who listen before they ask. Two community teams to send where trust and compliance are failing.', fx: { comTeams: 2 } },
   { id: 's8', tab: 'society', pos: [3, 0], icon: 'handshake', cost: 16, req: ['s5', 's6'], name: 'Global solidarity pact',
     desc: 'Nations commit to act together. Authority regenerates 35% faster and donors give 20% more.', fx: { auth: .35, income: .2 } },
-  { id: 's9', tab: 'society', pos: [3, 2], icon: 'star', cost: 14, req: ['s7'], name: 'Trusted messengers',
-    desc: 'Doctors, faith leaders and teachers carry the message. Compliance up, and trust drains 20% more slowly.', fx: { compliance: .06, trustDecay: .2 } },
   { id: 's10', tab: 'society', pos: [3, 1], icon: 'heart', cost: 8, req: ['s6'], name: 'Mental health support',
     desc: 'Helplines and support for the isolated. Patience recovers twice as fast after restrictions lift.', fx: { fatigueRecovery: 1 } },
+  { id: 's9', tab: 'society', pos: [3, 2], icon: 'star', cost: 14, req: ['s7'], name: 'Trusted messengers',
+    desc: 'Doctors, faith leaders and teachers carry the message. Compliance up, and trust drains 20% more slowly.', fx: { compliance: .06, trustDecay: .2 } },
+  { id: 's12', tab: 'society', pos: [3, 3], icon: 'coin', cost: 9, req: ['s11|s4'], name: 'Paid sick leave',
+    desc: 'A fund that pays people to isolate. Unlocks sick pay guarantees in regions.', fx: {} },
+  { id: 's14', tab: 'society', pos: [4, 1], icon: 'people', cost: 14, req: ['s8|s10'], name: 'Volunteer corps',
+    desc: 'Millions sign up to help. One more medical, vaccination and community team.', fx: { medTeams: 1, vaxTeams: 1, comTeams: 1 } },
 ];
 const UPGRADE = Object.fromEntries(UPGRADES.map(u => [u.id, u]));
 
@@ -960,6 +1119,27 @@ const DRUG_NAMES = {
   antiviral: { t5: 'Repurposed drugs', t6: 'Antivirals', t8: 'Monoclonal antibodies' },
   antibiotic: { t5: 'Broad-spectrum antibiotics', t6: 'Targeted antibiotics', t8: 'Phage therapy' },
 };
+
+// ---------------------------------------------------------------------------
+//  Field teams: people you send to a region. They travel there across the map,
+//  take a few days to set up, then work until you move them. count is the key
+//  in the upgrade modifiers that adds teams of the type (epidemiology starts
+//  with one).
+// ---------------------------------------------------------------------------
+const TEAMS = [
+  { id: 'epi', name: 'Epidemiology team', short: 'Epidemiology', icon: 'radar', count: 'epiTeams', base: 1, unlock: null,
+    desc: 'Investigators with a mobile lab. Finds hidden cases, confirms outbreaks early and makes contact tracing hit harder.' },
+  { id: 'med', name: 'Medical team', short: 'Medical', icon: 'hospital', count: 'medTeams', base: 0, unlock: 't12',
+    desc: 'Doctors and nurses. More hospital beds, fewer deaths, and staff who do not burn out.' },
+  { id: 'vax', name: 'Vaccination team', short: 'Vaccination', icon: 'syringe', count: 'vaxTeams', base: 0, unlock: 'r12', needsVaccine: true,
+    desc: 'Mobile vaccinators. Doses go into arms much faster here, and fewer people refuse them.' },
+  { id: 'com', name: 'Community team', short: 'Community', icon: 'handshake', count: 'comTeams', base: 0, unlock: 's11',
+    desc: 'Local organisers. Trust and compliance rise, and restrictions wear people down more slowly.' },
+];
+const TEAM = Object.fromEntries(TEAMS.map(t => [t.id, t]));
+const TEAM_COST = 2;     // Funding to move a team anywhere
+const TEAM_SETUP = 3;    // days from arrival to full effect
+const HQ = 'DEU';        // teams start out from Geneva
 
 // ---------------------------------------------------------------------------
 //  Pathogen evolution. The adversary earns evolution points from infections
@@ -980,6 +1160,16 @@ const TRAITS = [
 const TRAIT = Object.fromEntries(TRAITS.map(t => [t.id, t]));
 const GREEK = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta', 'Iota', 'Kappa', 'Lambda', 'Mu',
   'Nu', 'Xi', 'Omicron', 'Pi', 'Rho', 'Sigma', 'Tau', 'Upsilon', 'Phi', 'Chi', 'Psi', 'Omega'];
+
+// The numbers an upgrade can move, for previews and for the moment it comes into force.
+// good: +1 when higher is better.
+const IMPACTS = [
+  ['found', 'Cases found', 'pct', 1], ['spread', 'Transmission cut', 'pct', 1], ['comp', 'Compliance', 'pct', 1],
+  ['ifr', 'Fatality rate', 'pct2', -1], ['beds', 'Hospital beds', 'n', 1], ['research', 'Vaccine research', 'rate', 1],
+  ['doses', 'Doses a day', 'n', 1], ['ve', 'Vaccine protection', 'pct', 1], ['refusal', 'Vaccine refusal', 'pct', -1],
+  ['income', 'Funding a month', 'f1', 1], ['auth', 'Authority a month', 'f1', 1], ['authCap', 'Authority cap', 'int', 1],
+  ['deploy', 'Measure deploy time', 'pct', -1], ['roll', 'Rollout time', 'pct', -1],
+];
 
 const PHASES = [
   [0, 'Candidate design'], [20, 'Pre-clinical testing'], [35, 'Phase I/II trials'], [60, 'Phase III trials'],
@@ -1016,8 +1206,8 @@ const fmtN = n => n >= 1e9 ? (n / 1e9).toFixed(n >= 1e10 ? 0 : 1) + 'B' : n >= 1
 const EVENTS = [
   {
     id: 'gathering', weight: 3,
-    when: g => g.pickRegion(r => r.st.detected && g.activePerM(r) > 20 && !r.st.m.lockdown) != null,
-    pick: g => g.pickRegion(r => r.st.detected && g.activePerM(r) > 20 && !r.st.m.lockdown, r => r.meta.pop),
+    when: g => g.pickRegion(r => r.st.detected && g.activePerM(r) > 20 && r.st.m.lockdown == null) != null,
+    pick: g => g.pickRegion(r => r.st.detected && g.activePerM(r) > 20 && r.st.m.lockdown == null, r => r.meta.pop),
     make: (g, r) => ({
       title: `Mass gathering in ${r.meta.the}`,
       text: `A national festival will draw millions onto the streets of ${r.meta.the} next week. Organisers say cancelling it would be a catastrophe for tourism.`,
@@ -1074,8 +1264,8 @@ const EVENTS = [
   },
   {
     id: 'protest', weight: 3,
-    when: g => g.pickRegion(r => r.st.fatigue > .55 && (r.st.m.lockdown || r.st.m.schools)) != null,
-    pick: g => g.pickRegion(r => r.st.fatigue > .55 && (r.st.m.lockdown || r.st.m.schools), r => r.st.fatigue),
+    when: g => g.pickRegion(r => r.st.fatigue > .55 && (r.st.m.lockdown != null || r.st.m.schools != null)) != null,
+    pick: g => g.pickRegion(r => r.st.fatigue > .55 && (r.st.m.lockdown != null || r.st.m.schools != null), r => r.st.fatigue),
     make: (g, r) => ({
       title: `Protests in ${r.meta.the}`,
       text: `Tens of thousands march in ${r.meta.the} against restrictions. Police are struggling to hold the crowds.`,
@@ -1151,8 +1341,8 @@ const EVENTS = [
       text: `Both candidates in ${r.meta.the} promise to end the restrictions. The incumbent wants to start now.`,
       choices: [
         { label: 'Persuade them to wait', cost: { authority: 3 }, note: 'Measures stay in place.', apply: () => {} },
-        { label: 'Let them lift', note: 'Every measure except testing, tracing and hospitals ends there.',
-          apply: g => { for (const id of ['masks', 'distancing', 'schools', 'lockdown', 'borders', 'ports', 'flights']) g.lift(r.i, id); } },
+        { label: 'Let them lift', note: 'Every restriction there ends. Testing, tracing, hospitals and support stay.',
+          apply: g => { for (const id of ['gatherings', 'masks', 'distancing', 'schools', 'lockdown', 'cordon', 'borders', 'ports', 'flights', 'travelq']) g.lift(r.i, id); } },
       ],
     }),
   },
@@ -1201,9 +1391,16 @@ class Game {
     this.R = REGIONS.map((meta, i) => ({ i, meta, c: geo.regions[idx[meta.id]].c, st: state.regions[i] }));
     this.P = state.pathogen;
     this.D = DIFFICULTY[state.difficulty];
+    // Saves from before rollouts and teams simply have none in progress.
+    state.rolling = state.rolling || {};
+    state.teams = state.teams || [];
+    state.teamId = state.teamId || 1;
+    for (const st of state.regions) st.h = st.h || [];
+    this.hq = this.R.find(r => r.meta.id === HQ);
     this.buildTravel();
     this.recomputeMods();
     this.events = [];
+    this.syncTeams();
   }
 
   static create(geo, { pathogen = 'virus', difficulty = 'regular', origin = null, seed = Date.now() % 2147483647, startMonth = null, noPlayer = false } = {}) {
@@ -1220,12 +1417,12 @@ class Game {
       S: m.pop, E: 0, I: 0, R: 0, V: 0, D: 0,
       inf: 0, cumInf: 0, repNew: 0, repCum: 0, repDeaths: 0, repActive: 0, repDeathsNew: 0, deathsNew: 0, infNew: 0,
       detected: false, detDay: -1, suspect: false, trust: m.trust, fatigue: 0, econ: 1, staff: 1, overload: 0,
-      m: {}, rogue: false, vaxCov: 0,
+      m: {}, rogue: false, vaxCov: 0, h: [],
     }));
     const st = {
       v: SAVE_VERSION, rng: s.rng, day: 0, pathogen: P, difficulty, seed,
       startDoy: startMonth == null ? Math.floor(rngNext(s) * 365) : startMonth * 30.4,
-      regions, funding: D.funding, authority: D.authority, upgrades: [], spent: 0,
+      regions, funding: D.funding, authority: D.authority, upgrades: [], spent: 0, rolling: {}, teams: [], teamId: 1,
       ep: 0, traits: {}, variants: [], research: 0,
       vaccine: { approved: false, day: -1, made: 0, given: 0, ramp: 0, matched: 0 },
       bonus: { prod: 0, equity: 0 },
@@ -1323,17 +1520,56 @@ class Game {
       research: 0, mrna: 0, trials: 0, review: 0, prod: 0, equity: 0, coldChain: 0, boosters: 0, panVariant: 0, trustPoor: 0,
       hesitancy: 0, trustDecay: 0, trustTarget: 0, misinfo: 0, compliancePoor: 0, compliance: 0, fatigueRelief: 0,
       econRelief: 0, lockEcon: 0, econTrust: 0, auth: 0, income: 0, fatigueRecovery: 0, vectorBeta: 0,
+      traceBoost: 0, teamDetect: 0, deployFast: 0, fieldFast: 0, veBonus: 0, vePenalty: 0, rollFast: 0,
+      epiTeams: 0, medTeams: 0, vaxTeams: 0, comTeams: 0,
     };
     const mult = new Set(['detectThr']);
+    // A programme's graded effects build up while it rolls out. Switches, new teams
+    // and whatever it unlocks arrive whole, on the day it is finished.
+    const whole = new Set(['sequenced', 'wastewater', 'modelling', 'oneHealth', 'ventilation', 'staffProtect', 'mrna',
+      'boosters', 'panVariant', 'fieldFast', 'epiTeams', 'medTeams', 'vaxTeams', 'comTeams']);
+    this.unlocked = new Set();
     for (const id of this.s.upgrades) {
+      const p = this.upgradeProg(id);
+      if (p >= 1) this.unlocked.add(id);
       const fx = UPGRADE[id].fx;
-      for (const k in fx) { if (mult.has(k)) M[k] *= fx[k]; else M[k] += fx[k]; }
+      for (const k in fx) {
+        if (whole.has(k)) { if (p >= 1) M[k] += fx[k]; }
+        else if (mult.has(k)) M[k] *= 1 - (1 - fx[k]) * p;
+        else M[k] += fx[k] * p;
+      }
     }
     M.misinfo = Math.min(.85, M.misinfo);
+    M.deployFast = Math.min(.6, M.deployFast);
+    M.rollFast = Math.min(.6, M.rollFast);
     this.M = M;
-    this.unlocked = new Set(this.s.upgrades);
     if (this.s.vaccine.approved) this.unlocked.add('vaccine');
   }
+  // 0..1: how far a funded programme has rolled out. 1 once it is in force.
+  upgradeProg(id) {
+    const ro = this.s.rolling[id];
+    if (!ro) return this.s.upgrades.includes(id) ? 1 : 0;
+    return clamp((this.s.day - ro.start) / ro.days, 0, 1);
+  }
+  upgradeReady(id) { return this.s.upgrades.includes(id) && !this.s.rolling[id]; }
+  upgradeDays(id) {
+    const u = UPGRADE[id];
+    return Math.max(2, Math.round((u.days || 3 + u.cost * .7) * (1 - this.M.rollFast) * (this.D.roll || 1)));
+  }
+  rollingLeft(id) { const ro = this.s.rolling[id]; return ro ? Math.max(0, ro.start + ro.days - this.s.day) : 0; }
+  // Measures take days to come into force; their effect builds up linearly.
+  measureDays(id) {
+    const m = MEASURE[id];
+    let d = m.days * (1 - this.M.deployFast) * (this.D.deploy || 1);
+    if (id === 'hospital' && this.M.fieldFast) d /= 3;
+    return Math.max(1, d);
+  }
+  mr(r, id) {
+    const t = r.st.m[id];
+    if (t == null) return 0;
+    return clamp((this.s.day - t) / this.measureDays(id), 0, 1);
+  }
+  measureLeft(r, id) { const t = r.st.m[id]; return t == null ? 0 : Math.max(0, Math.ceil(t + this.measureDays(id) - this.s.day)); }
 
   // -------------------------------------------------------------- queries
   get worldPop() { return this._wp || (this._wp = REGIONS.reduce((a, r) => a + r.pop, 0)); }
@@ -1365,7 +1601,7 @@ class Game {
     const esc = this.traitLevel('escape');
     const unmatched = this.M.boosters ? Math.max(0, esc - this.s.vaccine.matched) : esc;
     const per = this.M.panVariant ? .08 : .22;
-    return clamp(.9 * (1 - per * unmatched), .2, .95);
+    return clamp(.9 * (1 - per * unmatched) + this.M.veBonus - this.M.vePenalty, .2, .97);
   }
   upgradeCost(id) {
     const u = UPGRADE[id];
@@ -1380,6 +1616,8 @@ class Game {
     if (u.modes && !u.modes.includes(this.P.mode)) return false;
     return (u.req || []).every(r => r.split('|').some(x => this.unlocked.has(x)));
   }
+  // Funded but still rolling out counts as on the way, for the tree's links.
+  upgradeOwned(id) { return this.s.upgrades.includes(id); }
   upgradeVisible(id) { const u = UPGRADE[id]; return !u.modes || u.modes.includes(this.P.mode); }
   measureVisible(id) { const m = MEASURE[id]; return !m.modes || m.modes.includes(this.P.mode); }
   measureUnlocked(id) { return this.unlocked.has(MEASURE[id].unlock); }
@@ -1408,7 +1646,8 @@ class Game {
   reportFrac(r) {
     const w = r.meta.wealth, M = this.M;
     let base = .03 + .24 * Math.pow(w, 1.2) + M.detect * (.5 + .5 * w) + (w < .4 ? M.detectPoor : 0) + this.effectSum('detect', r.i);
-    const testing = r.st.m.testing != null ? .25 + M.testing : 0;
+    base += this.teamStr(r, 'epi') * (.08 + .14 * (1 - w)) * (1 + M.teamDetect);
+    const testing = (.25 + M.testing) * this.mr(r, 'testing');
     base = clamp(base + testing, .01, .92);
     const a = this.asym;
     return clamp(base * (1 - a) + a * base * (testing ? .5 : .08), 0, .95);
@@ -1417,12 +1656,13 @@ class Game {
     const st = r.st, M = this.M;
     let c = (.45 + .55 * st.trust) * (.65 + .35 * r.meta.gov) * (1 - .4 * st.fatigue);
     c += M.compliance + (r.meta.wealth < .4 ? M.compliancePoor : 0) + this.effectSum('compliance', r.i);
+    c += .05 * this.mr(r, 'sickpay') + .07 * this.teamStr(r, 'com');
     return clamp(c, .05, .97);
   }
   capacity(r) {
     const base = r.meta.pop * (.45 + 4.2 * Math.pow(r.meta.wealth, 1.25)) / 1000;
-    const field = r.st.m.hospital != null ? .5 : 0;
-    return base * (1 + this.M.cap + field) * r.st.staff * Math.max(.2, 1 + this.effectSum('capacity', r.i));
+    const field = (this.M.fieldFast ? .625 : .5) * this.mr(r, 'hospital');
+    return base * (1 + this.M.cap + field) * (1 + .3 * this.teamStr(r, 'med')) * r.st.staff * Math.max(.2, 1 + this.effectSum('capacity', r.i));
   }
   season(r) {
     const s = Math.cos(2 * Math.PI * (this.doy() - 15) / 365); // +1 mid-January
@@ -1455,12 +1695,15 @@ class Game {
     for (const id in st.m) {
       const m = MEASURE[id];
       if (!m.eff) continue;
-      let e = m.eff;
+      const ramp = this.mr(r, id);
+      if (!ramp) continue;
+      let e = m.eff * ramp;
       if (id === 'masks') e *= P.maskEff * aero * vent;
       if (id === 'distancing') e *= aero * vent * (P.mode === 'vector' ? .4 : 1);
       if (id === 'schools' && P.mode === 'vector') e *= .3;
       if (id === 'lockdown' && P.mode === 'vector') e *= .45;
       if (id === 'vector' && P.mode !== 'vector') e = 0;
+      if (id === 'burials' && P.mode !== 'contact') e = 0;
       // Even a reluctant public half-follows the rules.
       const got = e * (.35 + .65 * c);
       red[id] = got;
@@ -1468,12 +1711,22 @@ class Game {
     }
     // Confirmed cases isolate; tracing finds their contacts while numbers are small.
     const rf = this.reportFrac(r);
-    const iso = clamp(rf * (.3 + M.iso) * (.4 + .6 * c) * (P.mode === 'vector' ? .3 : 1) * (P.mode === 'contact' ? 1.5 : 1), 0, .8);
+    const epi = this.teamStr(r, 'epi');
+    const iso = clamp(rf * (.3 + M.iso) * (.4 + .6 * c) * (P.mode === 'vector' ? .3 : 1) * (P.mode === 'contact' ? 1.5 + .3 * epi : 1)
+      * (1 + .6 * this.mr(r, 'sickpay')), 0, .85);
     keep *= 1 - iso;
-    if (st.m.tracing != null) {
+    const trace = this.mr(r, 'tracing');
+    if (trace) {
       const per100k = st.repNew / (r.meta.pop / 1e5);
-      const t = .25 * P.traceEff * c / (1 + per100k / 6);
-      red.tracing = t; keep *= 1 - clamp(t, 0, .6);
+      const t = trace * .25 * P.traceEff * c * (1 + M.traceBoost) * (1 + .5 * epi) / (1 + per100k / 6);
+      red.tracing = clamp(t, 0, .6); keep *= 1 - red.tracing;
+    }
+    // A cordon crushes a handful of clusters and is helpless against a national epidemic.
+    const cord = this.mr(r, 'cordon');
+    if (cord) {
+      const per100k = st.repActive / (r.meta.pop / 1e5);
+      const t = cord * .5 * (.35 + .65 * c) / (1 + per100k / 3);
+      red.cordon = t; keep *= 1 - t;
     }
     return { beta: beta * keep, raw: beta, keep, c, rf, iso, red };
   }
@@ -1485,6 +1738,7 @@ class Game {
     const drug = clamp(M.ifrDrug * power * (1 - resist), 0, .75);
     let f = P.ifr * care * (1 - M.ifr) * (1 - (r.meta.wealth < .4 ? M.ifrPoor : 0)) * (1 - drug);
     f *= 1 + .35 * this.trait('severe');
+    f *= (1 - .25 * this.mr(r, 'shield')) * (1 - .15 * this.teamStr(r, 'med'));
     f *= 1 + 1.6 * st.overload;
     return clamp(f, 0, .9);
   }
@@ -1505,9 +1759,11 @@ class Game {
     const c = this.upgradeCost(id);
     if (this.s.funding < c) return false;
     this.s.funding -= c; this.s.spent += c;
+    const days = this.upgradeDays(id);
     this.s.upgrades.push(id);
+    this.s.rolling[id] = { start: this.s.day, days };
     this.recomputeMods();
-    this.news(`${this.upgradeName(id)} is now part of the global response.`, 'good');
+    this.news(`${this.upgradeName(id)} is rolling out. In force in ${days} days.`, 'info');
     return true;
   }
   authorityCap() { return 30 + this.M.authCap; }
@@ -1523,6 +1779,62 @@ class Game {
     return true;
   }
   lift(i, id) { delete this.R[i].st.m[id]; }
+
+  // ---------------------------------------------------------------- teams
+  teamCount(type) { const T = TEAM[type]; return T.base + (this.M[T.count] || 0); }
+  teamUnlocked(type) { return this.teamCount(type) > 0; }
+  // New teams wait at headquarters.
+  syncTeams() {
+    const s = this.s;
+    for (const T of TEAMS) {
+      const have = s.teams.filter(t => t.type === T.id).length;
+      for (let k = have; k < this.teamCount(T.id); k++) {
+        s.teams.push({ k: s.teamId++, type: T.id, r: -1, from: this.hq.c.slice(), dep: s.day, arr: s.day });
+        if (s.day > 0 && !s.noPlayer) this.news(`A new ${T.name.toLowerCase()} is ready at headquarters.`, 'good');
+      }
+    }
+  }
+  // Where a team is now, in map coordinates, at a fractional day.
+  teamPos(t, day = this.s.day) {
+    const to = t.r >= 0 ? this.R[t.r].c : this.hq.c;
+    if (day >= t.arr || t.arr <= t.dep) return to;
+    const u = clamp((day - t.dep) / (t.arr - t.dep), 0, 1);
+    return [lerp(t.from[0], to[0], u), lerp(t.from[1], to[1], u)];
+  }
+  teamTravelDays(t, i) {
+    const [x, y] = this.teamPos(t), c = this.R[i].c;
+    return Math.max(1, Math.ceil(1 + Math.hypot(c[0] - x, c[1] - y) / 260));
+  }
+  // 0..1 per team once it has arrived and set up; two teams of a kind stack to 1.5.
+  teamStr(r, type) {
+    let v = 0;
+    for (const t of this.s.teams) if (t.type === type && t.r === r.i) v += clamp((this.s.day - t.arr) / TEAM_SETUP, 0, 1);
+    return Math.min(1.5, v);
+  }
+  teamsIn(i) { return this.s.teams.filter(t => t.r === i); }
+  // The team the region card offers: one idle at headquarters, else the nearest working elsewhere.
+  teamFor(type, i) {
+    const ts = this.s.teams.filter(t => t.type === type && t.r !== i);
+    if (!ts.length) return null;
+    const idle = ts.filter(t => t.r < 0);
+    const pool = idle.length ? idle : ts;
+    return pool.reduce((a, b) => this.teamTravelDays(a, i) <= this.teamTravelDays(b, i) ? a : b);
+  }
+  sendTeam(k, i) {
+    const s = this.s, t = s.teams.find(x => x.k === k);
+    if (s.over || !t || t.r === i || s.funding < TEAM_COST) return false;
+    const days = this.teamTravelDays(t, i);
+    t.from = this.teamPos(t).slice(); t.dep = s.day; t.arr = s.day + days; t.r = i;
+    s.funding -= TEAM_COST; s.spent += TEAM_COST;
+    return true;
+  }
+  recallTeam(k) {
+    const s = this.s, t = s.teams.find(x => x.k === k);
+    if (!t || t.r < 0) return false;
+    const c = this.hq.c, [x, y] = this.teamPos(t);
+    t.from = [x, y]; t.dep = s.day; t.arr = s.day + Math.max(1, Math.ceil(1 + Math.hypot(c[0] - x, c[1] - y) / 260)); t.r = -1;
+    return true;
+  }
   collectBubble(id) {
     const k = this.s.bubbles.findIndex(b => b.id === id);
     if (k < 0) return null;
@@ -1582,6 +1894,32 @@ class Game {
     s.effects = s.effects.filter(e => e.until > s.day);
     for (const tr of Object.values(s.traits)) tr.ramp = Math.min(1, tr.ramp + 1 / 25);
 
+    // 0. Programmes rolling out build up their effect every day, and finish.
+    const rolling = Object.keys(s.rolling);
+    if (rolling.length) {
+      for (const id of rolling) {
+        const ro = s.rolling[id];
+        if (s.day < ro.start + ro.days) continue;
+        delete s.rolling[id];
+        if (s.noPlayer) continue;
+        const gain = this.upgradeImpact(id);
+        this.news(`${this.upgradeName(id)} is in force.`, 'good');
+        this.events.push({ t: 'rolled', id, gain });
+      }
+      this.recomputeMods();
+      this.syncTeams();
+    }
+    // Measures that finish deploying today, and teams that arrive.
+    if (!s.noPlayer) {
+      for (const r of this.R) for (const id in r.st.m) {
+        if (s.day - r.st.m[id] === Math.ceil(this.measureDays(id))) this.events.push({ t: 'deployed', r: r.i, id });
+      }
+      for (const t of s.teams) if (t.arr === s.day && t.r >= 0) {
+        this.events.push({ t: 'team', r: t.r, type: t.type });
+        this.news(`The ${TEAM[t.type].name.toLowerCase()} reaches ${this.R[t.r].meta.the} and sets up.`, 'info', t.r);
+      }
+    }
+
     // 1. Arrivals scheduled by yesterday's travel.
     s.flights = s.flights.filter(f => {
       if (f.arrive > s.day) return true;
@@ -1632,6 +1970,7 @@ class Game {
       st.repDeathsNew = st.detected ? deaths * dr : 0;
       st.repCum += st.repNew; st.repDeaths += st.repDeathsNew;
       st.repActive = st.repActive * (1 - gamma) + st.repNew;
+      st.h.push(Math.round(st.repNew)); if (st.h.length > 120) st.h.shift();
       if (!st.detected) {
         st.shadowRep = (st.shadowRep || 0) + onset * rf;
         const thr = this.D.detect * M.detectThr;
@@ -1645,7 +1984,7 @@ class Game {
         }
       }
       // Healthcare staff burn out under sustained overload.
-      if (st.overload > .15 && !M.staffProtect) st.staff = Math.max(.55, st.staff - .004 * st.overload);
+      if (st.overload > .15 && !M.staffProtect && this.teamStr(r, 'med') < .5) st.staff = Math.max(.55, st.staff - .004 * st.overload);
       else st.staff = Math.min(1, st.staff + .003);
       // Headlines for the turning points a player should notice.
       if (st.detected && !s.noPlayer) {
@@ -1667,9 +2006,8 @@ class Game {
     this.vaccinate();
 
     // 6. Income.
-    const T = this.globalTrust(), E = this.globalEconomy();
-    s.funding += .33 * Math.pow(E, 1.2) * (.55 + .45 * T) * this.D.income * (1 + M.income);
-    s.authority = Math.min(this.authorityCap(), s.authority + .3 * (.32 + T) * this.D.auth * (1 + M.auth));
+    s.funding += this.incomeRate();
+    s.authority = Math.min(this.authorityCap(), s.authority + this.authRate());
 
     // 7. The adversary.
     this.evolve();
@@ -1682,6 +2020,9 @@ class Game {
     this.checkEnd();
   }
 
+  incomeRate() { return .33 * Math.pow(this.globalEconomy(), 1.2) * (.55 + .45 * this.globalTrust()) * this.D.income * (1 + this.M.income); }
+  authRate() { return .3 * (.32 + this.globalTrust()) * this.D.auth * (1 + this.M.auth); }
+
   travel() {
     const s = this.s, P = this.P, M = this.M, n = this.n;
     const asym = this.asym;
@@ -1692,13 +2033,13 @@ class Game {
       const A = this.R[a], sa = A.st;
       if (sa.I + sa.E < .5) continue;
       const prev = (sa.I * sick + sa.E * .5) / A.meta.pop * incub;
-      const openA = sa.m.flights != null ? .05 : 1;
+      const openA = 1 - .95 * this.mr(A, 'flights');
       for (let b = 0; b < n; b++) {
         if (a === b) continue;
         const w = this.air[a * n + b];
         if (!w) continue;
         const B = this.R[b];
-        const openB = B.st.m.flights != null ? .05 : 1;
+        const openB = (1 - .95 * this.mr(B, 'flights')) * (1 - .7 * this.mr(B, 'travelq'));
         const lam = 55 * w * prev * openA * openB * screen * P.air;
         if (lam < 1e-7) continue;
         // Into an established epidemic, imports are just a flow; only first arrivals are dramatic.
@@ -1713,7 +2054,7 @@ class Game {
         const w = this.sea[a * n + b];
         if (!w) continue;
         const B = this.R[b];
-        const open = (sa.m.ports != null ? .08 : 1) * (B.st.m.ports != null ? .08 : 1);
+        const open = (1 - .92 * this.mr(A, 'ports')) * (1 - .92 * this.mr(B, 'ports')) * (1 - .7 * this.mr(B, 'travelq'));
         const lam = 6 * w * prev * open * P.sea;
         if (lam < 1e-7) continue;
         if (B.st.E + B.st.I > 50) { const k = Math.min(lam, B.st.S); B.st.S -= k; B.st.E += k; continue; }
@@ -1729,7 +2070,8 @@ class Game {
         const X = this.R[x], Y = this.R[y];
         if (X.st.I + X.st.E < .5) continue;
         const prev = (X.st.I * sick + X.st.E * .5) / X.meta.pop;
-        const open = (X.st.m.borders != null ? .12 : 1) * (Y.st.m.borders != null ? .12 : 1);
+        const open = (1 - .88 * this.mr(X, 'borders')) * (1 - .88 * this.mr(Y, 'borders'))
+          * (1 - .6 * this.mr(X, 'cordon')) * (1 - .6 * this.mr(Y, 'cordon'));
         const lam = 3.2 * prev * Math.sqrt(X.meta.pop / 1e6 * Y.meta.pop / 1e6) * open * P.land;
         if (lam < 1e-7) continue;
         if (Y.st.E + Y.st.I > 50) { const k = Math.min(lam, Y.st.S); Y.st.S -= k; Y.st.E += k; continue; }
@@ -1744,9 +2086,13 @@ class Game {
     for (const r of this.R) {
       const st = r.st;
       let harsh = 0, econCost = 0;
-      for (const id in st.m) { const m = MEASURE[id]; harsh += this.measureHarsh(m); econCost += this.measureEcon(m, r); }
+      for (const id in st.m) {
+        const m = MEASURE[id], k = .4 + .6 * this.mr(r, id);
+        harsh += this.measureHarsh(m) * k; econCost += this.measureEcon(m, r) * k;
+      }
+      const com = this.teamStr(r, 'com');
       // Fatigue: patience runs out under restrictions and returns slowly.
-      st.fatigue = clamp(st.fatigue + .0028 * harsh * (1 - M.fatigueRelief)
+      st.fatigue = clamp(st.fatigue + .0028 * harsh * (1 - M.fatigueRelief) * (1 - .3 * Math.min(1, com))
         - .006 * (1 + M.fatigueRecovery) * Math.max(0, 1 - harsh * 1.5), 0, 1);
       // Perceived threat: what the public sees, not what is true.
       const threat = clamp(Math.log10(1 + this.activePerM(r)) / 3.4, 0, 1);
@@ -1758,7 +2104,7 @@ class Game {
       dT -= .0025 * Math.max(0, .82 - st.econ) * (1 - M.econTrust);
       dT *= D.trustDecay * (1 - M.trustDecay);
       const target = clamp(r.meta.trust + M.trustTarget + (r.meta.wealth < .4 ? M.trustPoor : 0)
-        + (s.vaccine.approved ? .04 : 0), 0, 1);
+        + (s.vaccine.approved ? .04 : 0) + .06 * com, 0, 1);
       dT += (target - st.trust) * .006;
       st.trust = clamp(st.trust + dT, 0, 1);
       // Economy: drifts towards what restrictions and sickness allow.
@@ -1787,9 +2133,9 @@ class Game {
   gdp(r) { return r.meta.pop * Math.pow(r.meta.wealth, 1.6); }
   globalEconomy() { let a = 0, w = 0; for (const r of this.R) { const g = this.gdp(r); a += r.st.econ * g; w += g; } return a / w; }
 
-  research() {
+  researchRate() {
     const s = this.s, M = this.M;
-    if (s.vaccine.approved) return;
+    if (s.vaccine.approved) return 0;
     let rate = .118 * this.D.research * this.P.vax * (1 + M.research);
     rate *= M.sequenced ? 1 : .25;
     // Research happens in rich labs, and stalls when their economies do.
@@ -1799,6 +2145,12 @@ class Game {
     const p = s.research;
     if (p >= 35 && p < 85) rate *= 1 + M.trials;
     if (p >= 85) rate *= 1 + M.review;
+    return rate;
+  }
+  research() {
+    const s = this.s;
+    if (s.vaccine.approved) return;
+    const rate = this.researchRate(), p = s.research;
     const before = this.phase();
     s.research = Math.min(100, p + rate);
     const after = this.phase();
@@ -1822,26 +2174,26 @@ class Game {
       if (v.boosterProg >= 1) { v.boosterProg = 0; v.matched++; this.news('An updated booster matching the latest variant is approved.', 'good'); }
     }
     v.ramp = Math.min(1, v.ramp + 1 / 70);
-    let supply = this.worldPop * .0009 * (1 + M.prod + s.bonus.prod) * (.12 + .88 * v.ramp) * this.effectMul('prod', -1);
+    let supply = this.doseRate();
     v.made += supply;
     const eq = clamp(.15 + M.equity + s.bonus.equity + this.effectSum('equity', -1), 0, 1) / this.D.hoard;
     const hes = this.hesitancy();
     // Who still wants a dose, and how fast each region can give them.
     const want = this.R.map(r => {
       const st = r.st, N = r.meta.pop;
-      const willing = .95 * clamp(.35 + .85 * st.trust - hes, .1, 1);
+      const willing = .95 * clamp(.35 + .85 * st.trust - hes + .08 * this.teamStr(r, 'vax'), .1, 1);
       const left = Math.max(0, willing * N - st.V);
       const poolS = st.S + st.R;
       return Math.min(left, poolS);
     });
     const rateCap = this.R.map(r => r.meta.pop * (.0015 + .0075 * r.meta.wealth) * (1 + (r.meta.wealth < .5 ? M.coldChain : 0))
-      * (r.st.m.vaxdrive != null ? 1.6 : 1));
+      * (1 + .6 * this.mr(r, 'vaxdrive')) * (1 + 1.2 * this.teamStr(r, 'vax')));
     for (let pass = 0; pass < 3 && supply > 1; pass++) {
       const wts = this.R.map((r, i) => {
         if (want[i] < 1 || rateCap[i] < 1) return 0;
         const need = 1 + clamp(Math.log10(1 + this.truePerM(r)) / 3, 0, 1.5);
         const market = Math.pow(r.meta.wealth, 3) * 3;
-        return want[i] * ((1 - eq) * market + eq * need) * (r.st.m.vaxdrive != null ? 2.5 : 1);
+        return want[i] * ((1 - eq) * market + eq * need) * (1 + 1.5 * this.mr(r, 'vaxdrive'));
       });
       const tot = wts.reduce((a, b) => a + b, 0);
       if (tot <= 0) break;
@@ -1859,6 +2211,43 @@ class Game {
       if (used < 1) break;
     }
     for (const r of this.R) r.st.vaxCov = r.st.V / r.meta.pop;
+  }
+
+  // Doses a day; before approval, what the factories will make once production has ramped up.
+  doseRate() {
+    const s = this.s, v = s.vaccine;
+    const ramp = v.approved ? v.ramp : 1;
+    return this.worldPop * .0009 * (1 + this.M.prod + s.bonus.prod) * (.12 + .88 * ramp) * this.effectMul('prod', -1);
+  }
+
+  // What the player can feel: the world's response in a handful of numbers.
+  metrics() {
+    let w = 0, found = 0, keep = 0, comp = 0, ifr = 0, beds = 0;
+    for (const r of this.R) {
+      const N = r.meta.pop, t = this.transmission(r);
+      w += N; found += t.rf * N; keep += t.keep * N; comp += t.c * N; ifr += this.ifr(r) * N; beds += this.capacity(r);
+    }
+    return {
+      found: found / w, spread: 1 - keep / w, comp: comp / w, ifr: ifr / w, beds, research: this.researchRate(), doses: this.doseRate(),
+      ve: this.vaccineEfficacy(), refusal: this.hesitancy(), income: this.incomeRate() * 30, auth: this.authRate() * 30, authCap: this.authorityCap(),
+      deploy: 1 - this.M.deployFast, roll: 1 - this.M.rollFast,
+    };
+  }
+  // The same numbers with an upgrade fully in force, against without it.
+  upgradeImpact(id) {
+    const s = this.s, ups = s.upgrades, roll = s.rolling;
+    const rest = ups.filter(x => x !== id), restRoll = { ...roll }; delete restRoll[id];
+    s.rolling = restRoll;
+    s.upgrades = rest; this.recomputeMods(); const a = this.metrics();
+    s.upgrades = [...rest, id]; this.recomputeMods(); const b = this.metrics();
+    s.upgrades = ups; s.rolling = roll; this.recomputeMods();
+    const out = [];
+    for (const [k, label, fmt, good] of IMPACTS) {
+      const x = a[k], y = b[k];
+      if (Math.abs(y - x) <= Math.max(Math.abs(x), 1e-9) * .004) continue;
+      out.push({ k, label, fmt, from: x, to: y, better: (y > x) === (good > 0) });
+    }
+    return out;
   }
 
   // The adversary: earns evolution points from infections, spends them to counter you.
@@ -1887,10 +2276,11 @@ class Game {
       if (r.st.cumInf > N * .01) coverage += N;
       if (r.st.cumInf < 1) { if (r.meta.heat < .4) coldFree += N; if (r.meta.heat > .6) hotFree += N; }
       det += this.reportFrac(r) * N;
-      let keep = 1; for (const id in r.st.m) { const m = MEASURE[id]; if (m.eff) keep *= 1 - m.eff; }
-      if (r.st.m.masks != null || r.st.m.distancing != null) maskShare += N;
+      let keep = 1; for (const id in r.st.m) { const m = MEASURE[id]; if (m.eff) keep *= 1 - m.eff * this.mr(r, id); }
+      keep *= 1 - .5 * this.mr(r, 'cordon');
+      maskShare += Math.max(this.mr(r, 'masks'), this.mr(r, 'distancing')) * N;
       npi += (1 - keep) * N;
-      if (r.meta.air >= 2) { hubs++; if (r.st.m.flights != null) closed++; }
+      if (r.meta.air >= 2) { hubs++; closed += Math.max(this.mr(r, 'flights'), .7 * this.mr(r, 'travelq')); }
     }
     let vax = 0; for (const r of this.R) vax += r.st.V;
     const drug = clamp(this.M.ifrDrug * (this.P.drugPower || 1), 0, 1);
@@ -2093,6 +2483,7 @@ class Game {
 
 return {
   Game, REGIONS, DIFFICULTY, PATHOGENS, PATHOGEN, MEASURES, MEASURE, UPGRADES, UPGRADE, TABS, TRAITS, TRAIT, PHASES,
+  TEAMS, TEAM, TEAM_COST, TEAM_SETUP, IMPACTS,
   fmtN, clamp, SAVE_VERSION,
 };
 })();
@@ -2107,7 +2498,7 @@ if (typeof module !== 'undefined') module.exports = Containment;
 (() => {
 'use strict';
 const C = Containment;
-const { Game, REGIONS, PATHOGENS, PATHOGEN, DIFFICULTY, MEASURES, MEASURE, UPGRADES, UPGRADE, TABS, TRAITS, TRAIT, PHASES, fmtN, clamp } = C;
+const { Game, REGIONS, PATHOGENS, PATHOGEN, DIFFICULTY, MEASURES, MEASURE, UPGRADES, UPGRADE, TABS, TRAITS, TRAIT, PHASES, TEAMS, TEAM, TEAM_COST, TEAM_SETUP, fmtN, clamp } = C;
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const h = (tag, attrs = {}, ...kids) => {
@@ -2319,7 +2710,7 @@ function ramp(stops) {
 // The palette: the same tokens as the CSS. Four signals, one meaning each:
 // red the pathogen, blue the response, green stability, gold money.
 const PAL = {
-  red: '#d6322b', redDk: '#7c1717', redLt: '#f08c84', blue: '#3a9ad9', blueDk: '#1d5a85', green: '#6cb33e', gold: '#e3a83b',
+  red: '#d6322b', redDk: '#7c1717', redLt: '#f08c84', blue: '#3a9ad9', blueDk: '#1d5a85', blueLt: '#8cc6ee', green: '#6cb33e', gold: '#e3a83b',
   ink: '#eeeae0', ink3: '#7c847f', chrome: '#0b1014', c3: '#203039', line: '#24333d', bevel: '#43606f',
   sea: '#1b5270', seaDk: '#123a52', ice: '#d9dfdc',
 };
@@ -2381,9 +2772,14 @@ function insets() {
   const top = playing ? 54 : 0;
   return { top, bottom };
 }
+// Android's WebView can report a 0x0 window while the app starts or rotates. Nothing is
+// drawn until a real size arrives, and a fit asked for meanwhile waits for it.
+let pendingFit = null;
 function resize() {
   dpr = Math.min(2, window.devicePixelRatio || 1);
-  cw = window.innerWidth; ch = window.innerHeight;
+  cw = window.innerWidth || document.documentElement.clientWidth;
+  ch = window.innerHeight || document.documentElement.clientHeight;
+  if (!cw || !ch) return;
   canvas.width = base.width = Math.round(cw * dpr);
   canvas.height = base.height = Math.round(ch * dpr);
   const { top, bottom } = insets();
@@ -2392,8 +2788,11 @@ function resize() {
   view.max = Math.max(8, view.min * 20);
   clampView();
   baseDirty = true;
+  if (pendingFit) fitWorld(pendingFit.focus);
 }
 function fitWorld(focus) {
+  if (!cw || !ch) { pendingFit = { focus }; return; }
+  pendingFit = null;
   const { top, bottom } = insets();
   const ah = Math.max(120, ch - top - bottom);
   // Phones in portrait get a taller map they pan across, rather than a sliver.
@@ -2566,24 +2965,33 @@ function drawLabels(b) {
       b.lineWidth = 3; b.strokeStyle = 'rgba(14,16,12,.78)'; b.fillStyle = r.i === UI.sel ? '#ffffff' : 'rgba(244,241,232,.92)';
       b.strokeText(r.meta.name, x, y); b.fillText(r.meta.name, x, y);
     }
-    // Measure badges, so the state of the response reads at a glance.
+    // Measure badges, so the state of the response reads at a glance. A badge still
+    // deploying is dim, with a ring that fills as it comes into force.
     const badges = [];
-    const m = r.st.m;
-    if (m.lockdown != null) badges.push('lock');
-    if (m.flights != null) badges.push('plane');
-    if (m.borders != null) badges.push('border');
-    if (m.vaxdrive != null) badges.push('syringe');
-    if (r.st.rogue) badges.unshift('alert');
+    for (const m of MEASURES) if (r.st.m[m.id] != null) badges.push({ k: m.icon, ramp: g.mr(r, m.id) });
+    if (r.st.rogue) badges.unshift({ k: 'alert', ramp: 1, alert: true });
+    const sel = r.i === UI.sel, maxB = sel || s > 1.6 ? 8 : 4;
+    const extra = badges.length > maxB ? badges.length - maxB + 1 : 0;
+    if (extra) badges.length = maxB - 1;
     if (badges.length && (show || s > .9)) {
-      const sz = 15, gap = 3, w = badges.length * (sz + gap) - gap;
+      const sz = 15, gap = 3, w = (badges.length + (extra ? 1 : 0)) * (sz + gap) - gap;
       let bx = x - w / 2; const by = y + (show ? 10 : -sz / 2);
-      for (const k of badges) {
-        b.fillStyle = k === 'alert' ? PAL.red : 'rgba(11,16,20,.88)';
-        b.beginPath(); b.roundRect ? b.roundRect(bx, by, sz, sz, 4) : b.rect(bx, by, sz, sz); b.fill();
+      for (const bd of badges) {
+        const dep = bd.ramp < 1;
+        b.fillStyle = bd.alert ? PAL.red : dep ? 'rgba(11,16,20,.72)' : '#1d5a85';
+        b.beginPath(); b.roundRect ? b.roundRect(bx, by, sz, sz, 3) : b.rect(bx, by, sz, sz); b.fill();
         b.save(); b.translate(bx + 1.5, by + 1.5); b.scale(.5, .5);
-        b.strokeStyle = k === 'alert' ? '#fff' : PAL.ink; b.lineWidth = 2.4; b.lineCap = 'round'; b.lineJoin = 'round';
-        b.stroke(ICON_PATHS[k]); b.restore();
+        b.strokeStyle = bd.alert ? '#fff' : dep ? PAL.ink3 : '#fff'; b.lineWidth = 2.4; b.lineCap = 'round'; b.lineJoin = 'round';
+        b.stroke(ICON_PATHS[bd.k]); b.restore();
+        if (dep) {
+          b.strokeStyle = PAL.blueLt; b.lineWidth = 2;
+          b.beginPath(); b.arc(bx + sz / 2, by + sz / 2, sz / 2 + 2.5, -Math.PI / 2, -Math.PI / 2 + Math.max(.04, bd.ramp) * Math.PI * 2); b.stroke();
+        }
         bx += sz + gap;
+      }
+      if (extra) {
+        b.fillStyle = 'rgba(11,16,20,.88)'; b.beginPath(); b.roundRect ? b.roundRect(bx, by, sz + 4, sz, 3) : b.rect(bx, by, sz + 4, sz); b.fill();
+        b.fillStyle = PAL.ink; b.font = `700 10px ${COND}`; b.fillText('+' + extra, bx + sz / 2 + 2, by + sz / 2 + .5);
       }
     }
   }
@@ -2603,6 +3011,7 @@ function bubblePos(b) {
 }
 
 function drawFrame(now) {
+  if (!base.width || !base.height) return;
   if (baseDirty) drawBase();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.drawImage(base, 0, 0);
@@ -2668,13 +3077,51 @@ function drawFrame(now) {
     ctx.stroke(ICON_PATHS[B.icon]); ctx.restore();
     ctx.globalAlpha = 1;
   }
-  // Collection pops.
-  UI.pops = UI.pops.filter(p => t - p.t0 < 1.1);
+  // Field teams: tokens that travel across the map, then sit by the region they work in.
+  const fday = g.s.day + (UI.phase === 'play' ? clamp(UI.acc, 0, .999) : 0);
+  const slot = {};
+  for (const tm of g.s.teams) {
+    if (tm.r < 0 && fday >= tm.arr) continue; // idle at headquarters
+    const T = TEAM[tm.type];
+    const moving = fday < tm.arr;
+    let [wx, wy] = g.teamPos(tm, fday);
+    let [x, y] = toScreen(wx, wy);
+    if (!moving) { const k = slot[tm.r] = (slot[tm.r] || 0) + 1; x += (k - 1) * 22 - 11 * (g.teamsIn(tm.r).length - 1); y -= 24; }
+    else {
+      // A dotted trail ahead to where it is going.
+      const to = tm.r >= 0 ? g.R[tm.r].c : g.hq.c, [tx, ty] = toScreen(to[0], to[1]);
+      ctx.strokeStyle = 'rgba(140,198,238,.55)'; ctx.lineWidth = 1.5; ctx.setLineDash([3, 4]);
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(tx, ty); ctx.stroke(); ctx.setLineDash([]);
+    }
+    const setup = moving ? 0 : clamp((fday - tm.arr) / TEAM_SETUP, 0, 1);
+    const sz = 9.5;
+    ctx.save(); ctx.translate(x, y);
+    ctx.fillStyle = moving || setup < 1 ? '#173246' : PAL.blue;
+    ctx.strokeStyle = PAL.blueLt; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(0, -sz); ctx.lineTo(sz, 0); ctx.lineTo(0, sz); ctx.lineTo(-sz, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    if (!moving && setup < 1) {
+      ctx.strokeStyle = PAL.blueLt; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(0, 0, sz + 4, -Math.PI / 2, -Math.PI / 2 + setup * Math.PI * 2); ctx.stroke();
+    }
+    ctx.scale(.46, .46); ctx.translate(-12, -12);
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.stroke(ICON_PATHS[T.icon]);
+    ctx.restore();
+  }
+  // Collection pops, and measures coming into force.
+  UI.pops = UI.pops.filter(p => t - p.t0 < (p.small ? 2.2 : 1.1));
   for (const p of UI.pops) {
-    const u = (t - p.t0) / 1.1;
-    ctx.globalAlpha = 1 - u; ctx.fillStyle = p.col; ctx.font = `600 18px ${COND}`;
-    ctx.textAlign = 'center'; ctx.fillText(p.text, p.x, p.y - 20 - u * 30);
-    ctx.strokeStyle = p.col; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y, 15 + u * 22, 0, 7); ctx.stroke();
+    const u = (t - p.t0) / (p.small ? 2.2 : 1.1);
+    ctx.globalAlpha = Math.min(1, (1 - u) * 2.5); ctx.fillStyle = p.col; ctx.font = `600 ${p.small ? 14 : 18}px ${COND}`;
+    ctx.textAlign = 'center';
+    if (p.small) {
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(11,16,20,.85)';
+      const label = p.text.toUpperCase();
+      ctx.strokeText(label, p.x, p.y + 18 - u * 16); ctx.fillText(label, p.x, p.y + 18 - u * 16);
+    } else {
+      ctx.fillText(p.text, p.x, p.y - 20 - u * 30);
+      ctx.strokeStyle = p.col; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y, 15 + u * 22, 0, 7); ctx.stroke();
+    }
     ctx.globalAlpha = 1;
   }
 }
@@ -2911,7 +3358,8 @@ let cardKey = '';
 function renderCard(force) {
   const g = UI.g; if (!g || UI.sel < 0) return;
   const r = g.R[UI.sel], st = r.st, M = g.M;
-  const key = UI.sel + ':' + g.s.day + ':' + Math.floor(g.s.authority) + ':' + Object.keys(st.m).join() + ':' + g.s.upgrades.length;
+  const key = UI.sel + ':' + g.s.day + ':' + Math.floor(g.s.authority) + ':' + Math.floor(g.s.funding) + ':' + Object.keys(st.m).join() + ':'
+    + g.s.upgrades.length + ':' + g.s.teams.map(t => t.r + '/' + t.arr).join();
   if (!force && key === cardKey) return;
   cardKey = key;
   const card = $('#card');
@@ -2944,6 +3392,7 @@ function renderCard(force) {
     kv.append(h('div', {}, h('small', {}, 'Reproduction number'), h('b', { style: re != null ? `color:${re > 1 ? 'var(--red)' : 'var(--green)'}` : '' }, re != null ? re.toFixed(2) : '—')));
   }
   body.append(kv);
+  if (st.detected && st.h.length > 2) body.append(trendChart(g, r));
   const sev = st.I * g.P.hosp, cap = g.capacity(r);
   const load = st.detected ? sev / cap : 0;
   body.append(meter('Hospital load', load, load > 1 ? 'var(--red)' : load > .7 ? 'var(--gold)' : 'var(--green)', st.detected ? pct(load) : '—'));
@@ -2966,10 +3415,14 @@ function renderCard(force) {
     if (m.eff) fx.push(on && tx.red[m.id] != null ? `−${Math.round(tx.red[m.id] * 100)}% spread` : `up to −${Math.round(m.eff * 100)}% spread`);
     if (m.id === 'testing') fx.push('finds more cases');
     if (m.id === 'tracing') fx.push(on && tx.red.tracing != null ? `−${Math.round(tx.red.tracing * 100)}% spread` : 'best when cases are few');
+    if (m.id === 'cordon') fx.push(on && tx.red.cordon != null ? `−${Math.round(tx.red.cordon * 100)}% spread` : 'best against a few clusters');
     if (m.id === 'borders') fx.push('−88% overland travel');
     if (m.id === 'ports') fx.push('−92% sea travel');
     if (m.id === 'flights') fx.push('−95% air travel');
-    if (m.id === 'hospital') fx.push('+50% beds');
+    if (m.id === 'travelq') fx.push('−70% imported cases');
+    if (m.id === 'hospital') fx.push(M.fieldFast ? '+62% beds' : '+50% beds');
+    if (m.id === 'shield') fx.push('−25% deaths');
+    if (m.id === 'sickpay') fx.push('more cases isolate');
     if (m.id === 'vaxdrive') fx.push('priority doses');
     const ec = g.measureEcon(m, r); if (ec >= .005) fx.push(`−${Math.round(ec * 100)}% economy`);
     const hs = g.measureHarsh(m); if (hs >= .3) fx.push(hs >= .8 ? 'exhausting' : 'tiring');
@@ -2977,21 +3430,56 @@ function renderCard(force) {
     if (!unlocked) {
       const u = m.unlock === 'vaccine' ? null : UPGRADE[m.unlock];
       right = h('span', { class: 'cost' }, u ? `Needs ${g.upgradeName(u.id)}` : 'Needs a vaccine');
-    } else if (on) right = h('span', { class: 'cost' }, `Since day ${st.m[m.id]} · Lift`);
-    else if (blocked) right = h('span', { class: 'cost' }, 'Refused');
+    } else if (on) {
+      const left = g.measureLeft(r, m.id);
+      right = h('span', { class: 'cost' }, left ? `Deploying · ${left}d` : 'In force · Lift');
+    } else if (blocked) right = h('span', { class: 'cost' }, 'Refused');
     else right = h('span', { class: 'cost' }, icon('flag'), String(m.cost));
     const poor = unlocked && !on && g.s.authority < m.cost;
+    const ramp = on ? g.mr(r, m.id) : 0;
+    const days = Math.ceil(g.measureDays(m.id));
+    if (unlocked && !on) fx.push(days === 1 ? 'in force tomorrow' : `${days} days to deploy`);
     const btn = h('button', {
-      class: 'm' + (on ? ' on' : '') + (!unlocked || blocked ? ' locked' : '') + (poor ? ' poor' : ''),
+      class: 'm' + (on ? ' on' : '') + (on && ramp < 1 ? ' dep' : '') + (!unlocked || blocked ? ' locked' : '') + (poor ? ' poor' : ''),
       title: m.desc,
       onclick: () => toggleMeasure(r.i, m.id),
-    }, h('span', { class: 'ic' }, icon(m.icon)), h('span', {}, h('div', { class: 'nm' }, m.name), h('div', { class: 'fx' }, fx.join(' · '))), right);
+    }, h('span', { class: 'ic' }, icon(m.icon)), h('span', {}, h('div', { class: 'nm' }, m.name), h('div', { class: 'fx' }, fx.join(' · ')),
+      on && ramp < 1 ? h('div', { class: 'prog' }, h('i', { style: `width:${pct(ramp)}` })) : null), right);
     ms.append(btn);
   }
   body.append(ms);
-  body.append(h('p', { class: 'note', style: 'margin-top:12px' },
-    st.detected ? 'Measures cost Authority once, then economy and patience every day they stay in force.'
+  body.append(h('p', { class: 'note', style: 'margin-top:10px' },
+    st.detected ? 'Measures cost Authority once and take days to deploy; their effect builds as they do. In force, they cost economy and patience every day.'
       : 'No confirmed cases yet. Restrictions here cost more trust, because people cannot see why.'));
+  const teamTypes = TEAMS.filter(T => g.teamUnlocked(T.id));
+  if (teamTypes.length) {
+    const here = g.teamsIn(r.i);
+    body.append(h('div', { class: 'sect' }, 'Field teams', h('span', {}, here.length ? `${here.length} here` : `${TEAM_COST} Funding to send one`)));
+    const ts = h('div', { class: 'ms' });
+    for (const T of teamTypes) {
+      const t = here.find(x => x.type === T.id);
+      let status, right, cls = 'm team', act;
+      if (t) {
+        const left = t.arr - g.s.day, setup = g.s.day - t.arr;
+        status = left > 0 ? `On the way · arrives in ${left} day${left > 1 ? 's' : ''}` : setup < TEAM_SETUP ? 'Setting up' : 'At work here';
+        right = h('span', { class: 'cost' }, 'Recall');
+        cls += ' on' + (left > 0 || setup < TEAM_SETUP ? ' dep' : '');
+        act = () => { g.recallTeam(t.k); Audio.fx('lift'); baseDirty = true; renderCard(true); };
+      } else {
+        const c = g.teamFor(T.id, r.i);
+        const d = c ? g.teamTravelDays(c, r.i) : 0;
+        status = !c ? 'None available' : c.r < 0 ? `Idle at headquarters · ${d} days away` : `Working in ${g.R[c.r].meta.the} · ${d} days away`;
+        right = h('span', { class: 'cost gold' }, icon('coin'), String(TEAM_COST));
+        if (!c || g.s.funding < TEAM_COST) cls += ' poor';
+        act = () => sendTeam(r.i, T.id);
+      }
+      const prog = t ? clamp((g.s.day - t.dep) / (t.arr - t.dep + TEAM_SETUP), 0, 1) : 0;
+      ts.append(h('button', { class: cls, title: T.desc, onclick: act },
+        h('span', { class: 'ic' }, icon(T.icon)), h('span', {}, h('div', { class: 'nm' }, T.name), h('div', { class: 'fx' }, status),
+          t && prog < 1 ? h('div', { class: 'prog' }, h('i', { style: `width:${pct(prog)}` })) : null), right));
+    }
+    body.append(ts);
+  }
   card.append(body);
   body.scrollTop = scroll;
 }
@@ -3005,8 +3493,53 @@ function toggleMeasure(i, id) {
   if (r.st.m[id] != null) { g.setMeasure(i, id, false); Audio.fx('lift'); }
   else if (r.st.rogue && g.measureHarsh(m) >= .3) { toast(`${r.meta.The} refuses harsh measures until trust recovers.`, 'bad'); Audio.fx('error'); return; }
   else if (g.s.authority < m.cost) { toast(`Not enough Authority. ${m.name} needs ${m.cost}.`, 'bad'); Audio.fx('error'); bump('#auth'); return; }
-  else { g.setMeasure(i, id, true); Audio.fx('impose'); }
+  else { g.setMeasure(i, id, true); Audio.fx('impose'); hint('deploy'); }
   baseDirty = true; hud(true); renderCard(true);
+}
+
+function sendTeam(i, type) {
+  const g = UI.g, T = TEAM[type];
+  if (UI.phase !== 'play') return;
+  const c = g.teamFor(type, i);
+  if (!c) { toast(`Every ${T.name.toLowerCase()} is already here.`); Audio.fx('error'); return; }
+  if (g.s.funding < TEAM_COST) { toast(`Not enough Funding. Sending a team costs ${TEAM_COST}.`, 'bad'); Audio.fx('error'); bump('#fund'); return; }
+  const from = c.r >= 0 ? g.R[c.r].meta.the : null;
+  g.sendTeam(c.k, i);
+  Audio.fx('impose');
+  toast(`${T.name} ${from ? `leaves ${from}` : 'leaves headquarters'} for ${g.R[i].meta.the}. Arrives in ${c.arr - g.s.day} days.`);
+  hint('teams');
+  baseDirty = true; hud(true); renderCard(true);
+}
+// The region's confirmed cases a day, with a mark where each measure in force began.
+function trendChart(g, r) {
+  const st = r.st, raw = st.h.slice(-90), sm = smooth(raw, 7);
+  const n = sm.length, last = sm[n - 1], prev = sm[Math.max(0, n - 8)];
+  const trend = last < .5 && prev < .5 ? ['No new cases', 'ok'] : last > prev * 1.12 ? ['Rising', 'hot'] : last < prev * .88 ? ['Falling', 'ok'] : ['Holding steady', 'warn'];
+  const cv = h('canvas', { class: 'trend' });
+  const wrap = h('div', { class: 'trendbox' },
+    h('div', { class: 'row' }, h('span', {}, `Confirmed cases a day · ${n} days`), h('span', { class: 'tg ' + trend[1] }, trend[0])), cv);
+  requestAnimationFrame(() => {
+    const W = cv.clientWidth, H = cv.clientHeight; if (!W) return;
+    const k = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = W * k; cv.height = H * k;
+    const x = cv.getContext('2d'); x.scale(k, k);
+    const max = Math.max(1, ...sm) * 1.1, bw = W / Math.max(n, 30);
+    const X = i => W - (n - i) * bw;
+    x.fillStyle = 'rgba(214,50,43,.55)';
+    for (let i = 0; i < n; i++) { const v = raw[i] / max * (H - 4); x.fillRect(X(i), H - Math.min(H, v), Math.max(1, bw - 1), Math.min(H, v)); }
+    x.strokeStyle = PAL.red; x.lineWidth = 1.6; x.beginPath();
+    for (let i = 0; i < n; i++) { const y = H - 2 - sm[i] / max * (H - 4); i ? x.lineTo(X(i) + bw / 2, y) : x.moveTo(X(i) + bw / 2, y); }
+    x.stroke();
+    // Measures in force: a blue tick where each began.
+    const day0 = g.s.day - n + 1;
+    for (const id in st.m) {
+      const i = st.m[id] - day0; if (i < 0) continue;
+      const px = X(i) + bw / 2;
+      x.strokeStyle = PAL.blue; x.globalAlpha = .9; x.setLineDash([2, 2]); x.beginPath(); x.moveTo(px, 4); x.lineTo(px, H); x.stroke(); x.setLineDash([]);
+      x.fillStyle = PAL.blue; x.beginPath(); x.moveTo(px, 0); x.lineTo(px + 3.5, 3.5); x.lineTo(px, 7); x.lineTo(px - 3.5, 3.5); x.fill(); x.globalAlpha = 1;
+    }
+  });
+  return wrap;
 }
 
 // ---------------------------------------------------------------------------
@@ -3028,9 +3561,10 @@ function renderResp() {
   for (const t of TABS) {
     const ups = UPGRADES.filter(u => u.tab === t.id && g.upgradeVisible(u.id));
     const own = ups.filter(u => g.s.upgrades.includes(u.id)).length;
+    const rolling = ups.filter(u => g.s.rolling[u.id]).length;
     tabs.append(h('button', { class: t.id === respTab ? 'on' : '', onclick: () => { respTab = t.id; respSel = null; Audio.fx('tap'); renderResp(); } },
       h('span', { class: 'dot', style: `background:${TABCOL[t.id]}` }),
-      h('span', {}, h('b', {}, t.name), h('small', {}, `${own} of ${ups.length} · ${t.blurb}`))));
+      h('span', {}, h('b', {}, t.name), h('small', {}, `${own} of ${ups.length}${rolling ? ` · ${rolling} rolling out` : ''} · ${t.blurb}`))));
   }
   const ups = UPGRADES.filter(u => u.tab === respTab && g.upgradeVisible(u.id));
   if (!respSel || !ups.find(u => u.id === respSel)) respSel = (ups.find(u => !g.s.upgrades.includes(u.id) && g.upgradeAvailable(u.id)) || ups[0]).id;
@@ -3055,18 +3589,25 @@ function renderResp() {
   for (const u of ups) {
     const [x, y] = pos(u);
     const own = g.s.upgrades.includes(u.id), avail = g.upgradeAvailable(u.id), cost = g.upgradeCost(u.id), afford = cost <= g.s.funding;
+    const rolling = own && g.s.rolling[u.id], prog = g.upgradeProg(u.id);
     const gEl = mk('g', { class: 'hx', tabindex: 0, role: 'button', 'aria-label': g.upgradeName(u.id) });
     if (u.id === respSel) gEl.append(mk('polygon', { points: hexPts(x, y, R + 6), fill: 'none', stroke: PAL.ink, 'stroke-width': 2 }));
     gEl.append(mk('polygon', {
       class: 'face', points: hexPts(x, y, R),
-      fill: own ? col : avail ? '#112838' : '#0c141a',
-      stroke: own ? '#8cc6ee' : avail && afford ? col : avail ? PAL.bevel : '#1f2c34', 'stroke-width': avail && afford && !own ? 2.5 : 1.5,
+      fill: rolling ? '#163a52' : own ? col : avail ? '#112838' : '#0c141a',
+      stroke: rolling ? PAL.blueDk : own ? '#8cc6ee' : avail && afford ? col : avail ? PAL.bevel : '#1f2c34', 'stroke-width': avail && afford && !own ? 2.5 : 1.5,
     }));
+    // Rolling out: the rim fills in as the programme reaches more of the world.
+    if (rolling) {
+      const per = R * 6;
+      gEl.append(mk('polygon', { points: hexPts(x, y, R), fill: 'none', stroke: col, 'stroke-width': 4, 'stroke-linejoin': 'round',
+        'stroke-dasharray': `${per * prog} ${per}`, transform: `rotate(-120 ${x} ${y})` }));
+    }
     const ic = mk('svg', { x: x - 15, y: y - 21, width: 30, height: 30, viewBox: '0 0 24 24', fill: 'none',
       stroke: own ? '#ffffff' : avail ? PAL.ink : '#3a4a52', 'stroke-width': 1.8, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
     ic.append(mk('path', { d: ICONS[u.icon] || ICONS.star })); gEl.append(ic);
-    const t = mk('text', { x, y: y + 22, fill: own ? '#ffffff' : avail ? (afford ? PAL.gold : PAL.ink3) : '#3a4a52' });
-    t.textContent = own ? 'Funded' : avail ? cost : 'Locked';
+    const t = mk('text', { x, y: y + 22, fill: rolling ? '#bfe0f6' : own ? '#ffffff' : avail ? (afford ? PAL.gold : PAL.ink3) : '#3a4a52' });
+    t.textContent = rolling ? `${g.rollingLeft(u.id)} days` : own ? 'In force' : avail ? cost : 'Locked';
     gEl.append(t);
     const pick = () => { respSel = u.id; Audio.fx('tap'); renderResp(); };
     gEl.addEventListener('click', pick);
@@ -3087,13 +3628,36 @@ function renderResp() {
   }
   const ms = MEASURES.filter(m => m.unlock === u.id && g.measureVisible(m.id));
   if (ms.length) d.append(h('div', { class: 'req' }, `Unlocks in regions: ${ms.map(m => m.name.toLowerCase()).join(', ')}.`));
-  if (own) d.append(h('div', { class: 'owned' }, icon('check'), 'Funded'));
+  const tm = TEAMS.filter(T => (u.fx[T.count] || 0) > 0);
+  if (tm.length) d.append(h('div', { class: 'req' }, `Adds field teams: ${tm.map(T => `${u.fx[T.count]} ${T.short.toLowerCase()}`).join(', ')}.`));
+  // What it would change, in numbers, as the world stands today.
+  const gain = g.upgradeImpact(u.id);
+  if (gain.length) {
+    d.append(h('div', { class: 'gain' }, h('div', { class: 'gh' }, own && !g.s.rolling[u.id] ? 'What it does today' : 'In force, it would change'),
+      ...gain.map(x => h('div', { class: 'gr' + (x.better ? ' up' : ' down') }, h('span', {}, x.label),
+        h('b', {}, fmtImpact(x.fmt, x.from), h('i', {}, '→'), fmtImpact(x.fmt, x.to))))));
+  }
+  if (own && g.s.rolling[u.id]) {
+    const ro = g.s.rolling[u.id], left = g.rollingLeft(u.id);
+    d.append(h('div', { class: 'rollbox' }, h('div', { class: 'row' }, h('span', {}, 'Rolling out'), h('span', {}, `${left} of ${ro.days} days left`)),
+      h('div', { class: 'tr' }, h('i', { style: `width:${pct(g.upgradeProg(u.id))}` })),
+      h('div', { class: 'note' }, 'Its effect builds as it rolls out. Whatever it unlocks arrives when it is done.')));
+  } else if (own) d.append(h('div', { class: 'owned' }, icon('check'), 'In force'));
   else {
     const can = avail && cost <= g.s.funding;
+    d.append(h('div', { class: 'req' }, `Takes ${g.upgradeDays(u.id)} days to roll out once funded.`));
     const btn = h('button', { class: 'btn pri', disabled: can ? null : 'disabled', onclick: () => buy(u.id) },
       icon('coin'), avail ? (cost <= g.s.funding ? `Fund for ${cost}` : `Needs ${cost} funding`) : 'Locked');
     d.append(h('div', { class: 'buy' }, btn));
   }
+}
+function fmtImpact(f, v) {
+  if (f === 'pct') return (v < .1 && v > 0 ? (v * 100).toFixed(1) : Math.round(v * 100)) + '%';
+  if (f === 'pct2') return (v * 100).toFixed(2) + '%';
+  if (f === 'n') return fmtN(v);
+  if (f === 'rate') return (v * 30).toFixed(1) + '%/mo';
+  if (f === 'f1') return v.toFixed(1);
+  return String(Math.round(v));
 }
 function buy(id) {
   const g = UI.g;
@@ -3101,8 +3665,7 @@ function buy(id) {
   Audio.fx('buy');
   baseDirty = true;
   hud(true); renderResp();
-  const u = UPGRADE[id];
-  if (MEASURES.some(m => m.unlock === id)) hint('unlocked');
+  hint('rollout');
   if (id === 'd9') toast('True infections view unlocked. Prepare to be alarmed.', 'good');
 }
 
@@ -3317,9 +3880,12 @@ function showEvent() {
 const HINTS = {
   start: ['The clock is running', 'The map shows confirmed cases only. Most of the epidemic is invisible. Open Response and fund Surveillance network and Genome sequencing first: the vaccine cannot really start without the genome.'],
   bubble: ['Tap the bubbles', 'Gold bubbles are donor funding, blue are research breakthroughs, orange are outbreak intelligence, violet are Authority. They vanish if you leave them.'],
-  response: ['Spending funding', 'Each upgrade unlocks the next. Prices rise a little with each one you buy, so pick a strategy rather than buying everything.'],
+  response: ['Spending funding', 'Each upgrade unlocks the next. Prices rise a little with each one you buy, so pick a strategy rather than buying everything. The numbers on the right show what it would change today.'],
+  rollout: ['Programmes take time', 'A funded upgrade rolls out over days: the rim of its hex fills as its effect builds, and anything that needs it waits until it is in force. Fund ahead of the curve.'],
   unlocked: ['A new measure is available', 'Tap a region on the map to impose it. Measures cost Authority once, then economy and patience for as long as they last.'],
   measures: ['Measures', 'Harsh measures work, but publics tire of them. Use them where cases are climbing, then lift them before patience runs out.'],
+  deploy: ['Deploying', 'Measures take days to come into force. Their badge on the map fills as they deploy, and their effect builds with it. Act before the curve, not after.'],
+  teams: ['Field teams', 'Teams travel across the map, set up, then work where you put them. Move them as the epidemic moves: there are never enough.'],
   spread: ['It has escaped', 'A second region has confirmed cases. Expect more: the confirmed map always lags the real one by weeks.'],
   authority: ['Out of Authority', 'Authority regenerates faster while people trust you. Violet bubbles add more. Spend it where it buys the most time.'],
   variant: ['It is adapting', 'A new variant has been identified. The pathogen evolves towards whatever you rely on most. Check World, then Pathogen.'],
@@ -3356,6 +3922,22 @@ function handleEvents(g) {
     else if (e.t === 'ship') spawnTravel(e.from, e.to, { inf: true, ship: true });
     else if (e.t === 'variant') { Audio.fx('variant'); ping(e.r, PAL.red); toast(`New variant identified in ${g.R[e.r].meta.the}.`, 'alert'); hint('variant'); }
     else if (e.t === 'vaccine') { Audio.fx('win'); toast('Vaccine approved. Manufacturing has begun.', 'good'); hint('vaccine'); }
+    else if (e.t === 'rolled') {
+      // The moment a programme lands, show what it changed.
+      const u = UPGRADE[e.id], x = e.gain.slice(0, 2).map(c => `${c.label.toLowerCase()} ${fmtImpact(c.fmt, c.from)} → ${fmtImpact(c.fmt, c.to)}`);
+      const ms = MEASURES.filter(m => m.unlock === e.id && g.measureVisible(m.id)).map(m => m.name.toLowerCase());
+      const ts = TEAMS.filter(T => (u.fx[T.count] || 0) > 0).map(T => T.short.toLowerCase() + ' teams');
+      const what = x.length ? x.join(', ') : ms.length ? `${ms.join(' and ')} now available in regions` : ts.length ? `${ts.join(', ')} ready` : 'now part of the response';
+      toast(`${g.upgradeName(e.id)} in force: ${what}.`, 'good'); Audio.fx('buy');
+      if (ms.length) hint('unlocked');
+      if (OPEN.has('resp')) renderResp();
+    } else if (e.t === 'deployed') {
+      const r = g.R[e.r], m = MEASURE[e.id];
+      ping(e.r, PAL.blue);
+      const [x, y] = toScreen(r.c[0], r.c[1]);
+      UI.pops.push({ x, y: y - 58, text: `${m.name} in force`, col: PAL.blueLt, t0: performance.now() / 1000, small: true });
+      if (UI.sel === e.r) renderCard(true);
+    } else if (e.t === 'team') { ping(e.r, PAL.blue); if (UI.sel === e.r) renderCard(true); }
     else if (e.t === 'event') { /* shown after the step loop */ }
   }
 }
@@ -3364,15 +3946,21 @@ function ambientTraffic(g, dt) {
   if (Math.random() < dt * 1.6 * (UI.speed || 0)) {
     const [a, b] = g.airRoutes[Math.floor(Math.random() * g.airRoutes.length)];
     const [x, y] = Math.random() < .5 ? [a, b] : [b, a];
-    if (g.R[x].st.m.flights == null && g.R[y].st.m.flights == null) spawnTravel(x, y);
+    if (g.mr(g.R[x], 'flights') < .5 && g.mr(g.R[y], 'flights') < .5) spawnTravel(x, y);
   }
   if (g.seaRoutes.length && Math.random() < dt * .25 * (UI.speed || 0)) {
     const [a, b] = g.seaRoutes[Math.floor(Math.random() * g.seaRoutes.length)];
-    if (g.R[a].st.m.ports == null && g.R[b].st.m.ports == null) spawnTravel(a, b, { ship: true });
+    if (g.mr(g.R[a], 'ports') < .5 && g.mr(g.R[b], 'ports') < .5) spawnTravel(a, b, { ship: true });
   }
 }
 let lastT = performance.now(), saveT = 0;
+// The next frame is booked first, so one bad frame can never stop the game.
+let frameErr = false;
 function frame(now) {
+  requestAnimationFrame(frame);
+  try { tick(now); } catch (e) { if (!frameErr) { frameErr = true; console.error(e); } }
+}
+function tick(now) {
   const dt = Math.min(.25, (now - lastT) / 1000); lastT = now;
   const g = UI.g;
   if (UI.phase === 'play' && g) {
@@ -3402,7 +3990,6 @@ function frame(now) {
   }
   if (UI.phase === 'play' || UI.phase === 'over') tickerFrame(dt);
   drawFrame(now);
-  requestAnimationFrame(frame);
 }
 function dayHints(g) {
   if (g.s.bubbles.length) hint('bubble');
@@ -3609,8 +4196,30 @@ window.addEventListener('keydown', e => {
   else if (k === '+' || k === '=') zoomAt(cw / 2, ch / 2, 1.25);
   else if (k === '-') zoomAt(cw / 2, ch / 2, .8);
 });
-window.addEventListener('resize', () => { clearTimeout(UI.resizeT); UI.resizeT = setTimeout(() => { resize(); if (OPEN.has('world')) renderWorld(); }, 60); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+const onResize = () => { clearTimeout(UI.resizeT); UI.resizeT = setTimeout(() => { resize(); if (OPEN.has('world')) renderWorld(); }, 60); };
+window.addEventListener('resize', onResize);
+// A WebView that lays out late does not always fire 'resize'.
+if (window.ResizeObserver) new ResizeObserver(onResize).observe(document.documentElement);
+// Going to the background saves and silences the game; coming back resumes the sound.
+function appPause() { save(); try { if (Audio.ctx && Audio.ctx.state === 'running') Audio.ctx.suspend(); } catch {} }
+function appResume() { try { if (Audio.ctx && Audio.ctx.state === 'suspended') Audio.ctx.resume(); } catch {} resize(); baseDirty = true; }
+document.addEventListener('visibilitychange', () => { if (document.hidden) appPause(); else appResume(); });
+// The Android app calls these from its lifecycle and its back button.
+window.__containmentApp = {
+  pause: appPause,
+  resume: appResume,
+  // Returns 'exit' when there is nothing left to close, so the app can quit.
+  back() {
+    if (OPEN.has('evt')) return 'ok'; // a decision has to be made
+    const top = ['help', 'resp', 'world', 'pause', 'setup', 'end'].find(id => OPEN.has(id));
+    if (top) { closeOv(top); if (top === 'end') toTitle(); return 'ok'; }
+    if (UI.phase === 'pick') { $('#pickBack').click(); return 'ok'; }
+    if (UI.sel >= 0) { select(-1); return 'ok'; }
+    if (UI.phase === 'play') { openOv('pause'); syncToggles(); return 'ok'; }
+    if (UI.phase === 'over') { toTitle(); return 'ok'; }
+    return 'exit';
+  },
+};
 window.addEventListener('pagehide', save);
 
 // Boot

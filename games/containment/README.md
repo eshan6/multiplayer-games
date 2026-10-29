@@ -26,14 +26,28 @@ enable sound.
   burning. Detection upgrades narrow the gap. *Epidemic modelling* unlocks the
   true-infections map, and the end screen shows what was really there.
 - **Funding** comes from donors (less when the economy or trust is weak) and
-  from gold bubbles on the map. It pays for about 55 upgrades across five hex
-  trees: Detect, Contain, Treat, Vaccine and Society. Prices rise as you buy, so
-  you cannot have everything.
-- **Authority** is political capital. You spend it to impose measures region by
-  region: testing, contact tracing, masks, distancing, school closures,
-  lockdowns, border, port and flight closures, field hospitals and vaccination
-  drives. Measures cost economy and patience every day they stay in force. Tired
-  publics comply less, and a region whose trust collapses defies you outright.
+  from gold bubbles on the map. It pays for 73 upgrades across five hex trees:
+  Detect, Contain, Treat, Vaccine and Society. Each shows, in numbers, what it
+  would change today (cases found, transmission, fatality, beds, research speed
+  and so on). Prices rise as you buy, so you cannot have everything.
+- **Authority** is political capital. You spend it to impose 18 kinds of
+  measure region by region: testing, contact tracing, gathering bans, masks,
+  distancing, school closures, lockdowns, cordons, border, port and flight
+  closures, arrival quarantine, field hospitals, shielding, sick pay,
+  vaccination drives, and vector control or safe burials where the pathogen
+  calls for them. Measures cost economy and patience every day they stay in
+  force. Tired publics comply less, and a region whose trust collapses defies
+  you outright.
+- **Nothing happens at once.** As in Rebel Inc, a measure takes days to deploy
+  (a flight ban one, a lockdown three, field hospitals fourteen) and its effect
+  builds as it does; its badge on the map fills to show it. A funded upgrade
+  rolls out over one to three weeks, and anything that needs it waits until it
+  is in force. Each region's panel charts its daily cases with a mark where
+  each measure began, so you can see whether it bent the curve.
+- **Field teams** are units you move around the map: epidemiology, medical,
+  vaccination and community teams. Each travels to the region you send it to,
+  sets up, then works there (finding hidden cases, adding beds, speeding up
+  doses, raising trust) until you move it.
 - **The vaccine** needs the genome (*Genome sequencing*) before research really
   starts. Research runs in wealthy regions' labs, so wrecking their economies
   slows it. Once approved, rollout is limited by factories, by each region's
@@ -118,3 +132,28 @@ node games/containment/tools/simulate.mjs 10 virus regular
 An `idle` player must lose every pathogen on every difficulty. On Recruit a
 `casual` player should usually win. On Hardened even the `expert` script
 should lose a fair share of games.
+
+## Android app
+
+`android/` wraps the same `index.html` in a small full-screen WebView app
+(`Containment.apk`, about 240 KB, Android 7.0 or later). It plays in
+landscape, either way up, like Plague Inc on a phone. The page has its own
+landscape phone layout: a one-row title menu, three-column setup cards, the
+region card down the right-hand side, decisions with the story beside the
+choices, and controls kept clear of the camera cutout. The app adds only what a
+browser tab lacks: immersive full screen with the system bars hidden, the
+screen kept awake while playing, turning the phone over without losing the game, the back
+button (it closes the open panel, then opens the pause menu, and quits only
+from the title screen), and pausing the sound when the app goes to the
+background. It ignores the system font size so the layout keeps its
+proportions. Saves and settings stay on the phone.
+
+To install it, download `android/Containment.apk` on the phone, open it and
+allow installs from that app when Android asks.
+
+To rebuild it you need a JDK and two pieces of the Android SDK (build-tools
+and a platform `android.jar`), but not Gradle or Android Studio. See the
+header of `android/build-apk.sh`. `android/make-icons.cjs` renders the
+launcher icons. Keep the signing keystore it creates: Android installs an
+update over an existing copy, keeping the saves, only when the APK is signed
+with the same key.
