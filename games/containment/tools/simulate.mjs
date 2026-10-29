@@ -30,9 +30,10 @@ const MAP = ctx.MAP;
 export function makeBot(kind, seed) {
   let x = seed * 7919 + 13;
   const rnd = () => ((x = (x * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
-  const EXPERT_ORDER = ['d1', 'd3', 'c1', 'r1', 'd2', 'c2', 'c3', 's1', 'c4', 'r3', 'c8', 'd5', 'c6', 'c7', 't1',
-    'c11', 'c13', 'r4', 'r6', 'd4', 'c5', 's4', 'r5', 'd7', 't3', 's2', 'r10', 'r7', 'r9', 'r8', 'd8', 't2', 's3', 's7',
-    'd10', 'c10', 't4', 'd9', 'c9', 't5', 't6', 's6', 's5', 'r11', 'd6', 't7', 's10', 's8', 't9', 't8', 't11', 's9', 't10', 'r2', 'd11', 'c12'];
+  const EXPERT_ORDER = ['d1', 'd3', 'c1', 'r1', 'd2', 'c2', 'c3', 's1', 'c14', 'c4', 's13', 'r3', 'c8', 'd5', 'c6', 'c7', 't1',
+    'c11', 'c13', 't14', 'r4', 'r6', 't12', 'd4', 'c5', 'c15', 's4', 'r5', 'd7', 't3', 'd13', 's2', 'r10', 'r7', 'r9', 'r8', 'd8',
+    't2', 's3', 's11', 's7', 'c16', 'd10', 'c10', 't4', 'd9', 'c9', 't5', 't6', 's6', 'r12', 's12', 's5', 'r11', 'd6', 't7',
+    's10', 's8', 't15', 't9', 't8', 't11', 't13', 'r13', 's9', 's14', 'd14', 't10', 'r14', 'r2', 'd11', 'd12', 'c12'];
   const order = kind === 'casual' ? [...EXPERT_ORDER].sort(() => rnd() - .5) : EXPERT_ORDER;
   const collect = kind === 'expert' ? .85 : .45;
   const seen = new Set();
@@ -82,6 +83,28 @@ export function makeBot(kind, seed) {
       if (st.overload > .05) on('hospital');
       if (r.meta.air >= 2 && a > 100 && g.s.day < 250) on('flights'); else if (a < 20) off('flights');
       if (g.s.vaccine.approved && a > 5) on('vaxdrive');
+      if (a > 10) on('gatherings'); else if (a < 1) off('gatherings');
+      if (a > .5 && a < 40 && !st.rogue) on('cordon'); else if (a > 120 || st.fatigue > .7) off('cordon');
+      if (g.P.mode === 'contact' && a > .5) on('burials');
+      if (a > 15) on('sickpay');
+      if (a > 120 || st.overload > .02) on('shield');
+      if (r.meta.air >= 2 && a > 30 && g.s.day < 300) on('travelq');
+    }
+    // Field teams go where they help most; an expert re-posts them every few weeks.
+    if (g.s.day % (kind === 'expert' ? 20 : 45) === 0) {
+      const det = g.R.filter(r => r.st.detected && r.st.repActive > 0);
+      const best = { 
+        epi: det.slice().sort((x, y) => y.st.repActive * (1.2 - x.meta.wealth) - x.st.repActive * (1.2 - y.meta.wealth))[0],
+        med: g.R.filter(r => r.st.overload > 0).sort((x, y) => y.st.overload * y.meta.pop - x.st.overload * x.meta.pop)[0],
+        vax: g.s.vaccine.approved ? det.slice().sort((x, y) => (y.st.repActive / y.meta.pop - y.st.vaxCov) - (x.st.repActive / x.meta.pop - x.st.vaxCov))[0] : null,
+        com: det.slice().sort((x, y) => x.st.trust - y.st.trust)[0],
+      };
+      for (const T of C.TEAMS) {
+        const target = kind === 'casual' ? det[Math.floor(rnd() * det.length)] : best[T.id];
+        if (!target) continue;
+        const t = g.teamFor(T.id, target.i);
+        if (t && (t.r < 0 || kind === 'expert') && !g.teamsIn(target.i).some(x => x.type === T.id)) g.sendTeam(t.k, target.i);
+      }
     }
   };
 }

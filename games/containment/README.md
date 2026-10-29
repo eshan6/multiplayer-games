@@ -26,14 +26,28 @@ enable sound.
   burning. Detection upgrades narrow the gap. *Epidemic modelling* unlocks the
   true-infections map, and the end screen shows what was really there.
 - **Funding** comes from donors (less when the economy or trust is weak) and
-  from gold bubbles on the map. It pays for about 55 upgrades across five hex
-  trees: Detect, Contain, Treat, Vaccine and Society. Prices rise as you buy, so
-  you cannot have everything.
-- **Authority** is political capital. You spend it to impose measures region by
-  region: testing, contact tracing, masks, distancing, school closures,
-  lockdowns, border, port and flight closures, field hospitals and vaccination
-  drives. Measures cost economy and patience every day they stay in force. Tired
-  publics comply less, and a region whose trust collapses defies you outright.
+  from gold bubbles on the map. It pays for 73 upgrades across five hex trees:
+  Detect, Contain, Treat, Vaccine and Society. Each shows, in numbers, what it
+  would change today (cases found, transmission, fatality, beds, research speed
+  and so on). Prices rise as you buy, so you cannot have everything.
+- **Authority** is political capital. You spend it to impose 18 kinds of
+  measure region by region: testing, contact tracing, gathering bans, masks,
+  distancing, school closures, lockdowns, cordons, border, port and flight
+  closures, arrival quarantine, field hospitals, shielding, sick pay,
+  vaccination drives, and vector control or safe burials where the pathogen
+  calls for them. Measures cost economy and patience every day they stay in
+  force. Tired publics comply less, and a region whose trust collapses defies
+  you outright.
+- **Nothing happens at once.** As in Rebel Inc, a measure takes days to deploy
+  (a flight ban one, a lockdown three, field hospitals fourteen) and its effect
+  builds as it does; its badge on the map fills to show it. A funded upgrade
+  rolls out over one to three weeks, and anything that needs it waits until it
+  is in force. Each region's panel charts its daily cases with a mark where
+  each measure began, so you can see whether it bent the curve.
+- **Field teams** are units you move around the map: epidemiology, medical,
+  vaccination and community teams. Each travels to the region you send it to,
+  sets up, then works there (finding hidden cases, adding beds, speeding up
+  doses, raising trust) until you move it.
 - **The vaccine** needs the genome (*Genome sequencing*) before research really
   starts. Research runs in wealthy regions' labs, so wrecking their economies
   slows it. Once approved, rollout is limited by factories, by each region's
