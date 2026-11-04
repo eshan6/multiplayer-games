@@ -48,22 +48,47 @@ enable sound.
   vaccination and community teams. Each travels to the region you send it to,
   sets up, then works there (finding hidden cases, adding beds, speeding up
   doses, raising trust) until you move it.
+- **Misinformation is a second front.** Rumours start where people are tired,
+  frightened and distrustful, then spread to neighbouring regions and along
+  flight routes, shown in violet on their own map. Where they take hold, people
+  comply less, refuse the vaccine and lose trust. Fact-check campaigns,
+  community teams and crackdowns (fast, but they cost trust) push them back.
+- **Every region has a government**: cooperative, sceptical, authoritarian or
+  populist, each changing how measures land. Democracies hold elections, and
+  tired, poorer, misinformed publics vote in populists who lift the harshest
+  restrictions on day one.
+- **Flashpoints** put a clock on the map: a pilgrimage, a cruise ship, an
+  outbreak in a camp or a prison, a mass rally. Meet one of its needs in time
+  (a measure fully in force, the right team on the ground, or the money) or it
+  lands.
+- **Money has to last.** Paid programmes and deployed teams cost upkeep every
+  day, so the HUD shows your Funding net of it. **Medical supplies** build up
+  slowly; field hospitals, medical teams and supply drops use them.
 - **The vaccine** needs the genome (*Genome sequencing*) before research really
   starts. Research runs in wealthy regions' labs, so wrecking their economies
   slows it. Once approved, rollout is limited by factories, by each region's
   cold chain, by vaccine hesitancy, and by rich regions buying first unless you
-  fund equitable allocation.
-- **The pathogen fights back.** It earns evolution points from the number of
-  people infected and spends them on traits that counter your strategy: silent
-  carriage if you lean on testing, transmissibility if you lean on restrictions,
-  immune escape once you vaccinate, drug resistance once you treat, an animal
-  reservoir near the end. On Hardened it picks the counter almost every time.
+  fund equitable allocation. From phase III trials, ring vaccination stamps
+  out small clusters.
+- **The pathogen fights back, and you can see it coming.** It earns evolution
+  from the number of people infected and spends it on traits that counter your
+  strategy: silent carriage if you lean on testing, transmissibility if you lean
+  on restrictions, immune escape once you vaccinate. With genomic surveillance,
+  World → Intelligence shows what it is likely to evolve next and why, and you
+  are told where a new lineage is emerging; an epidemiology team, a cordon or
+  case finding there can stamp it out before it spreads.
 - **Decisions** interrupt the game every month or so: mass gatherings,
   whistleblowers, protests, export bans, challenge trials and elections, each
   with a real trade-off.
-- **You win** when there is not a single active infection left. **You lose** if
-  the death toll passes what the world can absorb, if global trust falls to 14%,
-  or if the pathogen is still circulating after four years.
+- **Regions are certified free** after 42 days without a confirmed case (28
+  with active surveillance there). Hidden chains can break certification, so
+  the endgame is a mop-up race across the certification map.
+- **You win** when the pathogen is gone and every region that had cases has
+  gone a fortnight clean. **You lose** if the death toll passes what the world
+  can absorb, if global trust falls to 14%, or if the pathogen is still
+  circulating when time runs out. The end screen grades detection,
+  containment, treatment, the vaccine, trust and the economy, and marks the
+  turning points.
 
 ## Pathogens and difficulty
 
@@ -73,23 +98,39 @@ Superbug (treatment matters most, resistance evolves), Haemorrhagic Fever
 (lethal, contact-traced) and Disease X (randomised, profile unknown). The first
 two are open from the start; beating one unlocks the next.
 
-**Recruit**, **Regular** and **Hardened** change funding, Authority, research
-speed, how fast and how cleverly the pathogen evolves, how much has spread
-silently before day one, how quickly publics lose patience, and how many deaths
-the world can absorb. A win earns one to three stars depending on the death
-toll.
+**Recruit**, **Regular**, **Hardened** and **Brutal** change funding,
+Authority, research speed, how fast and how cleverly the pathogen evolves, how
+much has spread silently before day one, how quickly publics lose patience and
+believe rumours, how often flashpoints flare, upkeep, and how many deaths the
+world can absorb. A **short game** gives you two and a half years instead of
+four, with faster labs and rollouts. A win earns one to three stars depending
+on the death toll.
+
+## Ways to play
+
+- **Outbreak**: pick a pathogen, a difficulty and a length, then an origin.
+- **Scenarios**: six set pieces with their own objectives. *First response* is
+  a guided first game that walks you through the response step by step; *Hold
+  the line* asks you to keep it inside Asia; *The great influenza* asks you to
+  survive two years; others start in West Africa with rumours already loose,
+  with a superbug that already resists antibiotics, or blind against Disease X.
+- **Daily**: the same outbreak, origin and two rule-changing modifiers for
+  everyone on a given day (no lockdowns, busy skies, tight budgets, an
+  infodemic and so on).
 
 ## Look
 
-The visual design follows Plague Inc and Rebel Inc. A natural, satellite-toned
-world map (each region shaded by its climate, on a deep blue ocean) sits under
-dark gunmetal chrome with steel hairline bezels, angled title tabs and bold
-condensed capitals. Decisions arrive as paper dispatches. The palette is fixed:
-four signal colours, each with exactly one meaning everywhere. **Red** is the
-pathogen (cases, deaths, danger), **blue** is the response (research, vaccine,
-your actions and selections), **green** is stability (trust, Authority, good
-news) and **gold** is money (funding, economy, caution). The tokens live at the
-top of the `<style>` block and in the `PAL` object in the UI script.
+The design follows Rebel Inc. A muted, earthy world map carries the game; over
+it float small dark controls (the clock, the money, the map views), and when
+you open something it arrives as a light paper card with dark ink, rounded
+corners and a soft shadow. Colour is used sparingly and always means the same
+thing: **red** is the pathogen, **green** is stability (trust, Authority,
+certification), **gold** is money, **blue** is the vaccine, **violet** is
+misinformation and **tan** is medical supplies. The five Response areas each
+have their own colour on their tab, their upgrades and the measures they
+unlock: Detect teal, Contain orange, Treat coral, Vaccine blue, Society green.
+The tokens live at the top of the `<style>` block and in the `PAL` and `CAT`
+objects in the UI script.
 
 ## Controls
 
@@ -98,9 +139,12 @@ top of the `<style>` block and in the `PAL` object in the UI script.
 | Pan / zoom | Drag, scroll wheel, `+` `-` | Drag, pinch |
 | Open a region | Click it | Tap it |
 | Collect a bubble | Click it | Tap it |
+| See a flashpoint's needs | Click its marker | Tap its marker |
 | Pause / speed | `Space`, `1` `2` `3` | Buttons, top left |
 | Response / World | `R` / `W` | Buttons, bottom |
 | Close a panel | `Esc` | ✕ |
+
+In the menu, **Pause on alerts** stops the clock for flashpoints, emerging lineages, new variants and lost certifications.
 
 ## Code
 
