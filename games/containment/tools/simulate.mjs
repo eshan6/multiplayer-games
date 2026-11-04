@@ -31,7 +31,7 @@ export function makeBot(kind, seed) {
   let x = seed * 7919 + 13;
   const rnd = () => ((x = (x * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
   const EXPERT_ORDER = ['d1', 'd3', 'c1', 'r1', 'd2', 'c2', 'c3', 's1', 'c14', 'c4', 's13', 'r3', 'c8', 'd5', 'c6', 'c7', 't1',
-    'c11', 'c13', 't14', 'r4', 'r6', 't12', 'd4', 'c5', 'c15', 's4', 'r5', 'd7', 't3', 'd13', 's2', 'r10', 'r7', 'r9', 'r8', 'd8',
+    'c11', 'c13', 't14', 'd15', 'r15', 'r4', 'r6', 't12', 'd4', 'c5', 'c15', 's4', 'r5', 'd7', 't3', 'd13', 's2', 'r10', 'r7', 'r9', 'r8', 'd8',
     't2', 's3', 's11', 's7', 'c16', 'd10', 'c10', 't4', 'd9', 'c9', 't5', 't6', 's6', 'r12', 's12', 's5', 'r11', 'd6', 't7',
     's10', 's8', 't15', 't9', 't8', 't11', 't13', 'r13', 's9', 's14', 'd14', 't10', 'r14', 'r2', 'd11', 'd12', 'c12'];
   const order = kind === 'casual' ? [...EXPERT_ORDER].sort(() => rnd() - .5) : EXPERT_ORDER;
@@ -70,7 +70,7 @@ export function makeBot(kind, seed) {
     const regions = g.R.filter(r => r.st.detected).sort((x, y) => y.st.repActive - x.st.repActive);
     for (const r of regions) {
       const st = r.st, a = g.activePerM(r) / late;
-      const on = id => { if (st.m[id] == null && g.s.authority >= C.MEASURE[id].cost) g.setMeasure(r.i, id, true); };
+      const on = id => { if (st.m[id] == null && g.s.authority >= g.measureCost(C.MEASURE[id], r)) g.setMeasure(r.i, id, true); };
       const off = id => { if (st.m[id] != null) g.setMeasure(r.i, id, false); };
       if (a > 300 && st.fatigue < .5 && !st.rogue) on('lockdown');
       if (st.m.lockdown != null && (a < 60 || st.fatigue > .75)) off('lockdown');
@@ -89,7 +89,28 @@ export function makeBot(kind, seed) {
       if (a > 15) on('sickpay');
       if (a > 120 || st.overload > .02) on('shield');
       if (r.meta.air >= 2 && a > 30 && g.s.day < 300) on('travelq');
+      if (a > .3 && a < 30) { on('sweep'); on('ring'); } else if (a > 80) { off('sweep'); off('ring'); }
+      // Wind down once a region has been clear for three weeks: upkeep is not free.
+      if (kind === 'expert' && st.clean > 21) for (const id in st.m) off(id);
+      if (st.rumour > .12) on('factcheck'); else if (st.rumour < .03) off('factcheck');
+      if (kind === 'expert' && st.rumour > .5 && st.fatigue < .5) on('crackdown'); else if (st.rumour < .15) off('crackdown');
+      if (kind === 'expert' && st.overload > .1 && g.s.supplies >= 3 && !g.s.shipments.some(x => x.r === r.i)) g.sendSupplies(r.i);
     }
+    // Flashpoints: meet a need on the ground if it can, else pay.
+    for (const f of [...g.s.flashpoints]) {
+      if (kind === 'casual' && rnd() < .5) continue;
+      const F = C.FLASH[f.type], r = g.R[f.r];
+      let done = false;
+      F.opts.forEach((o, k) => {
+        if (done) return;
+        if (o.kind === 'measure' && g.measureUnlocked(o.id) && r.st.m[o.id] == null && g.measureDays(o.id, r) <= f.due - g.s.day) done = g.setMeasure(r.i, o.id, true);
+        else if (o.kind === 'team') { const t = g.teamFor(o.type, r.i); if (t && g.teamTravelDays(t, r.i) <= f.due - g.s.day) done = g.sendTeam(t.k, r.i); }
+        else if (o.kind === 'funding' || o.kind === 'supplies') done = g.payFlash(f.k, k);
+      });
+    }
+    // An emerging lineage: send the nearest epidemiology team.
+    const e = g.s.emerging;
+    if (kind === 'expert' && e && e.known && !g.teamsIn(e.r).some(t => t.type === 'epi')) { const t = g.teamFor('epi', e.r); if (t) g.sendTeam(t.k, e.r); }
     // Field teams go where they help most; an expert re-posts them every few weeks.
     if (g.s.day % (kind === 'expert' ? 20 : 45) === 0) {
       const det = g.R.filter(r => r.st.detected && r.st.repActive > 0);
