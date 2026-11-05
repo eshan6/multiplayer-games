@@ -89,7 +89,10 @@ enable sound.
   with active surveillance there). Hidden chains can break certification, so
   the endgame is a mop-up race, region by region.
 - **You win** when the pathogen is gone and every region that had cases has
-  gone a fortnight clean. **You lose** if the death toll passes what the world
+  gone a fortnight clean, or when no case has been confirmed anywhere for six
+  weeks and every region is clear. If an animal reservoir has appeared, One
+  Health surveillance is also needed, and the HUD says so when it is all that
+  is left. **You lose** if the death toll passes what the world
   can absorb, if global trust falls to 14%, or if the pathogen is still
   circulating when time runs out. The end screen grades detection,
   containment, treatment, the vaccine, trust and the economy, and marks the

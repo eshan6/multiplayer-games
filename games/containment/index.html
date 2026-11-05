@@ -867,7 +867,7 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
   <header><h2 class="cond">How to play</h2><button class="x" data-close aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></header>
   <div class="hbody">
     <h3>Your job</h3>
-    <p>A new pathogen has been confirmed in one region. You lead the world's response. <strong>You win when the pathogen is gone from every region</strong>: no infections left anywhere, and every region that had cases has gone a fortnight without one. You lose if the death toll passes the limit the world can absorb, if public trust collapses so far that governments stop following you, or if the pathogen is still circulating when time runs out. Scenarios have objectives of their own.</p>
+    <p>A new pathogen has been confirmed in one region. You lead the world's response. <strong>You win when the pathogen is gone from every region</strong>: either no infections are left anywhere and every region that had cases has gone a fortnight without one, or no case has been confirmed anywhere for six weeks and every region is clear. If an animal reservoir has appeared, you also need <strong>One Health surveillance</strong>; the HUD tells you when that is all that is left. You lose if the death toll passes the limit the world can absorb, if public trust collapses so far that governments stop following you, or if the pathogen is still circulating when time runs out. Scenarios have objectives of their own.</p>
     <h3>What you can see</h3>
     <p>The map shows <strong>confirmed</strong> cases, not real ones. Poor surveillance, silent carriers and weak health systems hide most of the epidemic, especially early on. A region looks clean until it confirms its first cases. Detection upgrades close the gap, and <strong>Epidemic modelling</strong> reveals the true picture. Each region's panel shows its cases, trust, rumours and certification.</p>
     <h3>Funding, Authority and supplies</h3>
@@ -3070,24 +3070,30 @@ class Game {
       if (s.day >= ob.day) { this.finish({ win: true, reason: 'contained', day: s.day }); return; }
     }
     if (ob.type === 'survive' && s.day >= ob.day) { this.finish({ win: true, reason: 'survived', day: s.day }); return; }
-    if (t.active < 1 && !s.flights.length) {
+    // Days in a row without a single active confirmed case anywhere.
+    s.quiet = t.repActive < 1 ? (s.quiet || 0) + 1 : 0;
+    const allClear = this.R.every(r => !r.st.detected || r.st.cert || (r.st.repActive < 1 && r.st.clean >= 14));
+    // Eradication is declared when the pathogen is truly gone and every region with
+    // cases has gone a fortnight clean, or when nobody anywhere has confirmed a case
+    // for six weeks and every region is clear: a few untraceable infections in the
+    // shadows do not keep the world waiting forever.
+    const gone = t.active < 1 && !s.flights.length;
+    const declared = s.quiet >= 42 && allClear && t.active < 300;
+    if ((gone && allClear) || declared) {
       if (this.traitLevel('reservoir') && !this.M.oneHealth) {
-        if (!s.reservoirWarned) {
-          s.reservoirWarned = true;
-          this.news('Cases have hit zero, but the animal reservoir will reseed it. Only One Health surveillance can end this.', 'alert');
+        // The one thing that still stops it: animals keep reseeding it.
+        if (!s.reservoirBlocked) {
+          s.reservoirBlocked = true;
+          this.news('Every region is clear, but an animal reservoir keeps reseeding the pathogen. Fund One Health surveillance (Detect) to finish it.', 'alert');
+          this.events.push({ t: 'reservoir' });
         }
-        return;
-      }
-      // Eradication is declared once every region with cases has gone a fortnight clean.
-      const waiting = this.R.filter(r => r.st.detected && !r.st.cert && (r.st.repActive >= 1 || r.st.clean < 14));
-      if (waiting.length) {
-        if (!s.finalCert) { s.finalCert = s.day; this.news('No new infections anywhere that anyone can find. Final certification is under way.', 'good'); }
         return;
       }
       for (const r of this.R) if (r.st.detected) r.st.cert = true;
       this.finish({ win: true, reason: 'eradicated', day: s.day });
       return;
     }
+    if (gone && !s.finalCert) { s.finalCert = s.day; this.news('No new infections anywhere that anyone can find. Final certification is under way.', 'good'); }
     if (s.day >= (s.limitDay || 1460)) this.finish({ win: false, reason: 'endemic', day: s.day });
   }
   finish(over) {
@@ -3974,8 +3980,14 @@ function hud(force) {
   } else if (ob.type === 'survive') {
     fs.querySelector('small').textContent = 'Hold out'; fs.querySelector('b').textContent = `${Math.max(0, ob.day - s.day)} days`;
     fs.querySelector('.mini i').style.width = pct(s.day / ob.day); fs.title = `Win by reaching day ${ob.day} without the world collapsing.`;
+  } else if (s.reservoirBlocked && !g.M.oneHealth) {
+    // Only an animal reservoir stands between you and the win: say so plainly.
+    fs.querySelector('small').textContent = 'Last step'; fs.querySelector('b').textContent = 'One Health';
+    fs.querySelector('.mini i').style.width = '100%'; fs.classList.add('crit');
+    fs.title = 'Every region is clear, but an animal reservoir keeps reseeding the pathogen. Fund One Health surveillance in Detect to win.';
   } else {
     const f = g.freeCount();
+    fs.classList.remove('crit');
     fs.querySelector('small').textContent = 'Regions free'; fs.querySelector('b').textContent = `${f} of ${REGIONS.length}`;
     fs.querySelector('.mini i').style.width = pct(f / REGIONS.length);
     fs.title = 'Regions never hit, or certified free after weeks without a confirmed case. Win when the pathogen is gone from all of them.';
@@ -4853,6 +4865,7 @@ function handleEvents(g) {
     else if (e.t === 'election') { ping(e.r, PAL.violet); hint('election'); if (UI.sel === e.r) renderCard(true); }
     else if (e.t === 'emerging') { Audio.fx('variant'); ping(e.r, PAL.red); toast(`A new lineage is emerging in ${g.R[e.r].meta.the}. Get an epidemiology team there.`, 'alert', true); if (UI.speed > 1) setSpeed(1); hint('emerging'); autoPause('emerging variant'); }
     else if (e.t === 'contained') { Audio.fx('win'); ping(e.r, PAL.green); toast(`New lineage stamped out in ${g.R[e.r].meta.the} before it could spread.`, 'good', true); }
+    else if (e.t === 'reservoir') { Audio.fx('alert'); toast('Every region is clear, but an animal reservoir keeps reseeding it. Fund One Health surveillance (Detect) to win.', 'alert'); }
     else if (e.t === 'supplies') { ping(e.r, PAL.tan); if (UI.sel === e.r) renderCard(true); }
     else if (e.t === 'event') { /* shown after the step loop */ }
   }
