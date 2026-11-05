@@ -37,7 +37,21 @@ export function makeBot(kind, seed) {
   const order = kind === 'casual' ? [...EXPERT_ORDER].sort(() => rnd() - .5) : EXPERT_ORDER;
   const collect = kind === 'expert' ? .85 : .45;
   const seen = new Set();
+  // A flashpoint whose time is up waits for an answer: wait for help on its
+  // way, else pay, else let it go ahead.
+  const flashDue = g => {
+    const f = g.s.flashpoints.find(x => x.k === g.s.pendingFlash);
+    if (!f) { g.resolveFlash(0); return; }
+    const cs = g.flashChoices(f);
+    let k = cs.length - 1;
+    if (kind !== 'idle') {
+      const w = cs.findIndex(c => c.kind === 'wait'), p = cs.findIndex(c => c.kind === 'pay' && c.ok);
+      k = w >= 0 ? w : p >= 0 && (kind === 'expert' || rnd() < .5) ? p : k;
+    }
+    g.resolveFlash(k);
+  };
   return function act(g) {
+    if (g.s.pendingFlash) flashDue(g);
     if (kind === 'idle') {
       if (g.s.pendingEvent) for (let j = g.eventCard().choices.length - 1; j >= 0 && g.s.pendingEvent; j--) g.resolveEvent(j);
       return;

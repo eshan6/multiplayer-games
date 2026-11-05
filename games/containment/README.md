@@ -23,10 +23,12 @@ enable sound.
 
 - **You see confirmed cases, not real ones.** Each region reports only what its
   surveillance catches, so poor, crowded regions look clean long after they are
-  burning. Detection upgrades narrow the gap. *Epidemic modelling* unlocks the
-  true-infections map, and the end screen shows what was really there.
+  burning. Detection upgrades narrow the gap. *Epidemic modelling* adds each region's
+  estimated true infections and reproduction number to its panel, and the end
+  screen shows what was really there.
 - **Funding** comes from donors (less when the economy or trust is weak) and
-  from gold bubbles on the map. It pays for 73 upgrades across five hex trees:
+  from gold bubbles on the map (blue ones, until a vaccine is approved, are
+  research breakthroughs). It pays for 73 upgrades across five hex trees:
   Detect, Contain, Treat, Vaccine and Society. Each shows, in numbers, what it
   would change today (cases found, transmission, fatality, beds, research speed
   and so on). Prices rise as you buy, so you cannot have everything.
@@ -40,9 +42,10 @@ enable sound.
   you outright.
 - **Nothing happens at once.** As in Rebel Inc, a measure takes days to deploy
   (a flight ban one, a lockdown three, field hospitals fourteen) and its effect
-  builds as it does; its badge on the map fills to show it. A funded upgrade
-  rolls out over one to three weeks, and anything that needs it waits until it
-  is in force. Each region's panel charts its daily cases with a mark where
+  builds as it does; the region's panel shows how far along it is. A funded
+  upgrade rolls out over one to three weeks, and anything that needs it waits
+  until it is in force. Response → Progress lists what is rolling out and what
+  each programme changed when it landed. Each region's panel charts its daily cases with a mark where
   each measure began, so you can see whether it bent the curve.
 - **Field teams** are units you move around the map: epidemiology, medical,
   vaccination and community teams. Each travels to the region you send it to,
@@ -50,7 +53,7 @@ enable sound.
   doses, raising trust) until you move it.
 - **Misinformation is a second front.** Rumours start where people are tired,
   frightened and distrustful, then spread to neighbouring regions and along
-  flight routes, shown in violet on their own map. Where they take hold, people
+  flight routes. Each region's panel shows how far they have spread. Where they take hold, people
   comply less, refuse the vaccine and lose trust. Fact-check campaigns,
   community teams and crackdowns (fast, but they cost trust) push them back.
 - **Every region has a government**: cooperative, sceptical, authoritarian or
@@ -58,10 +61,11 @@ enable sound.
   tired, poorer, misinformed publics vote in populists who lift the harshest
   restrictions on day one.
 - **Flashpoints** put a clock on the map: a pilgrimage, a cruise ship, an
-  outbreak in a camp or a prison, a mass rally. You get two to three weeks,
-  and time drops to normal speed when one appears. Meet one of its needs in time
-  (a measure fully in force, the right team on the ground, or the money) or it
-  lands.
+  outbreak in a camp or a prison, a mass rally. You get about three weeks,
+  and time drops to normal speed when one appears. Meet one of its needs in
+  time (a measure fully in force, the right team on the ground, or the money)
+  and it passes quietly. If time runs out, the game stops and asks: pay now,
+  hold on a few more days if help is about to arrive, or let it go ahead.
 - **Money has to last.** Paid programmes and deployed teams cost upkeep every
   day, so the HUD shows your Funding net of it. **Medical supplies** build up
   slowly; field hospitals, medical teams and supply drops use them.
@@ -83,7 +87,7 @@ enable sound.
   with a real trade-off.
 - **Regions are certified free** after 42 days without a confirmed case (28
   with active surveillance there). Hidden chains can break certification, so
-  the endgame is a mop-up race across the certification map.
+  the endgame is a mop-up race, region by region.
 - **You win** when the pathogen is gone and every region that had cases has
   gone a fortnight clean. **You lose** if the death toll passes what the world
   can absorb, if global trust falls to 14%, or if the pathogen is still
@@ -122,7 +126,7 @@ on the death toll.
 ## Look
 
 The design follows Rebel Inc. A muted, earthy world map carries the game; over
-it float small dark controls (the clock, the money, the map views), and when
+it float small dark controls (the clock and the money), and when
 you open something it arrives as a light paper card with dark ink, rounded
 corners and a soft shadow. Colour is used sparingly and always means the same
 thing: **red** is the pathogen, **green** is stability (trust, Authority,
