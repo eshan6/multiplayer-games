@@ -240,6 +240,8 @@ canvas.trend{display:block;width:100%;height:54px;margin-top:6px;background:#fff
 .toast.bad{box-shadow:inset 4px 0 0 var(--gold),var(--shadow)}
 .toast.good{box-shadow:inset 4px 0 0 var(--green),var(--shadow)}
 @keyframes tin{from{opacity:0;transform:translateY(-6px)}}
+/* With a region open on the right, messages centre in the space left of it. */
+body.card-on #toasts,body.card-on #tut{left:calc((100% - 370px) / 2);width:min(92vw,calc(100% - 420px),520px)}
 #hint{position:fixed;left:50%;bottom:calc(var(--bottom-h) + 50px + var(--safe-b));transform:translateX(-50%);width:min(92vw,460px);z-index:9;display:none;
   padding:14px 16px 14px 54px}
 #hint.on{display:block;animation:tin .3s ease-out}
@@ -514,6 +516,7 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
   .st small{font-size:9px;letter-spacing:.02em}
   #vacTxt{min-width:0;font-size:11px}
   #card{left:0;right:0;bottom:0;top:auto;width:auto;max-height:62%;padding-bottom:var(--safe-b);border-radius:var(--r) var(--r) 0 0}
+  body.card-on #toasts,body.card-on #tut{left:50%;width:min(92vw,520px)}
   #modes{top:calc(62px + var(--safe-t));padding:4px}
   #modes button{height:32px;width:32px;padding:0;justify-content:center}
   #modes button span.t{display:none}
@@ -649,6 +652,9 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
   #legend{display:none}
   #hint,#tut{top:auto;bottom:calc(var(--bottom-h) + 44px + var(--safe-b));left:calc(12px + var(--safe-l));transform:none;width:min(440px,calc(100% - 380px))}
   #tut{top:calc(52px + var(--safe-t));bottom:auto;left:calc(52px + var(--safe-l))}
+  #toasts{top:calc(52px + var(--safe-t))}
+  body.card-on #toasts{left:calc((100% - 346px) / 2);width:min(calc(100% - 380px),480px)}
+  body.card-on #tut{left:calc(52px + var(--safe-l));width:min(440px,calc(100% - 410px))}
   .sheet>header{min-height:46px;padding:6px 10px 6px 16px}
   .sheet>header h2{font-size:20px}
   #resp .wrap{grid-template-columns:1fr 290px;grid-template-rows:auto minmax(0,1fr)}
@@ -813,7 +819,7 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
     <h3>Misinformation</h3>
     <p>Rumours are a second epidemic. They start where people are tired, frightened and distrustful, then spread to neighbours and along flight routes, shown in violet on the misinformation map. Where they take hold, people comply less, refuse the vaccine and lose trust. <strong>Fact-check campaigns</strong> wear them down, <strong>community teams</strong> undercut them, and a <strong>crackdown</strong> stamps them out fast at a price in trust.</p>
     <h3>Flashpoints</h3>
-    <p>Sometimes something is about to happen in a region: a pilgrimage, a cruise ship docking, an outbreak in a camp or a prison, a mass rally. Its marker shows how many days you have. Meet one of its needs in time (a measure fully in force, the right team on the ground, or the money) and it passes quietly. Miss it and it lands.</p>
+    <p>Sometimes something is about to happen in a region: a pilgrimage, a cruise ship docking, an outbreak in a camp or a prison, a mass rally. Its gold marker shows how many days you have, usually two to three weeks, and time drops to normal speed when one appears. Meet one of its needs in time (a measure fully in force, the right team on the ground, or the money) and it passes quietly. Miss it and it lands.</p>
     <h3>Field teams</h3>
     <p>You start with an epidemiology team at headquarters in Geneva; upgrades add medical, vaccination and community teams. Send one from a region's panel for 2 Funding. It travels across the map, takes three days to set up, then works there until you move it.</p>
     <h3>Upgrades</h3>
@@ -1001,35 +1007,35 @@ const GOVS = {
 // Flashpoints: something about to happen in a region. Meet one of the needs
 // before the clock runs out, or the failure lands.
 const FLASHPOINTS = [
-  { id: 'pilgrimage', name: 'Pilgrimage', icon: 'people', days: 8, weight: 3,
+  { id: 'pilgrimage', name: 'Pilgrimage', icon: 'people', days: 16, weight: 3,
     text: r => `Millions are about to travel to a pilgrimage in ${r.meta.the}.`,
     opts: [{ kind: 'measure', id: 'gatherings' }, { kind: 'team', type: 'epi' }, { kind: 'funding', n: 6 }],
     where: (g, r) => r.st.detected && g.activePerM(r) > 5, fail: (g, r) => g.addEffect('beta', r.i, 1.8, 16),
     failText: 'Transmission there nearly doubles for two weeks.' },
-  { id: 'camp', name: 'Camp outbreak', icon: 'hotel', days: 10, weight: 2,
+  { id: 'camp', name: 'Camp outbreak', icon: 'hotel', days: 18, weight: 2,
     text: r => `Cases in a crowded displacement camp in ${r.meta.the}. Its clinic has no beds.`,
     opts: [{ kind: 'team', type: 'med' }, { kind: 'supplies', n: 3 }, { kind: 'funding', n: 7 }],
     where: (g, r) => r.st.detected && r.meta.wealth < .4 && r.st.I > 20,
     fail: (g, r) => { g.addEffect('beta', r.i, 1.35, 40); g.addEffect('ifr', r.i, 1.4, 40); },
     failText: 'More spread and more deaths there for forty days.' },
-  { id: 'cruise', name: 'Cruise ship', icon: 'ship', days: 6, weight: 2,
+  { id: 'cruise', name: 'Cruise ship', icon: 'ship', days: 12, weight: 2,
     text: r => `A cruise ship with sick passengers is due to dock in ${r.meta.the}.`,
     opts: [{ kind: 'measure', id: 'ports' }, { kind: 'measure', id: 'travelq' }, { kind: 'funding', n: 4 }],
     where: (g, r) => r.meta.port > 0 && r.st.detected && r.st.I > 5,
     fail: (g, r) => { for (let k = 0; k < 2; k++) { const j = g.pickRegion(x => x.meta.port > 0 && x.i !== r.i, x => x.meta.port); if (j != null) { const t = g.R[j].st; t.S -= 6; t.E += 6; } } },
     failText: 'Passengers scatter to two other ports, carrying it with them.' },
-  { id: 'plant', name: 'Factory cluster', icon: 'factory', days: 7, weight: 2,
+  { id: 'plant', name: 'Factory cluster', icon: 'factory', days: 14, weight: 2,
     text: r => `A cluster at a meat-packing plant in ${r.meta.the}. Workers cannot afford to stay home.`,
     opts: [{ kind: 'measure', id: 'testing' }, { kind: 'measure', id: 'sickpay' }, { kind: 'team', type: 'epi' }],
     where: (g, r) => r.st.detected && r.meta.wealth > .3 && r.st.I > 10,
     fail: (g, r) => g.addEffect('beta', r.i, 1.5, 20), failText: 'Transmission there rises by half for three weeks.' },
-  { id: 'prison', name: 'Prison outbreak', icon: 'lock', days: 9, weight: 1,
+  { id: 'prison', name: 'Prison outbreak', icon: 'lock', days: 16, weight: 1,
     text: r => `An outbreak inside an overcrowded prison in ${r.meta.the}.`,
     opts: [{ kind: 'team', type: 'med' }, { kind: 'funding', n: 5 }],
     where: (g, r) => r.st.detected && r.st.I > 10,
     fail: (g, r) => { g.addEffect('beta', r.i, 1.25, 25); r.st.trust = clamp(r.st.trust - .04, 0, 1); },
     failText: 'More spread there, and a scandal that costs trust.' },
-  { id: 'rally', name: 'Mass rally', icon: 'megaphone', days: 6, weight: 2,
+  { id: 'rally', name: 'Mass rally', icon: 'megaphone', days: 12, weight: 2,
     text: r => `A movement against the response is planning a mass rally in ${r.meta.the}.`,
     opts: [{ kind: 'team', type: 'com' }, { kind: 'measure', id: 'crackdown' }, { kind: 'measure', id: 'factcheck' }],
     where: (g, r) => r.st.detected && (r.st.fatigue > .35 || (r.st.rumour || 0) > .15),
@@ -2866,23 +2872,25 @@ class Game {
     s.bubbles = s.bubbles.filter(b => b.exp > s.day);
     if (s.noPlayer) return;
     const rnd = () => rngNext(s);
+    // Fewer, bigger bubbles: the same money over time, less clutter on the map.
+    if (s.bubbles.length >= 4) return;
     // Donor pledges come from wealthy regions; more when the world is watching.
     const active = this.R.filter(r => r.st.detected && r.st.repActive > 0).length;
-    if (rnd() < (.1 + Math.min(.12, active * .004)) * D.bubble) {
+    if (rnd() < (.06 + Math.min(.072, active * .0024)) * D.bubble) {
       const j = this.pickRegion(r => r.meta.wealth > .5, r => this.gdp(r));
-      if (j != null) this.spawnBubble('fund', j, 2 + Math.floor(rnd() * 3));
+      if (j != null) this.spawnBubble('fund', j, 4 + Math.floor(rnd() * 3));
     }
-    if (!s.vaccine.approved && s.research > 0 && rnd() < .05 * D.bubble * (this.M.sequenced ? 1 : .4)) {
+    if (!s.vaccine.approved && s.research > 0 && rnd() < .03 * D.bubble * (this.M.sequenced ? 1 : .4)) {
       const j = this.pickRegion(r => r.meta.wealth > .7, r => this.gdp(r));
-      if (j != null) this.spawnBubble('research', j, 1 + rnd() * .8);
+      if (j != null) this.spawnBubble('research', j, 1.7 + rnd() * 1.3);
     }
-    if (rnd() < .04 * D.bubble) {
+    if (rnd() < .027 * D.bubble) {
       const j = this.pickRegion(r => r.st.detected && r.st.repActive > 50, r => Math.sqrt(r.st.repActive));
-      if (j != null) this.spawnBubble('intel', j, 2);
+      if (j != null) this.spawnBubble('intel', j, 3);
     }
-    if (rnd() < .025 * D.bubble * (.5 + this.globalTrust())) {
+    if (rnd() < .017 * D.bubble * (.5 + this.globalTrust())) {
       const j = this.pickRegion(r => r.st.trust > .5, r => r.meta.pop);
-      if (j != null) this.spawnBubble('auth', j, 2);
+      if (j != null) this.spawnBubble('auth', j, 3);
     }
   }
 
@@ -3979,19 +3987,42 @@ function tickerFrame(dt) {
     e.style.transform = `translateX(${W}px)`;
   }
 }
-function toast(text, kind = 'info') {
-  const box = $('#toasts');
-  while (box.children.length >= 2) box.firstChild.remove();
-  const e = h('div', { class: 'toast ' + kind }, text);
-  box.append(e);
-  setTimeout(() => e.remove(), 3800);
+// One message at a time. Replies to what you just did show at once; news from
+// the world waits its turn, and is dropped if the queue is already full (the
+// ticker and the log still carry it).
+const toastQ = [];
+let toastEl = null, toastUntil = 0;
+function toast(text, kind = 'info', passive = false) {
+  if (toastEl && toastEl.textContent === text) return;
+  if (passive) {
+    if (toastQ.some(x => x.text === text) || toastQ.length >= 2) return;
+    toastQ.push({ text, kind });
+    pumpToasts();
+    return;
+  }
+  showToast(text, kind);
 }
+function showToast(text, kind) {
+  if (toastEl) toastEl.remove();
+  toastEl = h('div', { class: 'toast ' + kind }, text);
+  $('#toasts').append(toastEl);
+  toastUntil = performance.now() + 3400;
+}
+function pumpToasts() {
+  const now = performance.now();
+  if (toastEl && now < toastUntil) return;
+  if (toastEl) { toastEl.remove(); toastEl = null; }
+  const next = toastQ.shift();
+  if (next) showToast(next.text, next.kind);
+}
+setInterval(pumpToasts, 250);
 
 // ---------------------------------------------------------------------------
 //  Region card
 // ---------------------------------------------------------------------------
 function select(i) {
   UI.sel = i; baseDirty = true;
+  document.body.classList.toggle('card-on', i >= 0);
   if (i < 0) { $('#card').classList.remove('on'); return; }
   $('#card').classList.add('on');
   renderCard(true);
@@ -4222,7 +4253,6 @@ function sendTeam(i, type) {
   const from = c.r >= 0 ? g.R[c.r].meta.the : null;
   g.sendTeam(c.k, i);
   Audio.fx('impose');
-  toast(`${T.name} ${from ? `leaves ${from}` : 'leaves headquarters'} for ${g.R[i].meta.the}. Arrives in ${c.arr - g.s.day} days.`);
   hint('teams');
   baseDirty = true; hud(true); renderCard(true);
 }
@@ -4661,18 +4691,29 @@ const HINTS = {
   fatigue: ['Patience is running out', 'A region has been under heavy restrictions for a long time. If its trust collapses, it will defy you completely.'],
 };
 let hintShown = null;
+// Tips wait for a calm moment: no other message showing, nothing open, and a
+// pause since the last one.
+const hintQ = [];
+let hintAt = 0;
 function hint(id) {
-  if (!settings.tips || progress.hints[id] || hintShown || UI.phase !== 'play') return;
+  if (!settings.tips || progress.hints[id] || UI.phase !== 'play' || hintQ.includes(id) || hintShown === id) return;
   if (UI.g && UI.g.s.tutorial && (UI.g.s.tutStep || 0) < TUT.length) return;
+  hintQ.push(id);
+}
+function pumpHints() {
+  if (!hintQ.length || hintShown || UI.phase !== 'play' || blocking() || toastEl || performance.now() - hintAt < 25000) return;
+  const id = hintQ.shift();
+  if (progress.hints[id]) return;
   progress.hints[id] = 1; saveProgress();
   const [t, p] = HINTS[id];
   const el = $('#hint'); el.querySelector('b').textContent = t; el.querySelector('p').textContent = p;
   el.classList.add('on'); hintShown = id;
 }
+setInterval(pumpHints, 500);
 $('#hint').addEventListener('click', e => {
   const a = e.target.closest('button')?.dataset.a; if (!a) return;
   if (a === 'off') { settings.tips = false; saveSettings(); syncToggles(); }
-  $('#hint').classList.remove('on'); hintShown = null;
+  $('#hint').classList.remove('on'); hintShown = null; hintAt = performance.now();
 });
 
 // ---------------------------------------------------------------------------
@@ -4685,19 +4726,20 @@ function handleEvents(g) {
       if (e.kind === 'alert' && e.r >= 0) ping(e.r, PAL.red);
     } else if (e.t === 'detected') {
       // Toast the first few; after that the ticker carries them, or they drown everything else.
-      if (g.R.filter(r => r.st.detected).length <= 8) { Audio.fx('alert'); toast(`${g.R[e.r].meta.The} confirms its first cases.`, 'alert'); }
+      if (g.R.filter(r => r.st.detected).length <= 3) { Audio.fx('alert'); toast(`${g.R[e.r].meta.The} confirms its first cases.`, 'alert', true); }
       if (g.R.filter(r => r.st.detected).length >= 2) hint('spread');
     } else if (e.t === 'flight') { if (Math.random() < .8) spawnTravel(e.from, e.to, { inf: true }); }
     else if (e.t === 'ship') spawnTravel(e.from, e.to, { inf: true, ship: true });
-    else if (e.t === 'variant') { Audio.fx('variant'); ping(e.r, PAL.red); toast(`New variant identified in ${g.R[e.r].meta.the}.`, 'alert'); hint('variant'); autoPause('new variant'); }
-    else if (e.t === 'vaccine') { Audio.fx('win'); toast('Vaccine approved. Manufacturing has begun.', 'good'); hint('vaccine'); }
+    else if (e.t === 'variant') { Audio.fx('variant'); ping(e.r, PAL.red); toast(`New variant identified in ${g.R[e.r].meta.the}.`, 'alert', true); hint('variant'); autoPause('new variant'); }
+    else if (e.t === 'vaccine') { Audio.fx('win'); toast('Vaccine approved. Manufacturing has begun.', 'good', true); hint('vaccine'); }
     else if (e.t === 'rolled') {
       // The moment a programme lands, show what it changed.
       const u = UPGRADE[e.id], x = e.gain.slice(0, 2).map(c => `${c.label.toLowerCase()} ${fmtImpact(c.fmt, c.from)} → ${fmtImpact(c.fmt, c.to)}`);
       const ms = MEASURES.filter(m => m.unlock === e.id && g.measureVisible(m.id)).map(m => m.name.toLowerCase());
       const ts = TEAMS.filter(T => (u.fx[T.count] || 0) > 0).map(T => T.short.toLowerCase() + ' teams');
       const what = x.length ? x.join(', ') : ms.length ? `${ms.join(' and ')} now available in regions` : ts.length ? `${ts.join(', ')} ready` : 'now part of the response';
-      toast(`${g.upgradeName(e.id)} in force: ${what}.`, 'good'); Audio.fx('buy');
+      if (ms.length || ts.length || OPEN.has('resp')) toast(`${g.upgradeName(e.id)} in force: ${what}.`, 'good', true);
+      Audio.fx('buy');
       if (ms.length) hint('unlocked');
       if (e.id === 'd7') hint('intel');
       if (OPEN.has('resp')) renderResp();
@@ -4705,17 +4747,25 @@ function handleEvents(g) {
       const r = g.R[e.r], m = MEASURE[e.id];
       ping(e.r, PAL.blue);
       const [x, y] = toScreen(r.c[0], r.c[1]);
-      UI.pops.push({ x, y: y - 58, text: `${m.name} in force`, col: '#ffffff', t0: performance.now() / 1000, small: true });
+      const now = performance.now() / 1000;
+      if (!UI.pops.some(p => p.small && now - p.t0 < 1.5)) UI.pops.push({ x, y: y - 58, text: `${m.name} in force`, col: '#ffffff', t0: now, small: true });
       if (UI.sel === e.r) renderCard(true);
     } else if (e.t === 'team') { ping(e.r, '#ffffff'); if (UI.sel === e.r) renderCard(true); }
-    else if (e.t === 'flash') { Audio.fx('alert'); ping(e.r, PAL.gold); const f = g.s.flashpoints.find(x => x.k === e.k); toast(`${C.FLASH[f.type].name} in ${g.R[e.r].meta.the}: ${C.FLASH[f.type].days} days to act. Tap its marker.`, 'bad'); hint('flash'); autoPause('flashpoint'); }
+    else if (e.t === 'flash') {
+      Audio.fx('alert'); ping(e.r, PAL.gold);
+      const f = g.s.flashpoints.find(x => x.k === e.k);
+      toast(`${C.FLASH[f.type].name} in ${g.R[e.r].meta.the}: ${C.FLASH[f.type].days} days to act. Tap its gold marker.`, 'bad', true);
+      // Time drops to normal speed so there is a chance to read it and act.
+      if (UI.speed > 1) setSpeed(1);
+      hint('flash'); autoPause('flashpoint');
+    }
     else if (e.t === 'flashEnd') { if (UI.sel === e.r) renderCard(true); if (!e.ok) Audio.fx('alert'); }
     else if (e.t === 'rumour') { ping(e.r, PAL.violet); hint('rumour'); }
-    else if (e.t === 'cert') { ping(e.r, PAL.green); Audio.fx('pop'); hint('cert'); if (g.R.filter(r => r.st.cert).length <= 3) toast(`${g.R[e.r].meta.The} is certified free of the pathogen.`, 'good'); }
-    else if (e.t === 'uncert') { ping(e.r, PAL.red); toast(`${g.R[e.r].meta.The} loses its certification: new cases.`, 'alert'); autoPause('lost certification'); }
+    else if (e.t === 'cert') { ping(e.r, PAL.green); Audio.fx('pop'); hint('cert'); if (g.R.filter(r => r.st.cert).length <= 1) toast(`${g.R[e.r].meta.The} is certified free of the pathogen.`, 'good', true); }
+    else if (e.t === 'uncert') { ping(e.r, PAL.red); toast(`${g.R[e.r].meta.The} loses its certification: new cases.`, 'alert', true); autoPause('lost certification'); }
     else if (e.t === 'election') { ping(e.r, PAL.violet); hint('election'); if (UI.sel === e.r) renderCard(true); }
-    else if (e.t === 'emerging') { Audio.fx('variant'); ping(e.r, PAL.red); toast(`A new lineage is emerging in ${g.R[e.r].meta.the}. Get an epidemiology team there.`, 'alert'); hint('emerging'); autoPause('emerging variant'); }
-    else if (e.t === 'contained') { Audio.fx('win'); ping(e.r, PAL.green); toast(`New lineage stamped out in ${g.R[e.r].meta.the} before it could spread.`, 'good'); }
+    else if (e.t === 'emerging') { Audio.fx('variant'); ping(e.r, PAL.red); toast(`A new lineage is emerging in ${g.R[e.r].meta.the}. Get an epidemiology team there.`, 'alert', true); if (UI.speed > 1) setSpeed(1); hint('emerging'); autoPause('emerging variant'); }
+    else if (e.t === 'contained') { Audio.fx('win'); ping(e.r, PAL.green); toast(`New lineage stamped out in ${g.R[e.r].meta.the} before it could spread.`, 'good', true); }
     else if (e.t === 'supplies') { ping(e.r, PAL.tan); if (UI.sel === e.r) renderCard(true); }
     else if (e.t === 'event') { /* shown after the step loop */ }
   }

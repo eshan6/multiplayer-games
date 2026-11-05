@@ -58,7 +58,8 @@ enable sound.
   tired, poorer, misinformed publics vote in populists who lift the harshest
   restrictions on day one.
 - **Flashpoints** put a clock on the map: a pilgrimage, a cruise ship, an
-  outbreak in a camp or a prison, a mass rally. Meet one of its needs in time
+  outbreak in a camp or a prison, a mass rally. You get two to three weeks,
+  and time drops to normal speed when one appears. Meet one of its needs in time
   (a measure fully in force, the right team on the ground, or the money) or it
   lands.
 - **Money has to last.** Paid programmes and deployed teams cost upkeep every
