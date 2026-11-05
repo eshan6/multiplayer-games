@@ -24,7 +24,7 @@ import android.webkit.WebViewClient;
  */
 public class MainActivity extends Activity {
     private static final String GAME = "file:///android_asset/index.html";
-    private static final int CHROME = Color.rgb(11, 16, 20);
+    private static final int CHROME = Color.rgb(28, 29, 26);
     private WebView web;
 
     @Override
