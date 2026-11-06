@@ -60,7 +60,7 @@ enable sound.
   populist, each changing how measures land. Democracies hold elections, and
   tired, poorer, misinformed publics vote in populists who lift the harshest
   restrictions on day one.
-- **Flashpoints** put a clock on the map: a pilgrimage, a cruise ship, an
+- **Flashpoints** (rare: about one a year) put a clock on the map: a pilgrimage, a cruise ship, an
   outbreak in a camp or a prison, a mass rally. You get about three weeks,
   and time drops to normal speed when one appears. Meet one of its needs in
   time (a measure fully in force, the right team on the ground, or the money)
@@ -100,11 +100,25 @@ enable sound.
 
 ## Pathogens and difficulty
 
-Six pathogens, each played differently: Novel Coronavirus, Pandemic Influenza
-(seasonal, drifts fast), Mosquito-borne Fever (tropical, needs vector control),
-Superbug (treatment matters most, resistance evolves), Haemorrhagic Fever
-(lethal, contact-traced) and Disease X (randomised, profile unknown). The first
-two are open from the start; beating one unlocks the next.
+Six pathogens, each with a rule of its own. A chip under the clock shows its
+signature as it plays out, and each marks the map differently:
+
+- **Novel Coronavirus**: silent spread. About a third of cases show no
+  symptoms, so testing, tracing and wastewater matter most.
+- **Pandemic Influenza**: winter waves, hemisphere by hemisphere, and a strain
+  that drifts away from the vaccine every year unless an mRNA platform or
+  boosters ship an update. Washes the map orange-red.
+- **Mosquito-borne Fever**: only mosquitoes carry it. The map hatches today's
+  mosquito habitat, which moves with the seasons; vector control works,
+  lockdowns barely do.
+- **Superbug**: spreads on crowded hospital wards, so beds, field hospitals and
+  medical teams slow it as well as saving lives. Antibiotics work until it
+  learns to resist them.
+- **Haemorrhagic Fever**: lethal, spread by contact, and every unsafe funeral
+  seeds new cases until safe burials stop them. Deaths frighten publics more.
+- **Disease X**: randomised, its profile hidden until you sequence and model it.
+
+The first two are open from the start; beating one unlocks the next.
 
 **Recruit**, **Regular**, **Hardened** and **Brutal** change funding,
 Authority, research speed, how fast and how cleverly the pathogen evolves, how

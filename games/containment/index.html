@@ -107,6 +107,16 @@ body.playing #hud{display:block}
 #legend .bar{width:150px;height:7px;border-radius:4px;margin:5px 0 3px}
 #legend .ends{display:flex;justify-content:space-between;width:150px;color:var(--hud-ink-3)}
 
+/* ---------- the pathogen: its name and what makes it different, under the clock ---------- */
+#pchip{position:fixed;left:10px;top:calc(66px + var(--safe-t));z-index:4;display:flex;align-items:center;gap:9px;max-width:min(330px,calc(100% - 20px));
+  padding:5px 14px 5px 5px;border-radius:999px;background:var(--hud);color:var(--hud-ink);box-shadow:0 4px 14px rgba(0,0,0,.28);text-align:left}
+#pchip .ico{width:30px;height:30px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;flex:none}
+#pchip .ico svg{width:18px;height:18px}
+#pchip .pt{min-width:0}
+#pchip b{display:block;font:700 13px/1.1 var(--cond);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pchip small{display:block;font-size:11.5px;color:var(--hud-ink-2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pchip small.hot{color:#ff9a86}
+
 /* ---------- news ticker ---------- */
 #ticker{position:fixed;left:50%;transform:translateX(-50%);width:min(760px,calc(100% - 420px));bottom:calc(var(--bottom-h) + 8px + var(--safe-b));height:28px;
   display:flex;align-items:center;overflow:hidden;z-index:5;border-radius:999px;background:var(--hud);pointer-events:none;
@@ -626,6 +636,8 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
   .st b{font-size:14px}
   .st small{font-size:8.5px}
   .grades{grid-template-columns:1fr}
+  #pchip{top:calc(58px + var(--safe-t));padding:4px 11px 4px 4px} #pchip .ico{width:24px;height:24px} #pchip .ico svg{width:15px;height:15px}
+  #pchip b{font-size:11.5px} #pchip small{font-size:10.5px}
 }
 /* Narrow phones (360px class): the top bar has to fit without pushing the menu off screen. */
 @media (max-width:400px){
@@ -657,6 +669,8 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
   #speeds button{width:28px;height:26px}
   .cur b{font-size:16px} .cur small{display:none} .cur .ico{width:24px;height:24px} .cur .ico svg{width:15px;height:15px}
   #menuBtn{width:36px;height:36px}
+  #pchip{top:calc(52px + var(--safe-t));left:calc(8px + var(--safe-l));padding:4px 11px 4px 4px;max-width:300px} #pchip .ico{width:24px;height:24px} #pchip .ico svg{width:15px;height:15px}
+  #pchip b{font-size:11.5px} #pchip small{font-size:10.5px}
   #stats{gap:8px}
   .st small{font-size:9px;letter-spacing:.04em}
   .st b{font-size:15px;line-height:1.1}
@@ -758,6 +772,7 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
     <div class="chip cur" id="supp" title="Medical supplies: for field hospitals, medical teams and supply drops"><span class="ico"><svg class="i"><use href="#i-box"/></svg></span><div><b class="num" id="suppTxt">0</b><small>Supplies</small></div></div>
     <button class="chip" id="menuBtn" aria-label="Menu"><svg class="i"><use href="#i-menu"/></svg></button>
   </div>
+  <button id="pchip" aria-label="The pathogen"><span class="ico"><svg class="i"><use href="#i-virusvec" id="pchipIcon"/></svg></span><span class="pt"><b id="pchipName"></b><small id="pchipSig"></small></span></button>
   <div id="ticker" aria-live="polite"></div>
   <div id="bottom">
     <button class="bigbtn" id="respBtn"><span class="ico"><svg class="i"><use href="#i-hexes"/></svg></span><span class="badge num" id="respBadge"></span><span><b>Response</b><small>Upgrades and research</small></span></button>
@@ -885,11 +900,13 @@ table.rt{width:100%;border-collapse:collapse;font-size:13px}
     <h3>Misinformation</h3>
     <p>Rumours are a second epidemic. They start where people are tired, frightened and distrustful, then spread to neighbours and along flight routes, shown on each region's panel. Where they take hold, people comply less, refuse the vaccine and lose trust. <strong>Fact-check campaigns</strong> wear them down, <strong>community teams</strong> undercut them, and a <strong>crackdown</strong> stamps them out fast at a price in trust.</p>
     <h3>Flashpoints</h3>
-    <p>Sometimes something is about to happen in a region: a pilgrimage, a cruise ship docking, an outbreak in a camp or a prison, a mass rally. Its gold marker shows how many days you have, usually three weeks, and time drops to normal speed when one appears. Meet one of its needs in time (a measure fully in force, the right team on the ground, or the money) and it passes quietly. If time runs out, the game stops and asks you: pay now, hold on a few more days if help is about to arrive, or let it go ahead.</p>
+    <p>Once in a while, about once a year, something is about to happen in a region: a pilgrimage, a cruise ship docking, an outbreak in a camp or a prison, a mass rally. Its gold marker shows how many days you have, usually three weeks, and time drops to normal speed when one appears. Meet one of its needs in time (a measure fully in force, the right team on the ground, or the money) and it passes quietly. If time runs out, the game stops and asks you: pay now, hold on a few more days if help is about to arrive, or let it go ahead.</p>
     <h3>Field teams</h3>
     <p>You start with an epidemiology team at headquarters in Geneva; upgrades add medical, vaccination and community teams. Send one from a region's panel for 2 Funding. It travels across the map, takes three days to set up, then works there until you move it.</p>
     <h3>Upgrades</h3>
     <p>Open <strong>Response</strong> to fund upgrades in five areas: Detect, Contain, Treat, Vaccine and Society. Each shows what it would change today, in numbers. A funded upgrade <strong>rolls out over days</strong>: the rim of its hex fills as its effect builds, and anything that needs it waits until it is in force. <strong>Progress</strong>, at the bottom of the Response tabs, shows what is rolling out and what each programme changed when it landed. Prices rise a little with every upgrade you buy, so you will not get everything.</p>
+    <h3>Each pathogen is different</h3>
+    <p>The chip under the clock names the pathogen and what makes it different, live. The coronavirus spreads silently; influenza surges every winter and drifts away from its vaccine each year; the mosquito-borne fever lives only where mosquitoes do, hatched on the map; the superbug spreads on crowded hospital wards; haemorrhagic fever spreads at unsafe funerals; Disease X hides its profile until you study it. Tap the chip for the full profile.</p>
     <h3>The vaccine</h3>
     <p>Research needs the pathogen's genome first: buy <strong>Genome sequencing</strong> early. Research runs in the labs of wealthy regions, so wrecking their economies slows it. Once approved, doses are limited by factories, by how fast each region can vaccinate, by who trusts the vaccine, and by rich regions buying first unless you fund equitable allocation. From phase III trials, <strong>ring vaccination</strong> can stamp out small clusters.</p>
     <h3>The pathogen fights back</h3>
@@ -1193,8 +1210,8 @@ const MEASURES = [
     desc: 'Seal off the affected towns and test everyone inside. Crushing against a few clusters, useless against a national epidemic. Also cuts land travel.' },
   { id: 'vector', name: 'Vector control', icon: 'vector', unlock: 'c11', cost: 1, econ: .003, harsh: .04, eff: .55, days: 12, modes: ['vector'],
     desc: 'Spraying, drainage and bed nets. Cuts mosquito-borne transmission sharply, once the teams have covered the region.' },
-  { id: 'burials', name: 'Safe burials', icon: 'grave', unlock: 't14', cost: 1, econ: .002, harsh: .15, eff: .3, days: 6, modes: ['contact'],
-    desc: 'Trained teams handle the bodies of the dead. Funerals are a major source of contact spread; families resent the change.' },
+  { id: 'burials', name: 'Safe burials', icon: 'grave', unlock: 't14', cost: 1, econ: .002, harsh: .15, eff: .12, days: 6, modes: ['contact'],
+    desc: 'Trained teams handle the bodies of the dead. Every unsafe funeral seeds new cases; safe burials stop nearly all of them. Families resent the change.' },
   { id: 'borders', name: 'Close land borders', icon: 'border', unlock: 'c4', cost: 2, econ: .03, harsh: .12, days: 2,
     desc: 'Stops most overland travel in and out of the region.' },
   { id: 'ports', name: 'Close sea ports', icon: 'ship', unlock: 'c4', cost: 1, econ: .02, harsh: .05, days: 2,
@@ -1729,7 +1746,7 @@ class Game {
       lastStats: null,
       length, limitDay: length === 'short' ? 900 : 1460, scenario: sc ? sc.id : null, objective: sc && sc.objective || { type: 'eradicate' },
       tutorial: !!(sc && sc.tutorial), mods: mods.slice(), daily, researchMul: length === 'short' ? 1.25 : 1,
-      supplies: 6, shipments: [], flashpoints: [], flashId: 1, nextFlash: 25, log: [], shortfall: false, upkeep: 0,
+      supplies: 6, shipments: [], flashpoints: [], flashId: 1, nextFlash: 90, log: [], shortfall: false, upkeep: 0,
       emerging: null, certDays: [], pendingFlash: null, inForce: [],
     };
     st.rng = s.rng;
@@ -1923,7 +1940,8 @@ class Game {
     const esc = this.traitLevel('escape');
     const unmatched = this.M.boosters ? Math.max(0, esc - this.s.vaccine.matched) : esc;
     const per = this.M.panVariant ? .08 : .22;
-    return clamp(.9 * (1 - per * unmatched) + this.M.veBonus - this.M.vePenalty, .2, .97);
+    const drift = this.P.id === 'flu' ? 1 - .3 * Math.min(1.2, this.s.vaccine.drift || 0) : 1;
+    return clamp((.9 * (1 - per * unmatched) + this.M.veBonus - this.M.vePenalty) * drift, .2, .97);
   }
   upgradeCost(id) {
     const u = UPGRADE[id];
@@ -2012,6 +2030,7 @@ class Game {
       beta *= 1 - P.heatPen * r.meta.heat * (1 - .5 * this.trait('heat'));
     }
     if (P.mode === 'respiratory') beta *= 1 + .1 * this.trait('aerosol');
+    if (P.id === 'superbug') beta *= 1 + .6 * this.wardLoad(r);
     beta *= this.effectMul('beta', r.i);
     const c = this.compliance(r);
     const aero = P.mode === 'respiratory' && this.traitLevel('aerosol') && !M.ventilation ? .7 : 1;
@@ -2064,6 +2083,8 @@ class Game {
     }
     return { beta: beta * keep, raw: beta, keep, c, rf, iso, red };
   }
+  // How full the hospitals are (0..1.2): the superbug spreads on crowded wards.
+  wardLoad(r) { return Math.min(1.2, r.st.I * this.P.hosp / Math.max(1, this.capacity(r))); }
   ifr(r) {
     const P = this.P, M = this.M, st = r.st;
     const care = 1.35 - .55 * r.meta.wealth;
@@ -2307,6 +2328,10 @@ class Game {
         deaths = out * f;
       }
       st.S -= newS; st.V -= newV; st.E += newS + newV - onset; st.I += onset - out;
+      if (P.mode === 'contact' && deaths > 0) {
+        const funerals = Math.min(st.S, deaths * .9 * (1 - .9 * this.mr(r, 'burials')) * (.5 + .5 * (1 - this.compliance(r))));
+        st.S -= funerals; st.E += funerals; st.funeralNew = funerals;
+      } else st.funeralNew = 0;
       st.R += out - deaths; st.D += deaths;
       // Waning immunity.
       const wr = st.R * waneR, wv = st.V * waneV;
@@ -2542,7 +2567,7 @@ class Game {
       }
     }
     if (s.noPlayer || s.day < s.nextFlash || s.flashpoints.length >= 2) return;
-    s.nextFlash = s.day + 14 + Math.floor(rngNext(s) * 24 / (D.flash || 1));
+    s.nextFlash = s.day + Math.floor((200 + rngNext(s) * 220) / (D.flash || 1));
     if (rngNext(s) > .8 * (D.flash || 1)) return;
     const busy = new Set(s.flashpoints.map(f => f.r));
     const cands = FLASHPOINTS.filter(F => this.R.some(r => !busy.has(r.i) && F.where(this, r)));
@@ -2757,6 +2782,13 @@ class Game {
       if (v.boosterProg >= 1) { v.boosterProg = 0; v.matched++; this.news('An updated booster matching the latest variant is approved.', 'good'); }
     }
     v.ramp = Math.min(1, v.ramp + 1 / 70);
+    // Influenza drifts: a year after each strain update the vaccine matches it less
+    // well. An mRNA platform or variant-adapted boosters ship a fresh strain yearly.
+    if (this.P.id === 'flu') {
+      v.drift = (v.drift || 0) + 1 / 365;
+      if (v.drift >= 1 && (M.mrna || M.boosters)) { v.drift = 0; this.news("This year's flu vaccine update ships: protection is back to full strength.", 'good'); }
+      else if (Math.abs(v.drift - 1) < .5 / 365 && !s.noPlayer) this.news('The flu has drifted away from the vaccine strain. Without an mRNA platform or boosters, protection keeps falling.', 'bad');
+    }
     let supply = this.doseRate();
     v.made += supply;
     const eq = clamp(.15 + M.equity + s.bonus.equity + this.effectSum('equity', -1), 0, 1) / this.D.hoard;
@@ -3403,6 +3435,18 @@ const terrain = m => m.id === 'GRL' ? PAL.ice
   : m.heat > .5 ? '#7a8a4c' : '#6c7f4a';
 const LAND = '#a39f88';
 const R_INF = ramp([[0, '#dc3a2e'], [.6, PAL.red], [1, PAL.redDk]]);
+// Each pathogen marks the map in its own way: all red (the pathogen's colour),
+// but a different shade and a different mark.
+const PSTYLE = {
+  virus: { c: '#e81c16', dk: '#7f1410', mark: 'square' },
+  flu: { c: '#f2552c', dk: '#8a2a12', mark: 'dot' },
+  mosquito: { c: '#d4145a', dk: '#6d0b30', mark: 'dot' },
+  superbug: { c: '#b3201b', dk: '#5c0d0b', mark: 'ring' },
+  ebola: { c: '#8e0b0b', dk: '#3d0404', mark: 'big' },
+  x: { c: '#e81c16', dk: '#7f1410', mark: 'plus' },
+};
+const pstyle = () => PSTYLE[UI.g && UI.g.P.id] || PSTYLE.virus;
+const infRamp = () => { const p = pstyle(); return ramp([[0, p.c], [.6, p.c], [1, p.dk]]); };
 const R_DEAD = ramp([[0, '#6d5a50'], [.5, '#4a1c1a'], [1, '#160505']]);
 const R_HOSP = ramp([[0, PAL.green], [.55, PAL.gold], [.85, PAL.red], [1, PAL.redDk]]);
 const R_TRUST = ramp([[0, PAL.red], [.45, PAL.gold], [1, PAL.green]]);
@@ -3436,6 +3480,15 @@ const geoIdx = REGIONS.map(r => MAP.regions.findIndex(m => m.id === r.id));
 const PATHS = geoIdx.map(k => new Path2D(MAP.regions[k].d));
 const DOTS = geoIdx.map(k => MAP.regions[k].dots);
 const AREA = geoIdx.map(k => MAP.regions[k].a);
+// Bounding boxes, from the path data (absolute M, relative l).
+const BBOX = geoIdx.map(k => {
+  let x = 0, y = 0, x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const [, c, a, b2] of MAP.regions[k].d.matchAll(/([Ml])(-?[\d.]+)[ ,]?(-?[\d.]+)/g)) {
+    if (c === 'M') { x = +a; y = +b2; } else { x += +a; y += +b2; }
+    x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+  }
+  return [x0, y0, x1, y1];
+});
 const P_SPHERE = new Path2D(MAP.sphere), P_GRAT = new Path2D(MAP.grat), P_NEUTRAL = new Path2D(MAP.neutral);
 const P_BORDERS = new Path2D(MAP.borders), P_INNER = new Path2D(MAP.inner);
 const P_LAND = new Path2D(); PATHS.forEach(p => P_LAND.addPath(p));
@@ -3544,7 +3597,7 @@ function regionTint(g, r) {
   // Low levels read through the red stipple; the wash deepens to solid red as it takes hold.
   const a = m === 'infection' || m === 'true' ? .88 * Math.pow(v, 1.4) : m === 'deaths' ? .2 + .62 * v : m === 'vaccine' ? .12 + .62 * v
     : m === 'rumour' ? .15 + .65 * v : m === 'cert' ? .62 : .5;
-  return [MODE[m].ramp(v), a];
+  return [m === 'infection' || m === 'true' ? infRamp()(v) : MODE[m].ramp(v), a];
 }
 
 function drawBase() {
@@ -3568,6 +3621,19 @@ function drawBase() {
   b.fillStyle = LAND; b.fill(P_LAND);
   b.restore();
   REGIONS.forEach((m, i) => { b.fillStyle = terrain(m); b.fill(PATHS[i]); });
+  // Mosquito-borne fever: hatch the regions where mosquitoes can carry it this season.
+  if (g && g.P.mode === 'vector' && UI.phase !== 'title') {
+    b.save(); b.strokeStyle = 'rgba(46,60,20,.38)'; b.lineWidth = 1.2 / view.s;
+    for (const r of g.R) {
+      const v = g.vectorSuit(r); if (v < .18) continue;
+      b.save(); b.clip(PATHS[r.i]); b.globalAlpha = clamp(v, .25, 1);
+      const bb = BBOX[r.i], gap = 9;
+      b.beginPath();
+      for (let x = bb[0] - (bb[3] - bb[1]); x < bb[2]; x += gap) { b.moveTo(x, bb[3]); b.lineTo(x + (bb[3] - bb[1]), bb[1]); }
+      b.stroke(); b.restore();
+    }
+    b.restore();
+  }
   if (g) for (const r of g.R) {
     const t = regionTint(g, r);
     if (!t) continue;
@@ -3605,8 +3671,26 @@ function drawDots(b) {
     else f = st.detected ? Math.pow(log01(st.repDeaths / perM, 6000), 1.1) : 0;
     const d = DOTS[r.i], n = Math.round(f * d.length / 2);
     if (!n) continue;
-    b.fillStyle = mode === 'deaths' ? 'rgba(18,4,4,.9)' : 'rgba(232,28,22,.95)';
-    for (let k = 0; k < n; k++) b.fillRect(d[2 * k] - half, d[2 * k + 1] - half, size, size);
+    const ps = pstyle();
+    if (mode === 'deaths') {
+      b.fillStyle = 'rgba(18,4,4,.9)';
+      for (let k = 0; k < n; k++) b.fillRect(d[2 * k] - half, d[2 * k + 1] - half, size, size);
+    } else if (ps.mark === 'square') {
+      b.fillStyle = ps.c; for (let k = 0; k < n; k++) b.fillRect(d[2 * k] - half, d[2 * k + 1] - half, size, size);
+    } else if (ps.mark === 'dot' || ps.mark === 'big') {
+      const rr = ps.mark === 'big' ? size * .9 : size * .6, step = ps.mark === 'big' ? 2 : 1;
+      b.fillStyle = ps.c; b.beginPath();
+      for (let k = 0; k < n; k += step) { b.moveTo(d[2 * k] + rr, d[2 * k + 1]); b.arc(d[2 * k], d[2 * k + 1], rr, 0, 7); }
+      b.fill();
+    } else if (ps.mark === 'ring') {
+      b.strokeStyle = ps.c; b.lineWidth = size * .35; b.beginPath();
+      for (let k = 0; k < n; k++) { b.moveTo(d[2 * k] + size * .55, d[2 * k + 1]); b.arc(d[2 * k], d[2 * k + 1], size * .55, 0, 7); }
+      b.stroke();
+    } else {
+      b.strokeStyle = ps.c; b.lineWidth = size * .38; b.beginPath();
+      for (let k = 0; k < n; k++) { const x = d[2 * k], y = d[2 * k + 1]; b.moveTo(x - size * .6, y); b.lineTo(x + size * .6, y); b.moveTo(x, y - size * .6); b.lineTo(x, y + size * .6); }
+      b.stroke();
+    }
   }
 }
 
@@ -3950,6 +4034,7 @@ function hud(force) {
   $('#fundTxt').textContent = Math.floor(s.funding);
   $('#authTxt').textContent = Math.floor(s.authority);
   $('#suppTxt').textContent = Math.floor(s.supplies);
+  pathogenChip(g);
   const inc = g.incomeRate() * 30, up = (s.upkeep || 0) * 30, net = inc - up;
   const fr = $('#fundRate'); fr.textContent = `${net >= 0 ? '+' : '−'}${Math.abs(net).toFixed(net < 10 && net > -10 ? 1 : 0)} a month`;
   fr.classList.toggle('neg', net < 0);
@@ -4012,6 +4097,47 @@ function hud(force) {
   $('#respBadge').textContent = n; $('#respBtn').classList.toggle('can', n > 0);
   Audio.tension = clamp(log01(t.active, 1e9) * .9 + (trueShare > .5 ? .2 : 0), 0, 1);
   if (UI.sel >= 0) renderCard();
+}
+
+// What makes this pathogen different, in one line under its name.
+function pathogenChip(g) {
+  const P = g.P, s = g.s, el = $('#pchipSig');
+  $('#pchipName').textContent = P.name;
+  $('#pchipIcon').setAttribute('href', '#i-' + PATHOGEN_ICON[P.id]);
+  let text = '', hot = false, tip = '';
+  if (P.id === 'virus') {
+    text = `Silent spread · ${pct(g.asym)} of cases show no symptoms`;
+    tip = 'Most of its spread is invisible. Testing, tracing and wastewater monitoring find what symptoms will not.';
+  } else if (P.id === 'flu') {
+    const north = Math.cos(2 * Math.PI * (g.doy() - 15) / 365);
+    const season = north > .35 ? 'Flu season in the north' : north < -.35 ? 'Flu season in the south' : 'Between flu seasons';
+    const drift = s.vaccine.approved ? ` · vaccine strain ${pct(1 - .3 * Math.min(1.2, s.vaccine.drift || 0))} matched` : '';
+    text = season + drift; hot = Math.abs(north) > .35;
+    tip = 'It surges every winter, hemisphere by hemisphere, and drifts away from the vaccine each year. An mRNA platform or boosters ship a yearly update.';
+  } else if (P.id === 'mosquito') {
+    const n = g.R.filter(r => g.vectorSuit(r) > .5).length;
+    text = `Mosquito season · ${n} region${n === 1 ? '' : 's'} at peak · hatched on the map`;
+    tip = 'Only mosquitoes carry it, so it lives where they do: the hatching marks today\'s mosquito habitat, which moves with the seasons. Vector control works; lockdowns barely do.';
+  } else if (P.id === 'superbug') {
+    const n = g.R.filter(r => r.st.detected && g.wardLoad(r) > .7).length;
+    text = n ? `Spreading on crowded wards in ${n} region${n === 1 ? '' : 's'}` : 'Spreads in hospitals: keep wards from filling';
+    hot = n > 0;
+    tip = 'It spreads fastest in crowded hospitals, so beds, field hospitals and medical teams slow it as well as saving lives. Antibiotics work until it learns to resist them.';
+  } else if (P.id === 'ebola') {
+    const n = g.R.filter(r => r.st.detected && r.st.repDeathsNew > 0 && g.mr(r, 'burials') < 1).length;
+    text = n ? `Unsafe funerals in ${n} region${n === 1 ? '' : 's'} are spreading it` : 'Funerals spread it: bury the dead safely';
+    hot = n > 0;
+    tip = 'Every unsafe funeral seeds new cases. Safe burials (Treat) stop nearly all of them. Deaths frighten publics far more than other pathogens do.';
+  } else {
+    text = g.M.sequenced ? 'Profile partly known · fund modelling for the rest' : 'Profile unknown · sequence the genome';
+    if (g.M.modelling) text = 'Profile known';
+    tip = 'Nobody knows how it spreads, hides or kills until you study it. Genome sequencing gives ranges; epidemic modelling gives the numbers.';
+  }
+  el.textContent = text; el.classList.toggle('hot', hot);
+  $('#pchip').title = `${P.name}: ${tip}`;
+  UI.ptip = tip;
+  // The first time you face each pathogen, say what makes it different.
+  if (!HINTS['path_' + P.id]) { HINTS['path_' + P.id] = [`${P.name}: what makes it different`, tip]; hint('path_' + P.id); }
 }
 
 // ---------------------------------------------------------------------------
@@ -4654,6 +4780,7 @@ function renderPathogen(w) {
   const range = (v, spread, f, unit = '') => model ? f(v) + unit : seq ? `${f(v * (1 - spread / 2))}–${f(v * (1 + spread / 2))}${unit}` : 'Unknown';
   const R0 = P.R0 * (1 + .11 * g.trait('tx'));
   w.append(h('div', { class: 'h3', style: 'margin-top:0' }, `${P.name}`), h('p', { class: 'note', style: 'margin:0 0 12px' }, P.kind + '. ' + P.blurb));
+  if (UI.ptip) w.append(h('div', { class: 'panel' }, h('h4', {}, 'What makes it different'), h('p', {}, UI.ptip)));
   w.append(h('div', { class: 'profile' },
     h('div', {}, h('small', {}, 'Basic reproduction number'), h('b', {}, range(R0, .45, v => v.toFixed(1)))),
     h('div', {}, h('small', {}, 'Incubation'), h('b', {}, range(g.incDays, .5, v => v.toFixed(0), ' days'))),
@@ -5213,6 +5340,7 @@ $('#pickRandom').addEventListener('click', () => { Audio.fx('tap'); startGame(nu
 $('#pickBack').addEventListener('click', () => { $('#pickBar').classList.remove('on'); UI.picking = false; toTitle(); openSetup(); });
 $('#respBtn').addEventListener('click', () => { Audio.fx('tap'); openResp(); });
 $('#worldBtn').addEventListener('click', () => { Audio.fx('tap'); openWorld(); });
+$('#pchip').addEventListener('click', () => { Audio.fx('tap'); worldTab = 'pathogen'; openWorld(); });
 $('#menuBtn').addEventListener('click', () => { Audio.fx('tap'); openOv('pause'); syncToggles(); });
 $('#pHelp').addEventListener('click', () => openOv('help'));
 $('#pQuit').addEventListener('click', () => { save(); toTitle(); });
