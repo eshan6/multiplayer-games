@@ -1,0 +1,4 @@
+# Signing keys stay out of the repo.
+*.keystore
+*.jks
+*.idsig
