@@ -24,7 +24,10 @@ export class Input {
     // A key held while the window loses focus never sends its keyup.
     window.addEventListener('blur', () => this.down.clear());
 
+    surface.tabIndex = 0;
     surface.addEventListener('pointerdown', (e) => {
+      // Take keyboard focus: in an embedded frame, keys go nowhere until this.
+      surface.focus({ preventScroll: true });
       this.dragging = true;
       surface.setPointerCapture(e.pointerId);
     });

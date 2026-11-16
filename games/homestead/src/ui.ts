@@ -25,6 +25,17 @@ export class Hud {
 
   ready() {
     el('loading').classList.add('done');
+    // Inside an embedded frame the page has no keyboard focus until it is
+    // clicked, and nothing would say why W does nothing. Say so, once.
+    const hint = el('start-hint');
+    hint.hidden = false;
+    const dismiss = () => {
+      hint.hidden = true;
+      window.removeEventListener('pointerdown', dismiss);
+      window.removeEventListener('keydown', dismiss);
+    };
+    window.addEventListener('pointerdown', dismiss);
+    window.addEventListener('keydown', dismiss);
   }
 
   toggle() {

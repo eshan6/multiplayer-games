@@ -1,4 +1,5 @@
 :root {
+  color-scheme: dark;
   --ink: #fbf6ea;
   --ink-soft: rgba(251, 246, 234, 0.72);
   --glass: rgba(28, 24, 18, 0.46);
@@ -35,6 +36,9 @@ body {
 }
 #view:active {
   cursor: grabbing;
+}
+#view:focus {
+  outline: none;
 }
 
 .panel {
@@ -146,6 +150,24 @@ button:focus-visible,
 input:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+#start-hint {
+  position: fixed;
+  left: 50%;
+  top: 22%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: var(--glass);
+  border: 1px solid var(--glass-edge);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-family: var(--serif);
+  font-size: 17px;
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 #loading {
