@@ -67,6 +67,22 @@ npm run typecheck
 npm run build          # into dist/: index.html plus assets/
 ```
 
+To publish the shared, two-player page, pack the build for its host and
+publish `dist-page/page.html` with the files listed in `dist-page/files.json`
+and the `db`, `room` and `user` capabilities:
+
+```
+npm run build && node tools/pack_for_page.mjs
+```
+
+The host does not serve `.glb`, so the packer ships each model as base64 text
+and rewrites the script to match.
+
+Two scripted checks, run by hand against `npm run dev` (they need Playwright):
+`tools/playthrough.mjs` plays the whole loop through the real keys and
+buttons, and `tools/shared_check.mjs` runs the game against a stand-in for the
+shared database with a second player present.
+
 Homestead shares no code with Standoff and is not part of its build, its
 tests or its Docker image.
 

@@ -40,16 +40,20 @@ export const wind = {
   uStrength: { value: 1 },
 };
 
+function fromBase64(b64: string): ArrayBuffer {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out.buffer;
+}
+
 async function bytes(url: string): Promise<ArrayBuffer> {
-  if (url.startsWith('data:')) {
-    const b64 = url.slice(url.indexOf(',') + 1);
-    const bin = atob(b64);
-    const out = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-    return out.buffer;
-  }
+  if (url.startsWith('data:')) return fromBase64(url.slice(url.indexOf(',') + 1));
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Could not load ${url}: ${res.status}`);
+  // The published page's host serves text and images but not .glb, so
+  // tools/pack_for_page.mjs ships each model as base64 in a .txt beside it.
+  if (/\.txt(\?|$)/.test(url)) return fromBase64(await res.text());
   return res.arrayBuffer();
 }
 
