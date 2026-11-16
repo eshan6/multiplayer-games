@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Homestead</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <canvas id="view"></canvas>
+
+    <div id="loading">
+      <div class="loading-card">
+        <h1>Homestead</h1>
+        <p id="loading-text">Waking the countryside</p>
+        <div class="bar"><div id="loading-bar"></div></div>
+      </div>
+    </div>
+
+    <header id="title" class="panel">
+      <h1>Homestead</h1>
+      <p>Visual sample</p>
+    </header>
+
+    <aside id="keys" class="panel">
+      <dl>
+        <div><dt>W A S D</dt><dd>Ride</dd></div>
+        <div><dt>Shift</dt><dd>Gallop</dd></div>
+        <div><dt>C</dt><dd>Walk or canter</dd></div>
+        <div><dt>Drag</dt><dd>Look around</dd></div>
+        <div><dt>Scroll</dt><dd>Zoom</dd></div>
+        <div><dt>H</dt><dd>Hide this</dd></div>
+      </dl>
+    </aside>
+
+    <footer id="clock" class="panel">
+      <div class="clock-row">
+        <button id="clock-toggle" type="button" aria-label="Pause the clock">Pause</button>
+        <output id="clock-time">17:54</output>
+        <input id="clock-slider" type="range" min="0" max="24" step="0.01" aria-label="Time of day" />
+      </div>
+      <div class="clock-row presets">
+        <button type="button" data-hour="6.4">Dawn</button>
+        <button type="button" data-hour="12.5">Midday</button>
+        <button type="button" data-hour="18.2">Golden hour</button>
+        <button type="button" data-hour="19.5">Sunset</button>
+        <button type="button" data-hour="23">Night</button>
+        <span class="spacer"></span>
+        <button type="button" id="quality" title="Lower detail for slower computers">Detail: High</button>
+      </div>
+    </footer>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

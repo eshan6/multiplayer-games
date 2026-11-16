@@ -195,3 +195,15 @@ npm start          run the built server
   identity is deliberate (deep navy, seat colours fixed to seat not to "you",
   green/red reserved strictly for correct/wrong, Archivo across its width axis).
   Do not introduce emoji as icons or a second typeface.
+
+## Other games in this repo
+
+`games/` holds games that are **not Standoff**. They share no code with it and
+are not part of its build, tests or Docker image; nothing above applies to
+them, and nothing in them should reach into `src/`, `config/` or `data/`.
+
+- `games/frontline-1944/`, `games/containment/` — offline, single-file HTML.
+- `games/homestead/` — a 3D shared-countryside game in progress, with its own
+  `package.json`, Vite build and asset pipeline. Read
+  `games/homestead/README.md` before touching it; it records the decisions
+  made so far and the three architectural lines to keep.

@@ -1,0 +1,28 @@
+{
+  "name": "homestead",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A shared countryside to build a life in. Currently: the visual sample.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:single": "vite build --mode single",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@gltf-transform/core": "^4.1.0",
+    "@gltf-transform/extensions": "^4.1.0",
+    "@gltf-transform/functions": "^4.1.0",
+    "@types/three": "^0.170.0",
+    "meshoptimizer": "^1.3.0",
+    "three": "^0.170.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.0",
+    "vite-plugin-singlefile": "^2.0.3"
+  }
+}
