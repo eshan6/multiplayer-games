@@ -370,9 +370,9 @@ its [README](games/containment/README.md).
 
 ## Also in this repo: Homestead
 
-[`games/homestead/`](games/homestead/) is a separate 3D game in progress: a
-shared countryside where two people ride, build a house, farm and keep animals
-together. What exists so far is a rideable visual sample, built to agree the
-look before the systems are written. It has its own `package.json` and shares
-no code with Standoff and is not part of its build. See its
+[`games/homestead/`](games/homestead/) is a separate 3D game for two: you
+start with a tent on a hilltop and build a life there together, with a shared
+basket of points, a cottage to furnish, crops, animals to look after, cooking,
+weather and seasons. It has its own `package.json` and tests, shares no code
+with Standoff and is not part of its build. See its
 [README](games/homestead/README.md).

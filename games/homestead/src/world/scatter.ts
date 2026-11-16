@@ -187,6 +187,17 @@ export function scatter(assets: Assets, terrain: Terrain): Scattered {
     }
   }
 
+  // Deep in the wood, the odd tree has died where it stood.
+  for (let i = 0; i < 26; i++) {
+    const a = rand() * Math.PI * 2;
+    const d = 50 + Math.sqrt(rand()) * (WORLD.playRadius - 50);
+    const x = Math.cos(a) * d;
+    const z = Math.sin(a) * d;
+    if (woodland(x, z) < 0.55 || reserved(x, z, 2)) continue;
+    place(rand() < 0.5 ? 'DeadTree_3' : 'DeadTree_5', x, z, 1.5 + rand() * 0.7, { sink: 0.2 });
+    obstacles.push({ x, z, r: 0.5 });
+  }
+
   // The backdrop: wooded hills ringing the world.
   const FAR = ['NormalTree_5', 'MapleTree_4', 'PineTree_5'];
   const FAR_STEP = 13;

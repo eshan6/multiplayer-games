@@ -31,7 +31,7 @@ import {
   type StructureId,
   type Weather,
 } from './game/catalog';
-import { clock, currentGoal, describe, goalProgress, have, level, meta, pantry, points, roomFor, type Store } from './game/world';
+import { clock, currentGoal, describe, goalProgress, level, meta, pantry, points, roomFor, type Store } from './game/world';
 import { KEY_CODES, type Spot } from './interact';
 import type { Tool } from './build';
 
@@ -107,7 +107,6 @@ export class Hud {
 
   /** Ask who is playing. Resolves when they press the button. */
   welcome(suggested: string, avatar: AvatarId, shared: boolean): Promise<{ name: string; avatar: AvatarId }> {
-    el('loading').classList.add('done');
     const root = el('welcome');
     const name = el<HTMLInputElement>('welcome-name');
     name.value = suggested;
@@ -191,8 +190,6 @@ export class Hud {
       this.lastBasket = basket;
       el('basket-points').textContent = String(points(this.store));
       el('basket-level').textContent = lv.title;
-      const from = lv.index === 0 ? 0 : (lv.next === null ? lv.earned : 0);
-      void from;
       const span = lv.next === null ? 1 : lv.earned / lv.next;
       el('basket-meter').style.width = `${Math.round(Math.min(1, span) * 100)}%`;
       const goal = el('goal');
@@ -465,7 +462,6 @@ export class Hud {
       row.append(h('span', '', l.name), h('span', 'count', `${Math.round(l.earned)}`));
       body.append(row);
     }
-    void have;
   }
 
   private renderHelp(body: HTMLElement) {

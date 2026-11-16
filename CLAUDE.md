@@ -203,7 +203,7 @@ are not part of its build, tests or Docker image; nothing above applies to
 them, and nothing in them should reach into `src/`, `config/` or `data/`.
 
 - `games/frontline-1944/`, `games/containment/` — offline, single-file HTML.
-- `games/homestead/` — a 3D shared-countryside game in progress, with its own
-  `package.json`, Vite build and asset pipeline. Read
-  `games/homestead/README.md` before touching it; it records the decisions
-  made so far and the three architectural lines to keep.
+- `games/homestead/` — a 3D game for two, with its own `package.json`, Vite
+  build, tests and asset pipeline. Read `games/homestead/README.md` before
+  touching it: it names the architectural lines to keep, above all that the
+  game's state is derived from stored timestamps and never ticked.

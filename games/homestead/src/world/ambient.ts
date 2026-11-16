@@ -93,7 +93,8 @@ export class Ambient {
         this.uniforms,
       ),
     );
-    const wings = [0xf2a03c, 0xf7e27a, 0xfdfbf2, 0x8fb8e8, 0xe98ab0];
+    // Kept below the bloom threshold: a butterfly should not glow like a lamp.
+    const wings = [0xd98a2c, 0xd9c45a, 0xd8d4c8, 0x7fa4d0, 0xcf7a9c];
     this.group.add(
       flock(
         90,

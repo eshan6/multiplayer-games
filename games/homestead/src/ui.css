@@ -18,6 +18,11 @@
   box-sizing: border-box;
 }
 
+/* Several panels set their own display; hidden must still mean hidden. */
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   margin: 0;
@@ -458,14 +463,18 @@ dl.keys dd {
   padding: 16px;
 }
 #welcome {
-  background: rgba(18, 15, 11, 0.55);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  /* Top-aligned when it is taller than the window, so nothing is cut off. */
+  align-items: safe center;
+}
+#welcome {
+  /* Shown before the first frame is drawn, so it brings its own backdrop. */
+  background: radial-gradient(ellipse at 50% 60%, #3b3323 0%, #16130f 70%);
   overflow-y: auto;
+  z-index: 13;
 }
 .sheet {
-  width: min(520px, 100%);
-  padding: 24px;
+  width: min(500px, 100%);
+  padding: 20px 22px;
   border-radius: 16px;
   background: var(--glass-solid);
   border: 1px solid var(--edge);
@@ -520,8 +529,9 @@ dl.keys dd {
 }
 .avatars img {
   width: 100%;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 5 / 4;
   object-fit: cover;
+  object-position: 50% 30%;
   display: block;
   background: rgba(251, 246, 234, 0.06);
 }

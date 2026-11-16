@@ -106,7 +106,10 @@ async function boot() {
 
   // ---- the shared world ------------------------------------------------------
   hud.loading('Pitching camp', 0.9);
-  act.settle(store, now());
+  // Pitch camp only in a world known to be empty. If the shared world did not
+  // answer in time, assuming it is new would overwrite the real one's clock.
+  const known = !(store instanceof SharedStore) || store.loaded.has('meta');
+  if (known) act.settle(store, now());
   const mine = myLedger(store);
   const suggested = mine.name !== 'Someone' ? mine.name : store instanceof SharedStore ? store.suggestedName : '';
   const who = manual
@@ -114,6 +117,7 @@ async function boot() {
     : await hud.welcome(suggested, mine.avatar in AVATARS ? mine.avatar : 'f_adventurer', store.shared);
   act.join(store, who.name, who.avatar, now());
   if (manual) document.getElementById('hud')!.hidden = false;
+  if (!known) hud.toast('The shared world is slow to answer. What you do may not be saved.', { bad: true });
 
   const player = new Player(who.avatar);
   scene.add(player.avatar.root);

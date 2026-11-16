@@ -168,6 +168,8 @@ export class SharedStore extends BaseStore {
   readonly shared = true;
   /** Set if a write was refused: this viewer can look but not change things. */
   readOnly = false;
+  /** Collections whose contents have actually arrived from the database. */
+  readonly loaded = new Set<CollectionName>();
   private readonly pending = new Map<string, { name: CollectionName; id: string; doc: object | null }>();
   private readonly busy = new Set<string>();
 
@@ -209,6 +211,7 @@ export class SharedStore extends BaseStore {
             resolve();
           };
           this.db.collection(name).onSnapshot((snap) => {
+            this.loaded.add(name);
             this.absorb(name, snap.docs);
             done();
           }, done);
@@ -266,7 +269,9 @@ export class SharedStore extends BaseStore {
 
   present(p: Presence) {
     // The host coalesces these; calling every frame is what it is built for.
-    void this.room?.presence({ ...p, id: this.self }).catch(() => undefined);
+    // Centimetres are plenty: there is no need to send fifteen decimal places.
+    const r = (n: number) => Math.round(n * 100) / 100;
+    void this.room?.presence({ ...p, x: r(p.x), z: r(p.z), heading: r(p.heading), speed: r(p.speed), id: this.self }).catch(() => undefined);
   }
 
   peers(): Peer[] {

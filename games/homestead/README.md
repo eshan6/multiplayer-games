@@ -1,26 +1,44 @@
 # Homestead
 
-A shared countryside for two people to build a life in: ride out together,
-raise a house, farm a plot, keep animals, and watch all of it grow and change
-whether or not you are there.
+A hilltop, a tent, a fire, two horses and a dog. Everything else, the two of
+you build: a cottage, a garden, animals, a kitchen, a life. It carries on
+growing while you are away.
 
-**What exists today is the visual sample** — one rideable slice of the world,
-built to agree the look before any of the systems are written.
+![The camp you start with, a built-up farm, the vegetable beds, and inside the cottage](shots/overview.jpg)
 
-![Six views of the sample: golden hour, the pond, sunset, night, the paddock, deer in the meadow](shots/overview.jpg)
+## How it plays
 
-## What the sample shows
+Everything you do earns **points for one shared basket**, and the basket is
+what you spend to build. Doing things side by side earns half as much again.
 
-- Rolling hills, a lane, a pond, woods, drifts of flowers, and grass that
-  moves in the wind and parts round the horse's hooves.
-- A cottage with a smoking chimney, a well, a fire, a paddock and the first
-  tilled plot.
-- A full day: dawn, midday, golden hour, sunset, and a night with stars, lit
-  windows and fireflies. The clock runs on its own; you can also scrub it.
-- You, on a horse, with a walk, a canter and a gallop.
-- Animals with a little mind of their own. The cows and the grey mare graze
-  the paddock. The deer bolt if you ride at them, sooner if you gallop. The
-  dog comes to find you and keeps to your stirrup until you leave it behind.
+- **Gather** fallen branches, stones, berries and mushrooms. They grow back.
+- **Build** by choosing from the catalogue and clicking the ground: the
+  cottage, vegetable beds, a hen coop, a pig sty, a cow byre, a stable, a
+  well, fences and paths that join end to end, lanterns, trees, flower beds.
+- **Farm**: plant a row, water it, harvest it. Six crops, each a real model at
+  four stages. Watered crops grow twice as fast.
+- **Keep animals**: each gets hungry, grubby and bored on the clock. Feed,
+  wash and play with them. Fed hens lay, fed cows give milk, pigs find
+  truffles. Any horse can be ridden.
+- **Cook** over the campfire, and more once you have a stove.
+- **Go indoors**: walk to the cottage door and press E. Furnish the room,
+  paint the walls, lay a floor, sleep until morning, share a meal.
+- **The dog** keeps to your heel, sits in front of you when it wants
+  something, and runs off to show you things worth gathering.
+- **The world** has a day and night every 24 minutes, four seasons that
+  recolour the woods, and weather you can set.
+
+A list of goals in the corner leads from the tent to a working farm.
+
+## Playing together
+
+Opened from its published page, the game keeps the world in that page's shared
+database and shows each player to the other through its live room. Two people
+who open the same link are in the same world, and it is there when they come
+back. Each needs to be signed in and allowed to interact with the page.
+
+Run locally, or opened by someone signed out, it is a one-player game saved in
+the browser.
 
 ## Run it
 
@@ -32,75 +50,77 @@ npm run dev            # http://localhost:5174
 
 | Key | |
 | --- | --- |
-| `W` `A` `S` `D` | ride |
-| `Shift` | gallop |
-| `C` | switch between walk and canter |
-| drag | look around |
-| scroll | zoom |
-| `P` | pause or run the clock |
-| `H` | hide the interface |
+| `W` `A` `S` `D` | walk, or ride |
+| `Shift` | run, or gallop |
+| `C` | slow to a stroll |
+| `E` `R` `T` | do what the prompt offers |
+| `F` | mount a horse, or get down |
+| `B` | build (indoors: furnish) |
+| `I` | pantry |
+| `H` | help |
+| `Esc` | put the tool away, close a panel |
+| drag, scroll | look around, zoom |
 
 ```
-npm run build          # normal build into dist/
-npm run build:single   # one self-contained HTML file into dist-single/
+npm test               # the rules, played without a screen
 npm run typecheck
+npm run build          # into dist/: index.html plus assets/
 ```
-
-The single-file build inlines every model and texture, so the look can be
-shared as one file with no server behind it.
 
 Homestead shares no code with Standoff and is not part of its build, its
 tests or its Docker image.
 
-## Layout
+## How it is built
 
 ```
 src/
+  game/                the game itself, with no rendering in it
+    catalog.ts         every item, crop, animal, recipe, building, goal: data
+    world.ts           what is stored, and everything derived from it
+    actions.ts         everything a player can do
+    stores.ts          where the world lives: this browser, or shared
   main.ts              boot and the frame loop
-  assets.ts            loads models; turns material names into looks
-  camera.ts  input.ts  ui.ts
-  noise.ts             seeded noise — same seed, same countryside
-  world/
-    land.ts            the shape of the land as pure functions of (x, z)
-    terrain.ts         samples land.ts onto the mesh you ride on
-    grass.ts           instanced blades, streamed in tiles round the rider
-    scatter.ts         woods, bushes, flowers, rocks, and instancing
-    homestead.ts       cottage, yard, paddock, plot
-    sky.ts             the clock, sun and moon, every light, the sky dome
-    water.ts  fx.ts    pond; smoke, fire, fireflies
-  entities/
-    creature.ts        a skinned animal: gaits, turning, standing on a slope
-    rider.ts           you and your horse
-    animals.ts         what the other animals decide to do
-tools/                 the asset pipeline (see ASSETS.md)
+  build.ts             the placement tool
+  interior.ts          inside the cottage
+  interact.ts  ui.ts  camera.ts  input.ts  assets.ts
+  entities/            you, your partner, the animals you keep, the wild ones
+  world/               land, terrain, grass, woods, sky, weather, seasons,
+                       water, effects, and what you have built
+tests/game.test.ts     the rules
+tools/                 the asset pipeline and two scripted checks
 ```
 
-Three lines in this are drawn deliberately, because the full game needs them:
+The lines that matter:
 
-- **`land.ts` is pure.** It imports no renderer. A server can import the same
-  file and agree with every client about where the ground is.
-- **`Rider.intent()` and `Rider.step()` are separate.** One reads keys, the
-  other moves a horse from an intent. A second rider is `step()` fed by
-  intents from a socket.
-- **`sky.ts` owns every light.** One number, the hour, decides the look.
-  Weather and seasons are further inputs to that same resolve, and leaf
-  colour is already a single tint per species waiting for them.
+- **Nothing is ticked.** A crop stores when it was planted; how ripe it is
+  now is arithmetic on the clock. An animal stores when it last ate. That is
+  why the world grows while nobody is playing, why two players never disagree
+  about a tomato, and why there is no server.
+- **The basket is a sum.** Each player writes only their own ledger; points
+  and the pantry are the ledgers added up. Two people spending at once cannot
+  overwrite each other.
+- **`game/` knows nothing about the screen.** The tests play the game against
+  an in-memory store. The same rules run against browser storage and against
+  the shared database, behind one small `Store` interface.
+- **The scene follows the store.** Nothing draws a fence because you built
+  it; a fence is drawn because a fence document exists. That is the whole of
+  how your partner's fence appears on your screen.
+- **`world/land.ts` is pure**, so both players stand on the same hill.
+- **Balance is one file.** Every cost, duration and reward is in `catalog.ts`.
 
-## Decided so far
+## What it does not do yet
 
-- **Look:** smooth low-poly, soft shadows, moving grass, warm light, a full
-  day and night.
-- **Time passes while both players are offline.**
-- **Models:** Quaternius, CC0. See [ASSETS.md](ASSETS.md).
+- **Sound.** There is none.
+- **Touch.** It needs a keyboard and a mouse.
+- **Animals are not where your partner sees them.** Which animals exist and
+  how they feel is shared; where each is standing is worked out by each
+  player's own game. A ridden horse is the exception.
+- **One room.** The cottage interior is a single room.
+- **Rain does not water crops,** and winter does not stop them growing.
+- **The camera can pass through a tree crown.**
 
-## Not built yet
+Verified by tests and by scripted play in a headless browser with a software
+renderer. Not yet measured: frame rate on real graphics hardware, and two
+real people in the published page at once.
 
-Everything that makes it a game rather than a place: a second player,
-building, farming, cooking, keeping and breeding stock, pets you can call and
-play with, weather, seasons, avatars, saving. The intended order is two
-players riding together first, then building, then farming and cooking, then
-animals and pets, then seasons and weather.
-
-Known limits of the sample itself: pigs and hens are missing (the animal pack
-used has neither with a walk cycle), the rider is posed in code rather than
-animated, there is no sound, and the camera can pass through a tree crown.
+Models are Quaternius packs, CC0. See [ASSETS.md](ASSETS.md).
