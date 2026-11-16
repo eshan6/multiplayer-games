@@ -19,11 +19,11 @@ WHITE = {"leaves_normal", "leaves_birch", "leaves_bush"}
 
 # name -> (source file, edge in px, keeps alpha)
 TEXTURES = {
-    "leaves_normal": ("NormalTree_Leaves.png", 512, True),
-    "leaves_birch": ("BirchTree_Leaves.png", 512, True),
-    "leaves_maple": ("MapleTree_Leaves_BW.png", 512, True),
-    "leaves_pine": ("PineTree_Leaves.png", 512, True),
-    "leaves_bush": ("Bush_Leaves.png", 512, True),
+    "leaves_normal": ("NormalTree_Leaves.png", 1024, True),
+    "leaves_birch": ("BirchTree_Leaves.png", 1024, True),
+    "leaves_maple": ("MapleTree_Leaves_BW.png", 1024, True),
+    "leaves_pine": ("PineTree_Leaves.png", 1024, True),
+    "leaves_bush": ("Bush_Leaves.png", 1024, True),
     "flowers": ("Flowers.png", 512, True),
     "grass": ("Grass.png", 512, True),
     "bark_normal": ("NormalTree_Bark.png", 256, False),

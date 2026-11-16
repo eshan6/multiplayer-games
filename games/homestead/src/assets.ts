@@ -18,7 +18,10 @@ import horseUrl from './assets/horse.glb?url';
 import cowUrl from './assets/cow.glb?url';
 import dogUrl from './assets/dog.glb?url';
 import deerUrl from './assets/deer.glb?url';
-import riderUrl from './assets/rider.glb?url';
+import foxUrl from './assets/fox.glb?url';
+import pigUrl from './assets/pig.glb?url';
+import furnitureUrl from './assets/furniture.glb?url';
+import cropsUrl from './assets/crops.glb?url';
 
 import leavesNormalUrl from './assets/leaves_normal.webp?url';
 import leavesBirchUrl from './assets/leaves_birch.webp?url';
@@ -95,14 +98,28 @@ export interface Animated {
 export interface Assets {
   nature: Map<string, Model>;
   props: Map<string, Model>;
+  furniture: Map<string, Model>;
+  crops: Map<string, Model>;
   horse: Animated;
   cow: Animated;
   dog: Animated;
   deer: Animated;
-  rider: Animated;
+  fox: Animated;
+  pig: Animated;
   /** Materials whose glow follows the hour (cottage windows, the fire). */
   windowGlow: THREE.MeshLambertMaterial;
   fireGlow: THREE.MeshBasicMaterial;
+  /** Lampshades and lantern panes: lit after dark. */
+  lampGlow: THREE.MeshLambertMaterial;
+  /** Leaf materials by species, so the seasons can recolour the woods. */
+  foliage: Record<'normal' | 'birch' | 'maple' | 'pine' | 'bush', THREE.MeshLambertMaterial>;
+}
+
+/** Find a model by name in any pack, or fail loudly: a typo in the catalogue should not be a silent gap. */
+export function modelOf(assets: Assets, pack: 'nature' | 'props' | 'furniture' | 'crops', name: string): Model {
+  const found = assets[pack].get(name);
+  if (!found) throw new Error(`no model "${name}" in ${pack}`);
+  return found;
 }
 
 /**
@@ -283,6 +300,24 @@ function piecesOf(gltf: GLTF): Map<string, Piece[]> {
   return out;
 }
 
+/**
+ * Move a model so it stands centred on its own footprint. The kits are not
+ * consistent about where a model's origin is; placing and rotating things
+ * only feels right when it is the middle of the base.
+ */
+function centre(parts: Part[], floor: boolean) {
+  const box = new THREE.Box3();
+  for (const p of parts) {
+    p.geometry.computeBoundingBox();
+    box.union(p.geometry.boundingBox!);
+  }
+  const c = box.getCenter(new THREE.Vector3());
+  for (const p of parts) {
+    p.geometry.translate(-c.x, floor ? -box.min.y : 0, -c.z);
+    p.geometry.computeBoundingBox();
+  }
+}
+
 function sizeOf(parts: Part[]): THREE.Vector3 {
   const box = new THREE.Box3();
   for (const p of parts) {
@@ -346,11 +381,14 @@ export async function loadAssets(onProgress: (done: number, total: number) => vo
   const glb = {
     nature: track(loadGltf(natureUrl)),
     props: track(loadGltf(propsUrl)),
+    furniture: track(loadGltf(furnitureUrl)),
+    crops: track(loadGltf(cropsUrl)),
     horse: track(loadGltf(horseUrl)),
     cow: track(loadGltf(cowUrl)),
     dog: track(loadGltf(dogUrl)),
     deer: track(loadGltf(deerUrl)),
-    rider: track(loadGltf(riderUrl)),
+    fox: track(loadGltf(foxUrl)),
+    pig: track(loadGltf(pigUrl)),
   };
   onProgress(0, jobs.length);
 
@@ -423,6 +461,13 @@ export async function loadAssets(onProgress: (done: number, total: number) => vo
     Stone_Dark: 0x968f84,
     Stone_Light: 0xb5aea2,
     Bag: 0xb39a6c,
+    Hay: 0xd9bd62,
+    // The farm kit's barn red, taken down from fire-engine to weathered paint.
+    LightRed: 0xb5543f,
+    DarkRed: 0x8f3f31,
+    RoofBlack: 0x4a4744,
+    White: 0xeee6d6,
+    Brown: 0x7a5236,
   });
   const windowGlow = new THREE.MeshLambertMaterial({ color: 0x2b2a33, emissive: 0xffb45e, emissiveIntensity: 0 });
   const fireGlow = new THREE.MeshBasicMaterial({ color: 0xffa040 });
@@ -433,20 +478,75 @@ export async function loadAssets(onProgress: (done: number, total: number) => vo
       material: srcName === 'Windows' ? windowGlow : srcName === 'Fire' ? fireGlow : propMaterial(srcName, colour),
       castShadow: srcName !== 'Fire',
     }));
+    centre(parts, false);
     props.set(name, { name, parts, size: sizeOf(parts) });
+  }
+
+  // --- furniture and crops ----------------------------------------------------
+  const lampGlow = new THREE.MeshLambertMaterial({ color: 0xfff1d0, emissive: 0xffc878, emissiveIntensity: 0 });
+  const homeMaterial = palette({
+    // The interior kit is modern white-and-grey; nudged toward a cottage.
+    'furniture:Kitchen': 0x7f9a8c,
+    'furniture:KitchenTop': 0xc9b79a,
+    'furniture:White': 0xf1eadb,
+    'furniture:Marble': 0xcfc8ba,
+    'furniture:Couch_Blue': 0x6f8fa8,
+    'furniture:Sofa': 0x9a5a52,
+    'furniture:Comforter': 0x8d5a78,
+    'furniture:ComforterLight': 0xb98aa6,
+    'furniture:Grey': 0xb9b4a8,
+  });
+  const furniture = new Map<string, Model>();
+  for (const [name, pieces] of piecesOf(await glb.furniture)) {
+    const parts: Part[] = pieces.map(({ material: srcName, colour, geometry }) => ({
+      geometry,
+      material: srcName === 'furniture:Light' || (name.startsWith('Light_') && srcName === 'furniture:White') ? lampGlow : homeMaterial(srcName, colour),
+      castShadow: !name.startsWith('Carpet'),
+    }));
+    centre(parts, true);
+    furniture.set(name, { name, parts, size: sizeOf(parts) });
+  }
+  const cropMaterial = palette();
+  const crops = new Map<string, Model>();
+  for (const [name, pieces] of piecesOf(await glb.crops)) {
+    const parts: Part[] = pieces.map(({ material: srcName, colour, geometry }) => ({ geometry, material: cropMaterial(srcName, colour), castShadow: true }));
+    crops.set(name, { name, parts, size: sizeOf(parts) });
   }
 
   const assets: Assets = {
     nature,
     props,
+    furniture,
+    crops,
     horse: prepareAnimated(await glb.horse),
     cow: prepareAnimated(await glb.cow),
     dog: prepareAnimated(await glb.dog),
     deer: prepareAnimated(await glb.deer),
-    rider: prepareAnimated(await glb.rider),
+    fox: prepareAnimated(await glb.fox),
+    pig: prepareAnimated(await glb.pig, { 'Material.003': 0xe7a9a2, Material: 0x8a5a4a }),
     windowGlow,
     fireGlow,
+    lampGlow,
+    foliage: leaves,
   };
   await Promise.all(jobs);
   return assets;
+}
+
+// Avatars are fetched only when somebody is wearing them: six would add five
+// megabytes to every visit, and a session needs two.
+const AVATAR_URLS = import.meta.glob('./assets/avatar_*.glb', { query: '?url', import: 'default' }) as Record<string, () => Promise<string>>;
+const avatarCache = new Map<string, Promise<Animated>>();
+
+export function loadAvatar(id: string): Promise<Animated> {
+  let pending = avatarCache.get(id);
+  if (!pending) {
+    const url = AVATAR_URLS[`./assets/avatar_${id}.glb`];
+    if (!url) return Promise.reject(new Error(`no avatar "${id}"`));
+    pending = url()
+      .then(loadGltf)
+      .then((gltf) => prepareAnimated(gltf));
+    avatarCache.set(id, pending);
+  }
+  return pending;
 }

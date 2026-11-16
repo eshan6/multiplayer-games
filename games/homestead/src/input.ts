@@ -10,11 +10,17 @@ export class Input {
   /** Wheel movement since the last frame. */
   wheel = 0;
   dragging = false;
-  /** Fires once per press, for toggles. */
+  /** Where the pointer is, in normalised device coordinates (-1..1, y up). */
+  readonly pointer = { x: 0, y: 0 };
+  /** True for the one frame after a press-and-release that did not drag. */
+  clicked = false;
+  /** Fires once per key press, for toggles. */
   onPress: (code: string) => void = () => {};
+  private travelled = 0;
 
   constructor(surface: HTMLElement) {
     window.addEventListener('keydown', (e) => {
+      // Typing a name must not ride a horse.
       if (e.target instanceof HTMLInputElement) return;
       if (!this.down.has(e.code)) this.onPress(e.code);
       this.down.add(e.code);
@@ -24,22 +30,32 @@ export class Input {
     // A key held while the window loses focus never sends its keyup.
     window.addEventListener('blur', () => this.down.clear());
 
+    const aim = (e: PointerEvent) => {
+      const r = surface.getBoundingClientRect();
+      this.pointer.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+      this.pointer.y = -(((e.clientY - r.top) / r.height) * 2 - 1);
+    };
     surface.tabIndex = 0;
     surface.addEventListener('pointerdown', (e) => {
       // Take keyboard focus: in an embedded frame, keys go nowhere until this.
       surface.focus({ preventScroll: true });
       this.dragging = true;
+      this.travelled = 0;
+      aim(e);
       surface.setPointerCapture(e.pointerId);
     });
     surface.addEventListener('pointerup', (e) => {
+      if (this.dragging && this.travelled < 6 && e.button === 0) this.clicked = true;
       this.dragging = false;
       surface.releasePointerCapture(e.pointerId);
     });
     surface.addEventListener('pointercancel', () => (this.dragging = false));
     surface.addEventListener('pointermove', (e) => {
+      aim(e);
       if (!this.dragging) return;
       this.dragX += e.movementX;
       this.dragY += e.movementY;
+      this.travelled += Math.abs(e.movementX) + Math.abs(e.movementY);
     });
     surface.addEventListener(
       'wheel',
@@ -65,5 +81,6 @@ export class Input {
     this.dragX = 0;
     this.dragY = 0;
     this.wheel = 0;
+    this.clicked = false;
   }
 }

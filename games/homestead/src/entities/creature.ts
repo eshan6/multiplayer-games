@@ -36,6 +36,7 @@ const tmpRight = new THREE.Vector3();
 const tmpMatrix = new THREE.Matrix4();
 const tmpQuat = new THREE.Quaternion();
 const FORWARD_AXIS = new THREE.Vector3(0, 0, 1);
+const RIGHT_AXIS = new THREE.Vector3(1, 0, 0);
 
 export class Creature {
   /** Sits on the ground at the animal's feet. Move and turn this. */
@@ -50,6 +51,10 @@ export class Creature {
 
   private readonly actions = new Map<Gait, THREE.AnimationAction>();
   private readonly tilt = new THREE.Quaternion();
+  /** Upper leg bones, for animals whose model came with no walk of its own. */
+  private readonly legs: { bone: THREE.Object3D; rest: THREE.Quaternion; phase: number }[] = [];
+  private stride = 0;
+  private baseY = 0;
 
   constructor(
     source: Animated,
@@ -76,7 +81,8 @@ export class Creature {
     const box = new THREE.Box3().setFromObject(this.model);
     const scale = spec.height / (box.max.y - box.min.y);
     this.model.scale.setScalar(scale);
-    this.model.position.y = -box.min.y * scale;
+    this.baseY = -box.min.y * scale;
+    this.model.position.y = this.baseY;
     this.root.add(this.model);
 
     this.mixer = new THREE.AnimationMixer(this.model);
@@ -90,13 +96,26 @@ export class Creature {
       this.actions.set(gait, action);
     }
     this.actions.get('idle')?.setEffectiveWeight(1);
+    if (!this.actions.has('walk')) {
+      // No walk clip (the pig): swing the upper legs in diagonal pairs instead.
+      this.model.traverse((o) => {
+        if (!(o as THREE.Bone).isBone || !/UpLeg/.test(o.name)) return;
+        const front = /Front/.test(o.name);
+        const left = /L$/.test(o.name);
+        this.legs.push({ bone: o, rest: o.quaternion.clone(), phase: front === left ? 0 : Math.PI });
+      });
+    }
     // Start every animal at a different point in its loop, or a herd moves in step.
     this.mixer.setTime(Math.random() * 10);
   }
 
   /** Cross-fade to a gait. Asking for the current gait is free. */
   setGait(gait: Gait, fade = 0.3) {
-    if (gait === this.gait || !this.actions.has(gait)) return;
+    if (gait === this.gait) return;
+    if (!this.actions.has(gait)) {
+      // Models without this clip keep whatever they were playing.
+      return;
+    }
     const from = this.actions.get(this.gait);
     const to = this.actions.get(gait)!;
     to.enabled = true;
@@ -123,6 +142,14 @@ export class Creature {
     if (walk && this.gait === 'walk') walk.setEffectiveTimeScale(THREE.MathUtils.clamp(Math.abs(this.speed) / this.spec.walkPace, 0.5, 2.2) * Math.sign(this.speed || 1));
     if (run && this.gait === 'run') run.setEffectiveTimeScale(THREE.MathUtils.clamp(this.speed / this.spec.runPace, 0.55, 1.5));
     this.mixer.update(dt);
+    if (this.legs.length) {
+      this.stride += dt * (3 + Math.abs(this.speed) * 5.5);
+      const swing = Math.min(Math.abs(this.speed) / this.spec.walkPace, 1.4) * 0.5;
+      for (const leg of this.legs) {
+        leg.bone.quaternion.copy(leg.rest).multiply(this.tilt.setFromAxisAngle(RIGHT_AXIS, Math.sin(this.stride + leg.phase) * swing));
+      }
+      this.model.position.y = this.baseY + Math.abs(Math.sin(this.stride)) * 0.03 * swing;
+    }
 
     const p = this.root.position;
     p.y = terrain.height(p.x, p.z);

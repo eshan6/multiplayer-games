@@ -8,14 +8,22 @@
 import * as THREE from 'three';
 import type { Assets, Model } from '../assets';
 import { fbm, hash2, noise2, rng, smoothstep } from '../noise';
-import { COTTAGE, POND, WORLD, inPaddock, inPlot, laneDistance, waterDepth, woodland } from './land';
+import { POND, WORLD, laneDistance, waterDepth, woodland } from './land';
 import type { Terrain } from './terrain';
 
-/** A solid thing a horse cannot ride through, as a circle on the ground. */
+/** A solid thing you cannot walk or ride through, as a circle on the ground. */
 export interface Obstacle {
   x: number;
   z: number;
   r: number;
+}
+
+/** A straight barrier, as a segment on the ground. */
+export interface Wall {
+  x1: number;
+  z1: number;
+  x2: number;
+  z2: number;
 }
 
 /**
@@ -141,9 +149,8 @@ export function scatter(assets: Assets, terrain: Terrain): Scattered {
   /** True where nothing should be planted: buildings, water, lanes, fields. */
   const reserved = (x: number, z: number, margin: number) =>
     laneDistance(x, z) < 2.6 + margin ||
-    inPaddock(x, z, 1.5 + margin) ||
-    inPlot(x, z, 1 + margin) ||
-    Math.hypot(x - COTTAGE.x, z - COTTAGE.z) < 13 + margin ||
+    // The hilltop is left clear: it is where the two of you will build.
+    Math.hypot(x, z) < WORLD.yardRadius + 4 + margin ||
     waterDepth(x, z, terrain.height(x, z)) > -0.25;
 
   // ---- woods ---------------------------------------------------------------
@@ -198,8 +205,8 @@ export function scatter(assets: Assets, terrain: Terrain): Scattered {
 
   // A few trees placed by hand, because a home wants a tree to sit under.
   const feature: [string, number, number, number][] = [
-    ['NormalTree_1', -11.5, 2.5, 2.5],
-    ['NormalTree_2', 12.5, -15, 2.2],
+    ['NormalTree_1', -27, -9, 2.5],
+    ['NormalTree_2', 22, -25, 2.2],
     ['BirchTree_3', -27, 20, 1.9],
     ['BirchTree_5', -30.5, 16.5, 1.7],
     ['MapleTree_2', -52, 41, 2.1],

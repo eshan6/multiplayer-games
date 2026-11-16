@@ -1,24 +1,24 @@
 import { defineConfig } from 'vite';
-import { viteSingleFile } from 'vite-plugin-singlefile';
 
 /**
- * Two builds from one source:
- *
- *   vite build                the normal build — hashed assets beside index.html
- *   vite build --mode single  one self-contained HTML file, every model and
- *                             texture inlined, for sharing a look without a server
+ * File names are deliberately not hashed. The game is published as a page
+ * plus the files beside it, and each publish replaces files by path: a hash
+ * in the name would leave every previous build's assets behind.
  */
-export default defineConfig(({ mode }) => {
-  const single = mode === 'single';
-  return {
-    base: './',
-    plugins: single ? [viteSingleFile()] : [],
-    build: {
-      outDir: single ? 'dist-single' : 'dist',
-      emptyOutDir: true,
-      assetsInlineLimit: single ? Number.MAX_SAFE_INTEGER : 0,
-      chunkSizeWarningLimit: 20_000,
+export default defineConfig({
+  base: './',
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    assetsInlineLimit: 0,
+    chunkSizeWarningLimit: 2000,
+    rollupOptions: {
+      output: {
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name][extname]',
+      },
     },
-    server: { port: 5174 },
-  };
+  },
+  server: { port: 5174 },
 });

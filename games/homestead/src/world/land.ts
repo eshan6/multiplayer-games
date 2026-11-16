@@ -23,22 +23,13 @@ export const WORLD = {
 
 export const POND = { x: -40, z: 30, radius: 15, depth: 2.3 } as const;
 
-/** The paddock where the stock is kept. Axis-aligned, centre + half extents. */
-export const PADDOCK = { x: 33, z: -14, hx: 13, hz: 10 } as const;
-
-/** The first vegetable plot. Bare tilled earth for now. */
-export const PLOT = { x: -17, z: -9, hx: 5, hz: 3.6 } as const;
-
-/** Where the cottage stands, and which way its door faces (radians, about Y). */
-export const COTTAGE = { x: 0, z: -6, facing: 0.22 } as const;
-
 /**
  * The lane, as a polyline. It leaves the cottage door, drops off the yard and
  * wanders out across the meadows to the edge of the world.
  */
 const LANE_CONTROL: [number, number][] = [
-  [1.5, 2],
-  [3, 14],
+  [4, 9],
+  [4.5, 16],
   [10, 30],
   [26, 46],
   [40, 70],
@@ -47,14 +38,6 @@ const LANE_CONTROL: [number, number][] = [
   [8, 150],
   [22, 185],
   [30, 230],
-];
-
-/** A spur from the lane round to the paddock gate. */
-const SPUR_CONTROL: [number, number][] = [
-  [3.5, 13],
-  [14, 10],
-  [22, 2],
-  [27, -3.5],
 ];
 
 function catmullRom(points: [number, number][], samplesPerSpan: number): [number, number][] {
@@ -80,7 +63,6 @@ function catmullRom(points: [number, number][], samplesPerSpan: number): [number
 }
 
 export const LANE = catmullRom(LANE_CONTROL, 10);
-export const SPUR = catmullRom(SPUR_CONTROL, 8);
 
 function distToPolyline(x: number, z: number, line: [number, number][]): number {
   let best = Infinity;
@@ -121,13 +103,12 @@ const laneField = new Float32Array(FIELD_N * FIELD_N);
           if (laneField[i]! < 98) continue;
           const wx = ix - FIELD_HALF;
           const wz = iz - FIELD_HALF;
-          laneField[i] = Math.min(distToPolyline(wx, wz, LANE), distToPolyline(wx, wz, SPUR));
+          laneField[i] = distToPolyline(wx, wz, LANE);
         }
       }
     }
   };
   mark(LANE);
-  mark(SPUR);
 }
 
 /** Distance in metres to the nearest lane centreline (saturates at ~9). */
@@ -171,10 +152,6 @@ export function heightAt(x: number, z: number): number {
   // Level the yard.
   const d = Math.hypot(x, z);
   h = lerp(WORLD.yardHeight, h, smoothstep(WORLD.yardRadius, WORLD.yardRadius + 30, d));
-
-  // Level the paddock, more loosely — a field, not a floor.
-  const pd = Math.max(Math.abs(x - PADDOCK.x) - PADDOCK.hx, Math.abs(z - PADDOCK.z) - PADDOCK.hz);
-  h = lerp(WORLD.yardHeight - 0.25, h, smoothstep(-2, 16, pd));
 
   // Scoop out the pond.
   // The bank wanders in and out, so the pond is a pond and not a dish.
@@ -228,26 +205,14 @@ export function woodland(x: number, z: number): number {
   return clamp(Math.max(base * nearHome, rim), 0, 1);
 }
 
-export function inPaddock(x: number, z: number, margin = 0): boolean {
-  return Math.abs(x - PADDOCK.x) < PADDOCK.hx + margin && Math.abs(z - PADDOCK.z) < PADDOCK.hz + margin;
-}
-
-export function inPlot(x: number, z: number, margin = 0): boolean {
-  return Math.abs(x - PLOT.x) < PLOT.hx + margin && Math.abs(z - PLOT.z) < PLOT.hz + margin;
-}
-
 /**
  * How thickly grass grows here, 0..1. `h` is the ground height at the point —
  * callers already have it, and recomputing it per blade is the expensive part.
  */
 export function grassDensity(x: number, z: number, h: number): number {
   let g = 1 - laneMask(x, z);
-  if (inPlot(x, z, 0.3)) return 0;
-  // The yard right round the cottage is trodden short.
-  const yard = Math.hypot(x - COTTAGE.x, z - COTTAGE.z);
-  g *= 0.35 + 0.65 * smoothstep(5, 13, yard);
-  // Grazed down inside the paddock.
-  if (inPaddock(x, z)) g *= 0.55;
+  // The camp on the hilltop is trodden short.
+  g *= 0.45 + 0.55 * smoothstep(3, 12, Math.hypot(x, z));
   // Thinner under the trees, and none below the waterline.
   g *= 1 - 0.55 * woodland(x, z);
   g *= smoothstep(0.02, -0.35, waterDepth(x, z, h));
@@ -272,12 +237,6 @@ export function groundColor(x: number, z: number, h: number, out: [number, numbe
   g = lerp(g, 0.38, w * 0.75);
   b = lerp(b, 0.15, w * 0.75);
 
-  if (inPaddock(x, z)) {
-    r = lerp(r, 0.47, 0.35);
-    g = lerp(g, 0.55, 0.35);
-    b = lerp(b, 0.21, 0.35);
-  }
-
   // Damp, darker earth at the water's edge, then pale sand beneath it.
   const shore = smoothstep(-0.42, -0.02, waterDepth(x, z, h));
   r = lerp(r, 0.5, shore);
@@ -289,12 +248,6 @@ export function groundColor(x: number, z: number, h: number, out: [number, numbe
   r = lerp(r, 0.67 + dirtN, lane);
   g = lerp(g, 0.56 + dirtN, lane);
   b = lerp(b, 0.4 + dirtN, lane);
-
-  if (inPlot(x, z)) {
-    r = 0.36;
-    g = 0.25;
-    b = 0.17;
-  }
 
   out[0] = r;
   out[1] = g;

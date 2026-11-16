@@ -29,26 +29,34 @@ const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 
 /** Clips every quadruped needs. Names differ slightly between source files. */
 const ANIMAL_CLIPS = ['Idle', 'Idle_2', 'Idle_Headlow', 'Idle_2_HeadLow', 'Eating', 'Walk', 'Gallop'];
-// The rider is posed in code for now; walking on foot comes with a later phase,
-// and its clips (Walk, Run, Wave, Interact) are one edit away when it does.
-const HUMAN_CLIPS = ['Idle'];
+const HUMAN_CLIPS = ['Idle', 'Walk', 'Run', 'Interact', 'Wave'];
 
 const ANIMATED = [
   { out: 'horse', src: 'animals2/Horse.gltf', keep: ANIMAL_CLIPS },
   { out: 'cow', src: 'animals2/Cow.gltf', keep: ANIMAL_CLIPS },
   { out: 'dog', src: 'animals2/ShibaInu.gltf', keep: ANIMAL_CLIPS },
   { out: 'deer', src: 'animals2/Deer.gltf', keep: ANIMAL_CLIPS },
-  { out: 'rider', src: 'chars/Adventurer.gltf', keep: HUMAN_CLIPS },
+  { out: 'fox', src: 'animals2/Fox.gltf', keep: ANIMAL_CLIPS },
+  // The pig comes out of Blender (it starts as FBX); it only has an idle, and
+  // the game walks its legs in code.
+  { out: 'pig', src: 'pig_raw.glb', from: 'blender', keep: ['Armature|Idle', 'Idle'] },
+  // Avatars. Each is loaded only when someone is wearing it.
+  { out: 'avatar_f_adventurer', src: 'women/Adventurer.gltf', keep: HUMAN_CLIPS },
+  { out: 'avatar_f_casual', src: 'women/Casual.gltf', keep: HUMAN_CLIPS },
+  { out: 'avatar_f_formal', src: 'women/Formal.gltf', keep: HUMAN_CLIPS },
+  { out: 'avatar_m_farmer', src: 'men/Farmer.gltf', keep: HUMAN_CLIPS },
+  { out: 'avatar_m_casual', src: 'men/Casual_2.gltf', keep: HUMAN_CLIPS },
+  { out: 'avatar_m_adventurer', src: 'men/Adventurer.gltf', keep: HUMAN_CLIPS },
 ];
 
-const STATIC = ['nature', 'props'];
+const STATIC = ['nature', 'props', 'furniture', 'crops'];
 
 function report(name, path) {
   console.log(`[models] ${name}.glb ${(statSync(path).size / 1024).toFixed(0)} KB`);
 }
 
-for (const { out, src, keep } of ANIMATED) {
-  const doc = await io.read(join(SRC, src));
+for (const { out, src, keep, from } of ANIMATED) {
+  const doc = await io.read(join(from === 'blender' ? BLENDER_OUT : SRC, src));
   for (const anim of doc.getRoot().listAnimations()) {
     if (!keep.includes(anim.getName())) anim.dispose();
   }

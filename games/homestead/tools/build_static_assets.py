@@ -1,9 +1,12 @@
 """
-Blender half of the asset pipeline: turns the Quaternius source .blend files
-into two geometry-only GLBs the game loads.
+Blender half of the asset pipeline: turns the Quaternius source files into
+geometry-only GLBs the game loads.
 
-  nature.glb   trees, bushes, flowers, rocks   (Ultimate Stylized Nature)
-  props.glb    cottage, well, fence, fire…     (Medieval Village Pack)
+  nature.glb      trees, bushes, flowers, rocks        Ultimate Stylized Nature
+  props.glb       cottage, barns, fences, well…        Medieval Village, Farm Buildings
+  furniture.glb   beds, tables, stove, rugs…           Ultimate Furniture, Home Interior
+  crops.glb       vegetables at four stages of growth  Ultimate Crops
+  pig.glb         the pig, skinned, with its idle      Farm Animals
 
 Images and materials are deliberately NOT embedded. Each model is split into
 one object per material, and that object is tagged with the model it belongs
@@ -37,6 +40,7 @@ NATURE = [
     "BirchTree_2", "BirchTree_3", "BirchTree_5",
     "MapleTree_1", "MapleTree_2", "MapleTree_4", "MapleTree_5",
     "PineTree_1", "PineTree_2", "PineTree_3", "PineTree_4", "PineTree_5",
+    "DeadTree_3", "DeadTree_5",
     "Bush", "Bush_Flowers", "Bush_Large", "Bush_Large_Flowers", "Bush_Small",
     "Flower_1_Clump", "Flower_2_Clump", "Flower_3_Clump", "Flower_4_Clump", "Flower_5_Clump",
     "Plant_1", "Plant_2", "Plant_Flowers",
@@ -44,11 +48,32 @@ NATURE = [
     "Rock_1", "Rock_2", "Rock_4", "Rock_5",
 ]
 
-PROPS = {
-    "village": ["House_1"],
-    "props": ["Well", "Fence", "Bonfire_Lit", "Barrel", "Cart", "Crate", "Hay", "Bench_1", "Bags"],
+# pack -> list of source files (relative to SRC). The model takes the file's name.
+PACKS = {
+    "props": [
+        "village/House_1.blend", "village/Stable.blend",
+        "props/Well.blend", "props/Fence.blend", "props/Bonfire_Lit.blend", "props/Barrel.blend",
+        "props/Cart.blend", "props/Crate.blend", "props/Hay.blend", "props/Bench_1.blend",
+        "props/Bench_2.blend", "props/Bags.blend", "props/Gazebo.blend", "props/MarketStand_1.blend",
+        "props/Path_Straight.blend", "props/Path_Square.blend",
+        "farm/ChickenCoop.fbx", "farm/SmallBarn.fbx", "farm/OpenBarn.fbx",
+    ],
+    "furniture": [
+        "furniture/BedDouble.fbx", "furniture/BedTwin.fbx", "furniture/Bookcase_Books.fbx",
+        "furniture/Chair.fbx", "furniture/Closet.fbx", "furniture/ShortCloset.fbx",
+        "furniture/NightStand.fbx", "furniture/Sofa.fbx", "furniture/Sofa_individual.fbx",
+        "furniture/Stool.fbx", "furniture/Table.fbx", "furniture/Table2.fbx", "furniture/Desk.fbx",
+        "interior/Fireplace.fbx", "interior/Kitchen_Oven.fbx", "interior/Kitchen_Sink.fbx",
+        "interior/Kitchen_Cabinet1.fbx", "interior/Kitchen_2Drawers.fbx", "interior/Bathroom_Bathtub.fbx",
+        "interior/Carpet_1.fbx", "interior/Carpet_2.fbx", "interior/Carpet_Round.fbx",
+        "interior/Houseplant_1.fbx", "interior/Houseplant_3.fbx", "interior/Houseplant_5.fbx",
+        "interior/Houseplant_7.fbx", "interior/Light_Floor1.fbx", "interior/Light_Stand1.fbx",
+        "interior/Light_Desk.fbx", "interior/Shelf_1.fbx", "interior/Table_RoundSmall.fbx",
+        "interior/Curtains_Double.fbx", "interior/Drawer_1.fbx", "interior/Couch_Small1.fbx",
+    ],
+    "crops": [f"crops/{c}_{s}.fbx" for c in ("Carrot", "Lettuce", "Tomato", "Corn", "Pumpkin", "Wheat") for s in (1, 2, 3, 4)]
+    + ["crops/BushBerries_4.fbx", "crops/BushBerries_Harvested.fbx", "crops/Mushroom_4.fbx"],
 }
-
 
 # The village kit spells one of its materials two ways.
 ALIASES = {"WoodSide": "Wood_Side"}
@@ -62,34 +87,37 @@ def base_colour(mat):
     return [round(c, 4) for c in mat.diffuse_color[:3]]
 
 
-def split_by_material(name):
-    """Split one model into single-material pieces and tag each for the game."""
-    obj = bpy.data.objects[name]
+def only(obj):
+    bpy.ops.object.select_all(action="DESELECT")
     obj.hide_set(False)
     obj.hide_viewport = False
-    # Every model sits at the origin in the GLB; the game places instances.
-    obj.location = (0, 0, 0)
-    bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
+
+
+def split_by_material(obj, model, pack):
+    """Split one model into single-material pieces and tag each for the game."""
+    # Every model sits at the origin in the GLB; the game places instances.
+    obj.location = (0, 0, 0)
+    only(obj)
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
     bpy.ops.mesh.separate(type="MATERIAL")
     bpy.ops.object.mode_set(mode="OBJECT")
     pieces = list(bpy.context.selected_objects)
     for piece in pieces:
-        mat = piece.material_slots[piece.data.polygons[0].material_index].material
-        base = mat.name.split(".")[0]
-        piece["model"] = name
-        piece["material"] = ALIASES.get(base, base)
-        piece["colour"] = base_colour(mat)
+        slots = piece.material_slots
+        mat = slots[piece.data.polygons[0].material_index].material if slots and piece.data.polygons else None
+        base = mat.name.split(".")[0] if mat else "Default"
+        piece["model"] = model
+        # Furniture and crop packs name materials generically ("Wood", "Green"),
+        # and not consistently with the village kit, so keep them apart.
+        piece["material"] = ALIASES.get(base, base) if pack in ("nature", "props") else f"{pack}:{base}"
+        piece["colour"] = base_colour(mat) if mat else [0.8, 0.8, 0.8]
     return pieces
 
 
-def export(path, names):
-    pieces = []
-    for name in names:
-        pieces += split_by_material(name)
+def export(path, pieces):
     bpy.ops.object.select_all(action="DESELECT")
     for piece in pieces:
         piece.select_set(True)
@@ -107,27 +135,79 @@ def export(path, names):
         export_cameras=False,
         export_lights=False,
     )
-    print(f"[assets] wrote {path} ({os.path.getsize(path) / 1024:.0f} KB, {len(names)} models, {len(pieces)} pieces)")
+    models = len({p["model"] for p in pieces})
+    print(f"[assets] wrote {path} ({os.path.getsize(path) / 1024:.0f} KB, {models} models, {len(pieces)} pieces)")
+
+
+def load_model(rel):
+    """Bring one source file into the scene as a single mesh object named after it."""
+    name = os.path.splitext(os.path.basename(rel))[0]
+    path = os.path.join(SRC, rel)
+    before = set(bpy.data.objects)
+    if rel.endswith(".blend"):
+        with bpy.data.libraries.load(path) as (src, dst):
+            dst.objects = [n for n in src.objects if n == name]
+        for obj in dst.objects:
+            bpy.context.scene.collection.objects.link(obj)
+    else:
+        bpy.ops.wm.fbx_import(filepath=path)
+    meshes = [o for o in set(bpy.data.objects) - before if o.type == "MESH"]
+    if not meshes:
+        raise RuntimeError(f"no mesh in {rel}")
+    # FBX files arrive as several parented objects at odd scales. Flatten each
+    # to world space and join them so a model is one object with real metres.
+    for obj in meshes:
+        only(obj)
+        if obj.parent is not None:
+            bpy.ops.object.parent_clear(type="CLEAR_KEEP_TRANSFORM")
+    bpy.ops.object.select_all(action="DESELECT")
+    for obj in meshes:
+        obj.select_set(True)
+    bpy.context.view_layer.objects.active = meshes[0]
+    if len(meshes) > 1:
+        bpy.ops.object.join()
+    obj = bpy.context.view_layer.objects.active
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    obj.name = name
+    return obj, name
 
 
 def build_nature():
     bpy.ops.wm.open_mainfile(filepath=os.path.join(SRC, "nature_all.blend"))
-    export(os.path.join(OUT, "nature.glb"), NATURE)
+    pieces = []
+    for name in NATURE:
+        pieces += split_by_material(bpy.data.objects[name], name, "nature")
+    export(os.path.join(OUT, "nature.glb"), pieces)
 
 
-def build_props():
+def build_pack(pack, files):
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    names = []
-    for folder, models in PROPS.items():
-        for model in models:
-            blend = os.path.join(SRC, folder, f"{model}.blend")
-            with bpy.data.libraries.load(blend) as (src, dst):
-                dst.objects = [n for n in src.objects if n == model]
-            for obj in dst.objects:
-                bpy.context.scene.collection.objects.link(obj)
-                names.append(obj.name)
-    export(os.path.join(OUT, "props.glb"), names)
+    pieces = []
+    for rel in files:
+        obj, name = load_model(rel)
+        pieces += split_by_material(obj, name, pack)
+    export(os.path.join(OUT, f"{pack}.glb"), pieces)
+
+
+def build_pig():
+    """The pig keeps its skeleton: it is animated, the rest are not."""
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.wm.fbx_import(filepath=os.path.join(SRC, "farm", "Pig.fbx"))
+    bpy.ops.object.select_all(action="SELECT")
+    path = os.path.join(OUT, "pig_raw.glb")
+    bpy.ops.export_scene.gltf(
+        filepath=path,
+        export_format="GLB",
+        export_yup=True,
+        export_animations=True,
+        export_animation_mode="ACTIONS",
+        export_cameras=False,
+        export_lights=False,
+    )
+    print(f"[assets] wrote {path} ({os.path.getsize(path) / 1024:.0f} KB)")
 
 
 build_nature()
-build_props()
+for pack, files in PACKS.items():
+    build_pack(pack, files)
+build_pig()

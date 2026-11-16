@@ -116,11 +116,13 @@ const SKY_FRAG = /* glsl */ `
 `;
 
 export class Sky {
-  /** 0..24. */
+  /** 0..24. Set from the world's clock each frame. */
   hour = 17.9;
-  /** Game hours per real second while the clock runs. */
-  rate = 24 / 600;
-  running = true;
+  /** 0 clear .. 1 fully overcast, and 0 .. 1 mist. Eased toward by `setWeather`. */
+  overcast = 0;
+  mist = 0;
+  private wantOvercast = 0;
+  private wantMist = 0;
 
   readonly sun = new THREE.DirectionalLight(0xffffff, 3);
   readonly fill = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
@@ -136,6 +138,7 @@ export class Sky {
   private readonly dome: THREE.Mesh;
   private readonly uniforms: Record<string, THREE.IUniform>;
   private readonly clouds = new THREE.Group();
+  private readonly mountains: THREE.Mesh;
   private readonly cloudMaterial: THREE.MeshLambertMaterial;
   private readonly moonDir = new THREE.Vector3();
   private readonly tmpA = new THREE.Color();
@@ -191,16 +194,91 @@ export class Sky {
     this.cloudMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff, fog: false, flatShading: false });
     this.buildClouds();
     this.clouds.name = 'clouds';
-    scene.add(this.clouds);
+    this.mountains = this.buildMountains();
+    scene.add(this.mountains, this.clouds);
 
     this.resolve();
   }
 
   /** Puffy low-poly clouds: a few squashed spheres welded into one shape each. */
+  /**
+   * A far ring of mountains, drawn as flat silhouettes in the sky's own
+   * colours. They give the valley an edge, and the eye somewhere to rest.
+   */
+  private buildMountains(): THREE.Mesh {
+    const rand = rng(1717);
+    const segs = 180;
+    const pos: number[] = [];
+    const shade: number[] = [];
+    const idx: number[] = [];
+    // Two ranges: a nearer, lower, darker one and a higher paler one behind it.
+    for (const [radius, base, peak, tone] of [
+      [760, 30, 120, 0.72],
+      [900, 60, 230, 1.0],
+    ] as const) {
+      const start = pos.length / 3;
+      let h1 = 0;
+      let h2 = 0;
+      for (let i = 0; i <= segs; i++) {
+        const a = (i / segs) * Math.PI * 2;
+        // A wandering ridge line: slow swells with sharper peaks riding on them.
+        h1 = Math.sin(a * 3 + radius) * 0.5 + Math.sin(a * 7.3 + 1.7) * 0.3 + Math.sin(a * 17 + radius * 0.01) * 0.2;
+        h2 = h2 * 0.6 + (rand() - 0.5) * 0.5;
+        const top = base + (0.5 + 0.5 * h1) * peak * (0.75 + h2 * 0.5);
+        const x = Math.cos(a) * radius;
+        const z = Math.sin(a) * radius;
+        pos.push(x, -40, z, x, top, z);
+        shade.push(tone * 0.82, tone);
+        if (i < segs) {
+          const k = start + i * 2;
+          idx.push(k, k + 2, k + 1, k + 1, k + 2, k + 3);
+        }
+      }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('aShade', new THREE.Float32BufferAttribute(shade, 1));
+    geo.setIndex(idx);
+    const mesh = new THREE.Mesh(
+      geo,
+      new THREE.ShaderMaterial({
+        uniforms: { uNear: { value: new THREE.Color() }, uFar: { value: new THREE.Color() } },
+        vertexShader: /* glsl */ `
+          attribute float aShade;
+          varying float vShade;
+          void main() {
+            vShade = aShade;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: /* glsl */ `
+          uniform vec3 uNear;
+          uniform vec3 uFar;
+          varying float vShade;
+          void main() {
+            gl_FragColor = vec4(mix(uNear, uFar, smoothstep(0.6, 1.0, vShade)), 1.0);
+          }
+        `,
+        side: THREE.DoubleSide,
+        fog: false,
+      }),
+    );
+    mesh.frustumCulled = false;
+    mesh.renderOrder = -9;
+    mesh.name = 'mountains';
+    return mesh;
+  }
+
+  /** Ease toward a kind of weather. */
+  setWeather(kind: 'clear' | 'cloudy' | 'rain' | 'mist') {
+    this.wantOvercast = kind === 'clear' ? 0 : kind === 'cloudy' ? 0.6 : kind === 'rain' ? 1 : 0.45;
+    this.wantMist = kind === 'mist' ? 1 : kind === 'rain' ? 0.35 : 0;
+  }
+
   private buildClouds() {
     const rand = rng(404);
     const sphere = new THREE.IcosahedronGeometry(1, 2);
-    for (let i = 0; i < 22; i++) {
+    for (let i = 0; i < 42; i++) {
       const cloud = new THREE.Group();
       const puffs = 4 + Math.floor(rand() * 5);
       const length = 44 + rand() * 60;
@@ -225,8 +303,11 @@ export class Sky {
   /** Advance the clock and re-resolve the lighting. `focus` is what the shadows follow. */
   update(dt: number, focus: THREE.Vector3, camera: THREE.Camera) {
     this.time += dt;
-    if (this.running) this.hour = (this.hour + dt * this.rate) % 24;
+    const ease = 1 - Math.exp(-dt * 0.5);
+    this.overcast += (this.wantOvercast - this.overcast) * ease;
+    this.mist += (this.wantMist - this.mist) * ease;
     this.resolve();
+    this.mountains.position.set(camera.position.x, 0, camera.position.z);
 
     this.dome.position.copy(camera.position);
     this.dome.scale.setScalar(900);
@@ -239,14 +320,16 @@ export class Sky {
     this.sun.target.position.set(fx, focus.y, fz);
     this.sun.position.set(fx, focus.y, fz).addScaledVector(this.lightDir, 190);
 
-    for (const cloud of this.clouds.children) {
-      cloud.position.x += (cloud.userData.speed as number) * dt;
+    this.clouds.children.forEach((cloud, i) => {
+      cloud.position.x += (cloud.userData.speed as number) * dt * (1 + this.overcast);
       if (cloud.position.x > 620) cloud.position.x = -620;
-    }
+      // Fair weather shows a third of the clouds; an overcast sky, all of them.
+      cloud.visible = i % 3 === 0 || this.overcast > 0.12 + (i % 7) * 0.07;
+    });
     this.clouds.position.set(camera.position.x * 0.9, 0, camera.position.z * 0.9);
   }
 
-  /** Jump the clock without waiting for a frame (used by the time-of-day buttons). */
+  /** Jump the clock without waiting for a frame. */
   setHour(hour: number) {
     this.hour = ((hour % 24) + 24) % 24;
     this.resolve();
@@ -307,8 +390,31 @@ export class Sky {
     u.uMoonDisc!.value = THREE.MathUtils.smoothstep(this.moonDir.y, -0.02, 0.08) * (1 - this.daylight);
     u.uTime!.value = this.time;
 
+    // Weather: cloud takes the colour out of the sky and the edge off the
+    // shadows; mist closes the distance in.
+    if (this.overcast > 0.002 || this.mist > 0.002) {
+      const o = this.overcast;
+      const grey = this.tmpA.setHex(0xaab2b8).multiplyScalar(0.18 + 0.82 * this.daylight);
+      (u.uZenith!.value as THREE.Color).lerp(grey, o * 0.78);
+      (u.uHorizon!.value as THREE.Color).lerp(grey, o * 0.6);
+      this.fog.color.lerp(grey, Math.max(o * 0.6, this.mist * 0.7));
+      this.sun.intensity *= 1 - 0.62 * o;
+      this.fill.intensity *= 1 + 0.12 * o;
+      this.fill.color.lerp(grey, o * 0.5);
+      u.uSunDisc!.value *= 1 - o;
+      u.uGlow!.value *= 1 - 0.7 * o;
+      u.uStars!.value *= 1 - o;
+    }
+    this.fog.near = THREE.MathUtils.lerp(THREE.MathUtils.lerp(75, 45, this.overcast), 6, this.mist);
+    this.fog.far = THREE.MathUtils.lerp(THREE.MathUtils.lerp(440, 330, this.overcast), 95, this.mist);
+
+    // The mountains are painted in the sky's own colours, so they sit in it.
+    const mu = (this.mountains.material as THREE.ShaderMaterial).uniforms;
+    (mu.uFar!.value as THREE.Color).copy(u.uHorizon!.value as THREE.Color).lerp(u.uZenith!.value as THREE.Color, 0.42);
+    (mu.uNear!.value as THREE.Color).copy(mu.uFar!.value as THREE.Color).lerp(this.fog.color, 0.35).multiplyScalar(0.8);
+
     // Clouds take the sun's colour by day and sink into the sky colour at night.
-    this.cloudMaterial.color.copy(this.fill.color).lerp(this.tmpA.setHex(0xffffff), 0.35 + 0.5 * this.daylight);
+    this.cloudMaterial.color.copy(this.fill.color).lerp(this.tmpA.setHex(0xffffff), 0.35 + 0.5 * this.daylight).multiplyScalar(1 - 0.38 * this.overcast);
     this.cloudMaterial.emissive.copy(u.uHorizon!.value as THREE.Color).multiplyScalar(0.28 + 0.22 * this.daylight);
   }
 }

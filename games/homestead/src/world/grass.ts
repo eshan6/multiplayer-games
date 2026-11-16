@@ -62,6 +62,7 @@ export class Grass {
     uRider: { value: new THREE.Vector3() },
     uFade: { value: new THREE.Vector2(RANGE * 0.62, RANGE * 0.98) },
     uTip: { value: new THREE.Color(0xc2d674) },
+    uSeason: { value: new THREE.Color(1, 1, 1) },
   };
 
   constructor(private readonly terrain: Terrain) {
@@ -73,6 +74,7 @@ export class Grass {
       shader.uniforms.uRider = this.uniforms.uRider;
       shader.uniforms.uFade = this.uniforms.uFade;
       shader.uniforms.uTip = this.uniforms.uTip;
+      shader.uniforms.uSeason = this.uniforms.uSeason;
       shader.vertexShader = shader.vertexShader
         .replace(
           '#include <common>',
@@ -132,6 +134,7 @@ export class Grass {
           '#include <common>',
           `#include <common>
           uniform vec3 uTip;
+          uniform vec3 uSeason;
           varying vec3 vGrass;
           varying float vTip;`,
         )
@@ -144,11 +147,16 @@ export class Grass {
           // Tip: lifted toward a sunlit yellow-green.
           vec3 rootCol = vGrass * 0.82;
           vec3 tipCol = mix(vGrass * 1.18, uTip, 0.26);
-          diffuseColor.rgb = mix(rootCol, tipCol, vTip);
+          diffuseColor.rgb = mix(rootCol, tipCol, vTip) * uSeason;
           `,
         );
     };
     this.material.customProgramCacheKey = () => 'grass';
+  }
+
+  /** Tint the whole meadow: how the seasons reach the grass. Linear RGB multiplier. */
+  setSeason(tint: THREE.Color) {
+    this.uniforms.uSeason.value.copy(tint);
   }
 
   /** Build, show and drop tiles around the rider. Call once a frame. */

@@ -19,40 +19,62 @@
       </div>
     </div>
 
-    <p id="start-hint" hidden>Click the view, then ride with W A S D</p>
+    <section id="welcome" hidden>
+      <form id="welcome-form" class="sheet">
+        <h1>Homestead</h1>
+        <p class="lede">A hilltop, a tent, a fire, two horses and a dog. Everything else, you build together.</p>
+        <label for="welcome-name">What should we call you?</label>
+        <input id="welcome-name" type="text" maxlength="24" autocomplete="off" spellcheck="false" />
+        <span class="label">Who are you?</span>
+        <div id="welcome-avatars" class="avatars" role="radiogroup" aria-label="Avatar"></div>
+        <p id="welcome-mode" class="note"></p>
+        <button id="welcome-start" type="submit" class="primary">Ride in</button>
+      </form>
+    </section>
 
-    <header id="title" class="panel">
-      <h1>Homestead</h1>
-      <p>Visual sample</p>
-    </header>
+    <div id="hud" hidden>
+      <header id="basket" class="panel">
+        <div class="basket-row">
+          <output id="basket-points">0</output>
+          <span class="basket-unit">points in<br />the basket</span>
+        </div>
+        <p id="basket-level"></p>
+        <div class="meter"><div id="basket-meter"></div></div>
+        <p id="goal"></p>
+      </header>
 
-    <aside id="keys" class="panel">
-      <dl>
-        <div><dt>W A S D</dt><dd>Ride</dd></div>
-        <div><dt>Shift</dt><dd>Gallop</dd></div>
-        <div><dt>C</dt><dd>Walk or canter</dd></div>
-        <div><dt>Drag</dt><dd>Look around</dd></div>
-        <div><dt>Scroll</dt><dd>Zoom</dd></div>
-        <div><dt>H</dt><dd>Hide this</dd></div>
-      </dl>
-    </aside>
+      <aside id="world" class="panel">
+        <p id="world-clock"></p>
+        <p id="world-people"></p>
+        <div id="world-weather" class="segmented" role="group" aria-label="Weather"></div>
+      </aside>
 
-    <footer id="clock" class="panel">
-      <div class="clock-row">
-        <button id="clock-toggle" type="button" aria-label="Pause the clock">Pause</button>
-        <output id="clock-time">17:54</output>
-        <input id="clock-slider" type="range" min="0" max="24" step="0.01" aria-label="Time of day" />
+      <div id="toasts" aria-live="polite"></div>
+
+      <div id="prompt" class="panel" hidden>
+        <p id="prompt-title"></p>
+        <p id="prompt-detail"></p>
+        <div id="prompt-actions"></div>
       </div>
-      <div class="clock-row presets">
-        <button type="button" data-hour="6.4">Dawn</button>
-        <button type="button" data-hour="12.5">Midday</button>
-        <button type="button" data-hour="18.2">Golden hour</button>
-        <button type="button" data-hour="19.5">Sunset</button>
-        <button type="button" data-hour="23">Night</button>
-        <span class="spacer"></span>
+
+      <p id="tool-hint" class="panel" hidden></p>
+
+      <nav id="dock" class="panel">
+        <button type="button" data-open="build"><kbd>B</kbd> Build</button>
+        <button type="button" data-open="pantry"><kbd>I</kbd> Pantry</button>
+        <button type="button" data-open="help"><kbd>H</kbd> Help</button>
         <button type="button" id="quality" title="Lower detail for slower computers">Detail: High</button>
-      </div>
-    </footer>
+      </nav>
+
+      <section id="sheet" class="panel" hidden>
+        <header>
+          <h2 id="sheet-title"></h2>
+          <button type="button" id="sheet-close" aria-label="Close">Close</button>
+        </header>
+        <div id="sheet-tabs" class="segmented"></div>
+        <div id="sheet-body"></div>
+      </section>
+    </div>
 
     <script type="module" src="./src/main.ts"></script>
   </body>
