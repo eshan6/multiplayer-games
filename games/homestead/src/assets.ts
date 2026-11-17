@@ -12,7 +12,7 @@
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { loadPack, scanGlass } from './scans';
+import { loadPack, pbr, scanGlass } from './scans';
 import { growTrees, type Species } from './world/trees';
 
 import horseUrl from './assets/horse.glb?url';
@@ -237,19 +237,65 @@ export async function loadAssets(onProgress: (done: number, total: number) => vo
   return assets;
 }
 
-// Avatars are fetched only when somebody is wearing them: six would add five
-// megabytes to every visit, and a session needs two.
+// Avatars are fetched only when somebody is wearing them: six would add four
+// megabytes to every visit, and a session needs two. Their animations are one
+// shared file (tools/build_people.mjs): every avatar has the same bone names,
+// and a clip binds to a skeleton by name.
 const AVATAR_URLS = import.meta.glob('./assets/avatar_*.glb', { query: '?url', import: 'default' }) as Record<string, () => Promise<string>>;
+const MOVES_URL = () => import('./assets/people_moves.glb?url').then((m) => m.default as string);
 const avatarCache = new Map<string, Promise<Animated>>();
+let moves: Promise<THREE.AnimationClip[]> | null = null;
+
+/** Every move a person can make, loaded once. */
+function peopleMoves(): Promise<THREE.AnimationClip[]> {
+  moves ??= MOVES_URL()
+    .then(loadGltf)
+    .then((gltf) => gltf.animations);
+  return moves;
+}
+
+/**
+ * A person's materials: named in the model for the texture set they use
+ * (tools/build_people.py). Colourways of a garment (`peasant_2`) share the
+ * garment's relief and roughness.
+ */
+function personMaterial(name: string, avatar: string): THREE.MeshStandardMaterial {
+  // The hair textures are grey: the kit colours them in the material.
+  if (/^hair_/.test(name)) return pbr(name, { tint: HAIR[avatar] ?? 0x8a6040, relief: 0.8, own: `hair:${avatar}` });
+  const shape = name.replace(/_\d+$/, '');
+  const cloth = /^(peasant|ranger)/.test(name);
+  return pbr(name, { shape: shape !== name ? shape : undefined, metalness: cloth ? 1 : 0, relief: cloth ? 1.2 : 0.8 });
+}
+
+/** Hair (and brow and beard) colour for each avatar, as a tint over the grey hair texture. */
+const HAIR: Record<string, number> = {
+  m_farmer: 0x9a6a44,
+  m_casual: 0x3c2c22,
+  m_adventurer: 0xb0643a,
+  f_casual: 0xf0cf8a,
+  f_formal: 0x2e2420,
+  f_adventurer: 0xc0623a,
+};
 
 export function loadAvatar(id: string): Promise<Animated> {
   let pending = avatarCache.get(id);
   if (!pending) {
     const url = AVATAR_URLS[`./assets/avatar_${id}.glb`];
     if (!url) return Promise.reject(new Error(`no avatar "${id}"`));
-    pending = url()
-      .then(loadGltf)
-      .then((gltf) => prepareAnimated(gltf));
+    pending = Promise.all([url().then(loadGltf), peopleMoves()]).then(([gltf, clips]) => {
+      gltf.scene.traverse((o) => {
+        const mesh = o as THREE.SkinnedMesh;
+        if (!mesh.isMesh) return;
+        const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        const mats = list.map((m) => personMaterial(m.name, id));
+        mesh.material = mats.length === 1 ? mats[0]! : mats;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        // Skinned bounds come from the bind pose; a person bending down leaves them.
+        mesh.frustumCulled = false;
+      });
+      return { scene: gltf.scene, clips };
+    });
     avatarCache.set(id, pending);
   }
   return pending;

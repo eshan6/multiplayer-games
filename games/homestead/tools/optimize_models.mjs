@@ -29,7 +29,6 @@ const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 
 /** Clips every quadruped needs. Names differ slightly between source files. */
 const ANIMAL_CLIPS = ['Idle', 'Idle_2', 'Idle_Headlow', 'Idle_2_HeadLow', 'Eating', 'Walk', 'Gallop'];
-const HUMAN_CLIPS = ['Idle', 'Walk', 'Run', 'Interact', 'Wave'];
 
 const ANIMATED = [
   { out: 'horse', src: 'animals2/Horse.gltf', keep: ANIMAL_CLIPS },
@@ -40,13 +39,7 @@ const ANIMATED = [
   // The pig comes out of Blender (it starts as FBX); it only has an idle, and
   // the game walks its legs in code.
   { out: 'pig', src: 'pig_raw.glb', from: 'blender', keep: ['Armature|Idle', 'Idle'] },
-  // Avatars. Each is loaded only when someone is wearing it.
-  { out: 'avatar_f_adventurer', src: 'women/Adventurer.gltf', keep: HUMAN_CLIPS },
-  { out: 'avatar_f_casual', src: 'women/Casual.gltf', keep: HUMAN_CLIPS },
-  { out: 'avatar_f_formal', src: 'women/Formal.gltf', keep: HUMAN_CLIPS },
-  { out: 'avatar_m_farmer', src: 'men/Farmer.gltf', keep: HUMAN_CLIPS },
-  { out: 'avatar_m_casual', src: 'men/Casual_2.gltf', keep: HUMAN_CLIPS },
-  { out: 'avatar_m_adventurer', src: 'men/Adventurer.gltf', keep: HUMAN_CLIPS },
+  // The avatars are no longer built here: see tools/build_people.py.
 ];
 
 const STATIC = ['crops'];

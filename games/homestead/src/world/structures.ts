@@ -13,7 +13,8 @@ import { BED_SLOTS, CROPS, STRUCTURES, type CropId, type StructureId } from '../
 import { cropStage, isWatered, ripeness, slotId, type Crop, type Store, type Structure } from '../game/world';
 import type { Spot } from '../interact';
 import type { Effects, Flame } from './fx';
-import { BED_SLOT_AT, COTTAGE, instantiate, shapeObject } from './placed';
+import { BED_SLOT_AT, COTTAGE, instantiate, scaffold, shapeObject } from './placed';
+import type { Footprint } from './clearing';
 import type { Obstacle, Wall } from './scatter';
 import type { Terrain } from './terrain';
 
@@ -24,6 +25,19 @@ interface Built {
   smoke?: THREE.Object3D;
   /** For vegetable beds: what each slot is currently showing. */
   slots?: { key: string; holder: THREE.Group }[];
+  /** The ground it stands on, in its own space. */
+  foot: { cx: number; cz: number; hw: number; hd: number };
+  /** Going up: the building's own model rising inside scaffolding. */
+  raising?: { model: THREE.Object3D; scaffold: THREE.Object3D | null; seconds: number; dust: number };
+}
+
+/**
+ * How long a building takes to go up, by its size. Worked out from when it
+ * was placed, as everything in this world is, so both of you see the same
+ * stage of it and a building placed while you were away is simply finished.
+ */
+function raiseSeconds(size: number): number {
+  return size > 2.6 ? 4 + size * 0.45 : 1.2;
 }
 
 /** What the game needs to open when a spot's action is not a one-step thing. */
@@ -65,12 +79,29 @@ export class Structures {
     return new THREE.Vector3(lx, ly, lz).applyAxisAngle(up, s.rot).add(new THREE.Vector3(s.x, this.terrain.height(s.x, s.z), s.z));
   }
 
-  private add(id: string, doc: Structure) {
+  private add(id: string, doc: Structure, now: number) {
     const def = STRUCTURES[doc.kind];
-    const group = shapeObject(this.assets, def.shape);
+    const model = shapeObject(this.assets, def.shape);
+    // Measured on its own, before it is placed: in its own space.
+    const box = new THREE.Box3().setFromObject(model);
+    // The model sits in a holder so it can rise inside the scaffold without
+    // moving anything else the structure owns.
+    const group = new THREE.Group();
+    group.add(model);
     group.position.set(doc.x, this.terrain.height(doc.x, doc.z), doc.z);
     group.rotation.y = doc.rot;
-    const b: Built = { doc, group };
+    const foot = { cx: (box.max.x + box.min.x) / 2, cz: (box.max.z + box.min.z) / 2, hw: (box.max.x - box.min.x) / 2, hd: (box.max.z - box.min.z) / 2 };
+    const b: Built = { doc, group, foot };
+    const size = Math.max(box.max.x - box.min.x, box.max.z - box.min.z);
+    const seconds = raiseSeconds(size);
+    if (now - doc.at < seconds * 1000 && now >= doc.at - 1000) {
+      const frame = size > 2.6 ? scaffold(this.assets, box.max.x - box.min.x, box.max.z - box.min.z, box.max.y - box.min.y) : null;
+      if (frame) {
+        frame.position.set((box.max.x + box.min.x) / 2, 0, (box.max.z + box.min.z) / 2);
+        group.add(frame);
+      }
+      b.raising = { model, scaffold: frame, seconds, dust: 0 };
+    }
     if (doc.kind === 'campfire') {
       b.flame = this.fx.fire(this.at(doc, 0, 0.32, 0));
       this.group.add(b.flame.group);
@@ -134,10 +165,11 @@ export class Structures {
         const have = this.built.get(id)!.doc;
         if (!doc || doc.x !== have.x || doc.z !== have.z || doc.rot !== have.rot || doc.kind !== have.kind) this.remove(id);
       }
-      for (const [id, doc] of docs) if (!this.built.has(id) && doc.kind in STRUCTURES) this.add(id, doc);
+      for (const [id, doc] of docs) if (!this.built.has(id) && doc.kind in STRUCTURES) this.add(id, doc, now);
       this.collide();
       this.cropClock = 0;
     }
+    for (const b of this.built.values()) if (b.raising) this.raise(b, dt, now);
     // Crops change slowly; looking twice a second is plenty.
     this.cropClock -= dt;
     if (this.cropClock <= 0) {
@@ -146,7 +178,46 @@ export class Structures {
     }
   }
 
+  /** A building going up: walls rise course by course; the scaffold comes down at the end. */
+  private raise(b: Built, dt: number, now: number) {
+    const r = b.raising!;
+    const t = THREE.MathUtils.clamp((now - b.doc.at) / (r.seconds * 1000), 0, 1);
+    // Quick at first, settling into place: and in visible steps, like courses laid.
+    const eased = 1 - Math.pow(1 - t, 2.2);
+    const stepped = r.scaffold ? Math.min(1, Math.floor(eased * 9 + 0.6) / 9 * 0.85 + eased * 0.15) : eased;
+    r.model.scale.set(1, Math.max(0.02, stepped), 1);
+    r.dust -= dt;
+    if (r.dust <= 0 && t < 0.95) {
+      r.dust = r.scaffold ? 0.9 : 0.5;
+      const a = Math.random() * Math.PI * 2;
+      const at = new THREE.Vector3(Math.cos(a) * 1.2, 0.15, Math.sin(a) * 1.2).applyAxisAngle(up, b.doc.rot).add(b.group.position);
+      this.fx.burst('dust', at);
+    }
+    if (t >= 1) {
+      r.model.scale.set(1, 1, 1);
+      if (r.scaffold) b.group.remove(r.scaffold);
+      b.raising = undefined;
+    }
+  }
+
+  /** Bumped whenever the set of footprints changes. */
+  clearings = 0;
+
+  /** The ground every building claims, for the grass and the terrain. */
+  footprints(): Footprint[] {
+    const out: Footprint[] = [];
+    for (const { doc, foot } of this.built.values()) {
+      const def = STRUCTURES[doc.kind];
+      // Trees and shrubs you plant grow out of the meadow; they claim nothing.
+      if ('pack' in def.shape && def.shape.pack === 'tree') continue;
+      const light = doc.kind === 'fence' || doc.kind === 'lantern' || doc.kind === 'scarecrow';
+      out.push({ x: doc.x, z: doc.z, rot: doc.rot, ...foot, strength: light ? 0.55 : 1 });
+    }
+    return out;
+  }
+
   private collide() {
+    this.clearings++;
     this.obstacles = [];
     this.walls = [];
     for (const { doc } of this.built.values()) {
@@ -221,6 +292,7 @@ export class Structures {
             {
               key: 'E',
               label: waiting ? `Collect (${waiting})` : 'Collect',
+              move: 'collect',
               blocked: waiting ? undefined : 'Nothing to collect yet',
               run: () => ui.say(act.collect(this.store, ui.moment(), id), new THREE.Vector3(doc.x, this.terrain.height(doc.x, doc.z) + 1.5, doc.z)),
             },
@@ -246,7 +318,7 @@ export class Structures {
     const def = CROPS[crop.kind as CropId];
     const ripe = ripeness(crop, now);
     if (ripe >= 1) {
-      return { x: p.x, z: p.z, reach: 1.15, title: def.name, detail: 'Ready', height: 0.8, actions: [{ key: 'E', label: 'Harvest', run: () => ui.say(act.harvest(this.store, ui.moment(), bed, slot), here) }] };
+      return { x: p.x, z: p.z, reach: 1.15, title: def.name, detail: 'Ready', height: 0.8, actions: [{ key: 'E', label: 'Harvest', move: 'harvest', run: () => ui.say(act.harvest(this.store, ui.moment(), bed, slot), here) }] };
     }
     const wet = isWatered(crop, now);
     return {
@@ -256,7 +328,7 @@ export class Structures {
       title: def.name,
       detail: `${Math.round(ripe * 100)}% grown${wet ? '' : ', dry'}`,
       height: 0.8,
-      actions: [{ key: 'E', label: 'Water', blocked: wet ? 'Soil is damp' : undefined, run: () => ui.say(act.water(this.store, ui.moment(), bed, slot), here) }],
+      actions: [{ key: 'E', label: 'Water', move: 'water', blocked: wet ? 'Soil is damp' : undefined, run: () => ui.say(act.water(this.store, ui.moment(), bed, slot), here) }],
     };
   }
 

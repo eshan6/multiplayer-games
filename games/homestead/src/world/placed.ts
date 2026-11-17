@@ -315,8 +315,28 @@ function barn(assets: Assets, w: number, d: number, wall: number, rise: number, 
     k.box('door', dw, 2.25, 0.08, x - 0.08, 0.35, hd + 0.2, i % 2 ? 0.35 : -0.3);
   }
   k.box('timber', dw * doors + 0.5, 0.2, 0.14, 0, 0.35 + 2.3, hd + 0.03);
+  // Iron strap hinges, two to a door.
+  for (let i = 0; i < doors; i++) {
+    const x = (i - (doors - 1) / 2) * (dw + 0.08) - 0.08;
+    for (const y of [0.75, 2.05]) k.box('iron', dw * 0.62, 0.05, 0.02, x, 0.35 + y, hd + 0.25, i % 2 ? 0.35 : -0.3);
+  }
   // A loft hatch in the gable.
   k.box('dark', 0.04, 0.8, 0.8, hw + 0.01, top + 0.2, 0).box('timber', 0.06, 0.95, 0.95, hw - 0.01, top + 0.12, 0);
+  // Board-and-batten: a narrow strip over every joint of the cladding.
+  for (let x = -hw + 0.35; x < hw - 0.2; x += 0.42) {
+    if (Math.abs(x) < (dw * doors) / 2 + 0.15) continue;
+    k.box('timber', 0.05, wall - 0.1, 0.03, x, 0.4, hd + 0.01);
+  }
+  for (let x = -hw + 0.35; x < hw - 0.2; x += 0.42) k.box('timber', 0.05, wall - 0.1, 0.03, x, 0.4, -hd - 0.01);
+  // Fascia boards under the eaves, and a small window in the back wall.
+  for (const sz of [-1, 1]) k.box('timber', w + 1.0, 0.16, 0.05, 0, top - 0.06, sz * (hd + 0.52));
+  k.box('dark', 0.7, 0.5, 0.03, hw * 0.5, 1.5, -hd - 0.03).box('timber', 0.82, 0.08, 0.06, hw * 0.5, 1.46, -hd - 0.05).box('timber', 0.82, 0.08, 0.06, hw * 0.5, 2.0, -hd - 0.05);
+  // Outside the door: a hay rack on the wall, a water trough, straw trodden out.
+  k.box('timber', 1.4, 0.06, 0.08, -hw + 1.0, 1.55, hd + 0.08).box('timber', 1.4, 0.06, 0.08, -hw + 1.0, 0.95, hd + 0.35);
+  for (let i = 0; i < 8; i++) k.box('timber', 0.03, 0.66, 0.03, -hw + 0.4 + i * 0.17, 0.95, hd + 0.2, 0, -0.42);
+  k.box('straw', 1.2, 0.38, 0.22, -hw + 1.0, 1.08, hd + 0.2, 0, -0.42);
+  k.box('planks', 1.6, 0.42, 0.55, hw - 1.1, 0, hd + 0.75).box('water', 1.44, 0.02, 0.4, hw - 1.1, 0.36, hd + 0.75);
+  k.box('straw', dw * doors + 0.4, 0.03, 1.1, 0, 0, hd + 0.75);
   return k.build();
 }
 
@@ -337,6 +357,26 @@ function coop(assets: Assets): THREE.Group {
   for (let i = 0; i < 4; i++) k.box('timber', 0.4, 0.03, 0.04, 0.35, floor * 0.86 - i * 0.14, d / 2 + 0.16 + i * 0.28);
   // Nest boxes hung on the side.
   k.box('planks', 0.5, 0.5, 1.1, -w / 2 - 0.25, floor + 0.3, 0).box('door', 0.56, 0.05, 1.2, -w / 2 - 0.27, floor + 0.8, 0, 0, 0, 0.25);
+  k.box('iron', 0.03, 0.12, 0.03, -w / 2 - 0.52, floor + 0.62, 0.3).box('iron', 0.03, 0.12, 0.03, -w / 2 - 0.52, floor + 0.62, -0.3);
+  // A wired run in front: posts, a top rail, and the mesh as fine wires.
+  const runD = 2.2;
+  const runW = w + 0.4;
+  for (const sx of [-1, 0, 1]) k.box('timber', 0.08, 1.1, 0.08, sx * runW / 2, 0, d / 2 + runD);
+  for (const sx of [-1, 1]) k.box('timber', 0.08, 1.1, 0.08, sx * runW / 2, 0, d / 2 + 0.1);
+  for (const sz of [d / 2 + runD]) k.box('timber', runW, 0.06, 0.06, 0, 1.06, sz);
+  for (const sx of [-1, 1]) k.box('timber', 0.06, 0.06, runD, sx * runW / 2, 1.06, d / 2 + 0.1 + runD / 2);
+  for (let y = 0.08; y < 1.05; y += 0.13) {
+    k.box('iron', runW, 0.008, 0.008, 0, y, d / 2 + runD);
+    for (const sx of [-1, 1]) k.box('iron', 0.008, 0.008, runD, sx * runW / 2, y, d / 2 + 0.1 + runD / 2);
+  }
+  for (let x = -runW / 2; x <= runW / 2; x += 0.16) k.box('iron', 0.008, 1.05, 0.008, x, 0.02, d / 2 + runD);
+  for (const sx of [-1, 1]) for (let z = 0.1; z <= runD; z += 0.16) k.box('iron', 0.008, 1.05, 0.008, sx * runW / 2, 0.02, d / 2 + z);
+  // Inside the run: a perch, a grain feeder, a water dish, scattered straw.
+  k.box('timber', 1.2, 0.05, 0.05, -0.4, 0.45, d / 2 + 1.3).box('timber', 0.05, 0.45, 0.05, -0.95, 0, d / 2 + 1.3).box('timber', 0.05, 0.45, 0.05, 0.15, 0, d / 2 + 1.3);
+  k.cyl('iron', 0.12, 0.14, 0.3, 0.75, 0, d / 2 + 1.5, 12).cyl('iron', 0.2, 0.2, 0.04, 0.75, 0, d / 2 + 1.5, 14);
+  k.cyl('planks', 0.18, 0.16, 0.06, -0.2, 0, d / 2 + 0.75, 12).cyl('water', 0.15, 0.15, 0.01, -0.2, 0.05, d / 2 + 0.75, 12);
+  k.box('straw', runW - 0.2, 0.02, runD - 0.2, 0, 0, d / 2 + 0.1 + runD / 2);
+  k.box('timber', w + 0.5, 0.08, 0.1, 0, floor + 1.83, 0);
   return k.build();
 }
 
@@ -349,6 +389,18 @@ function sty(assets: Assets): THREE.Group {
   k.box('straw', 2.9, 0.12, 1.6, 0, 0, -0.4);
   // …and a low stone yard in front of it.
   k.box('stone', 0.34, 0.75, 3.0, -2.1, 0, 2.2).box('stone', 0.34, 0.75, 3.0, 2.1, 0, 2.2).box('stone', 1.5, 0.75, 0.34, -1.5, 0, 3.6).box('stone', 1.5, 0.75, 0.34, 1.5, 0, 3.6);
+  // Coping stones along the wall tops.
+  k.box('blocks', 0.42, 0.08, 3.08, -2.1, 0.75, 2.2).box('blocks', 0.42, 0.08, 3.08, 2.1, 0.75, 2.2).box('blocks', 1.58, 0.08, 0.42, -1.5, 0.75, 3.6).box('blocks', 1.58, 0.08, 0.42, 1.5, 0.75, 3.6);
+  // A five-bar gate in the gap, hung on a post, standing ajar.
+  k.box('timber', 0.14, 1.05, 0.14, -0.72, 0, 3.6).box('timber', 0.14, 1.05, 0.14, 0.72, 0, 3.6);
+  for (const y of [0.15, 0.33, 0.51, 0.69, 0.87]) k.box('door', 1.3, 0.07, 0.04, -0.05, y, 3.95, -0.55);
+  k.box('door', 1.55, 0.07, 0.04, -0.05, 0.5, 3.95, -0.55, 0, 0.62);
+  k.box('iron', 0.06, 0.05, 0.12, -0.66, 0.3, 3.62).box('iron', 0.06, 0.05, 0.12, -0.66, 0.8, 3.62);
+  // Wallowing mud, a stone feeding trough, and a heap of straw bedding.
+  k.box('soil', 2.6, 0.03, 1.6, 0.2, 0, 2.4);
+  k.box('stone', 1.3, 0.3, 0.45, 1.2, 0, 1.3).box('dark', 1.1, 0.02, 0.3, 1.2, 0.29, 1.3).box('soil', 1.0, 0.02, 0.25, 1.2, 0.27, 1.3);
+  k.box('straw', 1.0, 0.25, 0.8, -1.1, 0, -0.6, 0.3);
+  k.box('timber', 3.9, 0.12, 0.14, 0, 1.6, 0.85);
   return k.build();
 }
 
@@ -372,6 +424,22 @@ function stable(assets: Assets): THREE.Group {
   }
   k.box('timber', w + 0.1, 0.22, 0.2, 0, 2.6, d / 2 - 0.1);
   k.roof('tiles', w, d, 2.76, 1.44, 0, 0, 0.55, 0.2);
+  // In each stall: a hay rack on the back wall, a bucket, and the doors' iron.
+  for (let i = 0; i < 3; i++) {
+    const x = -w / 2 + ((i + 0.5) * w) / 3;
+    k.box('timber', 1.3, 0.06, 0.1, x, 1.75, -d / 2 + 0.2).box('timber', 1.3, 0.06, 0.1, x, 1.15, -d / 2 + 0.45);
+    for (let j = 0; j < 8; j++) k.box('timber', 0.03, 0.66, 0.03, x - 0.6 + j * 0.17, 1.15, -d / 2 + 0.32, 0, 0.42);
+    k.box('straw', 1.15, 0.4, 0.25, x, 1.25, -d / 2 + 0.32, 0, 0.42);
+    k.cyl('planks', 0.16, 0.13, 0.3, x + 1.0, 0.3, -d / 2 + 0.35, 12).cyl('water', 0.145, 0.145, 0.01, x + 1.0, 0.56, -d / 2 + 0.35, 12);
+    for (const y of [0.45, 1.25]) k.box('iron', (w / 3 - 0.5) * 0.55, 0.05, 0.02, x - 0.35, 0.3 + y, d / 2 + 0.3, i === 1 ? -0.5 : 0.25);
+  }
+  // A saddle on a rack by the end wall, and a lucky horseshoe over the middle door.
+  k.box('timber', 0.08, 1.0, 0.08, w / 2 - 0.4, 0.3, d / 2 - 0.5).box('timber', 0.6, 0.08, 0.08, w / 2 - 0.4, 1.3, d / 2 - 0.5, Math.PI / 2);
+  k.box('door', 0.42, 0.18, 0.62, w / 2 - 0.4, 1.32, d / 2 - 0.5, Math.PI / 2, 0, 0.12).box('dark', 0.06, 0.4, 0.04, w / 2 - 0.2, 0.95, d / 2 - 0.5);
+  k.box('iron', 0.2, 0.03, 0.02, 0, 2.45, d / 2 + 0.01).box('iron', 0.03, 0.16, 0.02, -0.09, 2.3, d / 2 + 0.01).box('iron', 0.03, 0.16, 0.02, 0.09, 2.3, d / 2 + 0.01);
+  // Battens on the back and end walls.
+  for (let x = -w / 2 + 0.3; x < w / 2 - 0.2; x += 0.45) k.box('timber', 0.05, 2.4, 0.03, x, 0.35, -d / 2 - 0.01);
+  for (const sx of [-1, 1]) for (let z = -d / 2 + 0.3; z < d / 2 - 0.2; z += 0.45) k.box('timber', 0.03, 2.4, 0.05, sx * (w / 2 + 0.01), 0.35, z);
   return k.build();
 }
 
@@ -383,6 +451,12 @@ function well(assets: Assets): THREE.Group {
   k.roof('tiles', 2.0, 1.5, 2.5, 0.6, 0, 0, 0.2, 0.08);
   for (const side of [1, -1]) k.poly('planks', [[side * 1.0, 2.5, -0.75], [side * 1.0, 2.5, 0.75], [side * 1.0, 3.1, 0]], true);
   k.add(instantiate(modelOf(assets, 'wild', 'wooden_bucket_01'), 1.0), 0.55, 0.85, 0.72, 0.6);
+  // Rope wound on the windlass, hanging into the shaft; a crank handle; a mossy coping ring.
+  k.cyl('straw', 0.11, 0.11, 0.7, 0.35, 1.75, 0, 12, 0, Math.PI / 2);
+  k.cyl('straw', 0.012, 0.012, 1.1, 0, 0.66, 0.0, 5);
+  k.box('iron', 0.04, 0.32, 0.04, 1.02, 1.6, 0).box('iron', 0.04, 0.04, 0.22, 1.02, 1.6, 0.1);
+  k.cyl('blocks', 1.02, 1.02, 0.1, 0, 0.85, 0, 16);
+  k.box('timber', 2.3, 0.08, 0.1, 0, 3.08, 0);
   return k.build();
 }
 
@@ -412,13 +486,19 @@ function vegetableBed(assets: Assets): THREE.Group {
   for (const sz of [-1, 1]) k.box('planks', BED_SIZE.x + 0.2, 0.3, 0.07, 0, 0, sz * (BED_SIZE.z / 2 + 0.03));
   for (const sx of [-1, 1]) k.box('planks', 0.07, 0.3, BED_SIZE.z, sx * (BED_SIZE.x / 2 + 0.03), 0, 0);
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) k.box('timber', 0.1, 0.4, 0.1, sx * (BED_SIZE.x / 2 + 0.03), 0, sz * (BED_SIZE.z / 2 + 0.03));
+  // Drills hoed along each row of planting, and a string line on pegs.
+  for (const z of [-0.62, 0.62]) for (const dz of [-0.16, 0.16]) k.box('soil', BED_SIZE.x - 0.25, 0.06, 0.16, 0, 0.22, z + dz, 0, 0, 0);
+  for (const sx of [-1, 1]) k.box('timber', 0.03, 0.42, 0.03, sx * (BED_SIZE.x / 2 - 0.12), 0.18, 0);
+  k.box('canvas', BED_SIZE.x - 0.24, 0.006, 0.006, 0, 0.55, 0);
   return k.build(false);
 }
 
 function fence(assets: Assets): THREE.Group {
   const k = new Kit(materials(assets));
-  for (const x of [-1.15, 1.15]) k.box('timber', 0.11, 1.2, 0.11, x, 0, 0);
-  for (const y of [0.42, 0.88]) k.box('planks', 2.3, 0.12, 0.05, 0, y, 0.03);
+  // Split rails nailed to round posts, each post weathered to a point.
+  for (const x of [-1.15, 1.15]) k.cyl('timber', 0.055, 0.065, 1.15, x, 0, 0, 7).cyl('timber', 0.005, 0.055, 0.1, x, 1.15, 0, 7);
+  for (const y of [0.32, 0.66, 0.98]) k.box('planks', 2.36, 0.1, 0.045, 0, y, 0.06, 0, 0, (y - 0.66) * 0.02);
+  for (const x of [-1.15, 1.15]) for (const y of [0.37, 0.71, 1.03]) k.box('iron', 0.018, 0.018, 0.02, x, y, 0.085);
   return k.build();
 }
 
@@ -622,6 +702,46 @@ export function shapeObject(assets: Assets, shape: Shape): THREE.Group {
   const wrap = new THREE.Group();
   wrap.add(instantiate(model, shape.fit ? fitScale(model, shape.fit) : (shape.scale ?? 1)));
   return wrap;
+}
+
+/**
+ * Timber scaffolding round a footprint `w` by `d` and `h` high: standards at
+ * the corners and every couple of metres, ledgers every metre and a quarter,
+ * a few boards to stand on, and a brace or two. For buildings going up.
+ */
+export function scaffold(assets: Assets, w: number, d: number, h: number): THREE.Group {
+  const k = new Kit(materials(assets));
+  const hw = w / 2 + 0.45;
+  const hd = d / 2 + 0.45;
+  const top = h + 0.6;
+  const along = (len: number) => Math.max(1, Math.round(len / 2.2));
+  for (const [ax, len, fixed] of [
+    ['x', hw * 2, hd],
+    ['x', hw * 2, -hd],
+    ['z', hd * 2, hw],
+    ['z', hd * 2, -hw],
+  ] as ['x' | 'z', number, number][]) {
+    const n = along(len);
+    for (let i = 0; i <= n; i++) {
+      const t = -len / 2 + (i * len) / n;
+      const [x, z] = ax === 'x' ? [t, fixed] : [fixed, t];
+      k.cyl('timber', 0.045, 0.05, top, x, 0, z, 6);
+    }
+    for (let y = 1.2; y < top; y += 1.25) {
+      // Cylinders stand on their base and are tipped about it: start them at one end.
+      if (ax === 'x') k.cyl('timber', 0.035, 0.035, len, len / 2, y, fixed, 6, 0, Math.PI / 2);
+      else k.cyl('timber', 0.035, 0.035, len, fixed, y, -len / 2, 6, Math.PI / 2, 0);
+    }
+    // One long brace across each face.
+    const diag = Math.hypot(len, top);
+    const lean = Math.atan2(len, top);
+    if (ax === 'x') k.cyl('timber', 0.03, 0.03, diag, -len / 2, 0, fixed, 6, 0, -lean);
+    else k.cyl('timber', 0.03, 0.03, diag, fixed, 0, -len / 2, 6, lean, 0);
+  }
+  for (let y = 1.2; y < top; y += 2.5) {
+    k.box('planks', hw * 2, 0.04, 0.32, 0, y + 0.04, hd - 0.1).box('planks', hw * 2, 0.04, 0.32, 0, y + 0.04, -hd + 0.1);
+  }
+  return k.build(false);
 }
 
 /** Recolour everything under `root` with one translucent material, for placement previews. */

@@ -396,9 +396,9 @@ export class Stock {
         detail: wants.length ? wants.join(', ') : 'content',
         height: b.doc.kind === 'hen' ? 0.6 : 1.6,
         actions: [
-          { key: 'E', label: 'Feed', blocked: n.food > CARE.wanted ? 'Not hungry' : undefined, run: care(act.feed) },
-          { key: 'R', label: b.doc.kind === 'hen' ? 'Dust off' : 'Wash', blocked: n.clean > CARE.wanted ? 'Clean' : undefined, run: care(act.wash) },
-          { key: 'T', label: b.doc.kind === 'dog' ? 'Throw a stick' : b.doc.kind === 'horse' ? 'Groom' : 'Pet', blocked: n.fun > CARE.wanted ? 'Had enough' : undefined, run: care(act.play) },
+          { key: 'E', label: 'Feed', move: b.doc.kind === 'hen' ? 'scatter' : 'feed', blocked: n.food > CARE.wanted ? 'Not hungry' : undefined, run: care(act.feed) },
+          { key: 'R', label: b.doc.kind === 'hen' ? 'Dust off' : 'Wash', move: b.doc.kind === 'hen' ? 'groom' : 'wash', blocked: n.clean > CARE.wanted ? 'Clean' : undefined, run: care(act.wash) },
+          { key: 'T', label: b.doc.kind === 'dog' ? 'Throw a stick' : b.doc.kind === 'horse' ? 'Groom' : 'Pet', move: b.doc.kind === 'dog' ? 'throw' : b.doc.kind === 'horse' ? 'groom' : 'pet', blocked: n.fun > CARE.wanted ? 'Had enough' : undefined, run: care(act.play) },
         ],
       };
       if ('rideable' in def && def.rideable) spot.actions.push({ key: 'F', label: 'Ride', run: () => this.ui.mount(b.id) });

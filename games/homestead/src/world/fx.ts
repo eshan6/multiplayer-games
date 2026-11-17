@@ -148,6 +148,48 @@ const STREAK = /* glsl */ `
   }
 `;
 
+/**
+ * A short burst thrown from a point: wood chips off an axe, water from a can,
+ * soil from a dibber, suds off a scrubbed flank. One ballistic shader for all
+ * of them; each kind is only colours, speeds and sizes.
+ */
+const BURST = /* glsl */ `${HEAD}
+  uniform float uBorn;
+  uniform float uLife;
+  uniform vec3 uColor;
+  uniform vec3 uColor2;
+  uniform vec3 uThrow;   // x: sideways spread, y: upward speed, z: gravity
+  uniform vec2 uSize;    // start, end (metres)
+  uniform vec2 uAim;     // a horizontal direction to favour
+  uniform float uAlpha;
+  void main() {
+    float age = (uTime - uBorn) - aSeed.x * uLife * 0.35;
+    float life = clamp(age / uLife, 0.0, 1.0);
+    float ang = aSeed.y * 6.28318;
+    vec2 out2 = vec2(cos(ang), sin(ang)) * (0.3 + aSeed.z) * uThrow.x + uAim * (0.5 + aSeed.w);
+    float t = max(age, 0.0);
+    vec3 p = uOrigin;
+    p.xz += out2 * t;
+    p.y += (uThrow.y * (0.5 + aSeed.w * 0.8)) * t - 0.5 * uThrow.z * t * t;
+    vec4 mv = modelViewMatrix * vec4(p, 1.0);
+    gl_Position = projectionMatrix * mv;
+    gl_PointSize = uScale * mix(uSize.x, uSize.y, life) * (0.6 + aSeed.z * 0.8) / -mv.z;
+    vColor = vec4(mix(uColor, uColor2, aSeed.w), uAlpha * step(0.0, age) * (1.0 - life * life));
+  }
+`;
+
+export type BurstKind = 'chips' | 'dust' | 'water' | 'soil' | 'suds' | 'grain' | 'leaves';
+
+const BURSTS: Record<BurstKind, { n: number; life: number; c1: number; c2: number; spread: number; up: number; g: number; size: [number, number]; alpha?: number }> = {
+  chips: { n: 14, life: 0.8, c1: 0xc9a476, c2: 0x7a5636, spread: 1.6, up: 2.6, g: 9, size: [0.05, 0.04] },
+  dust: { n: 16, life: 2.0, c1: 0x8f7f66, c2: 0x6f6352, spread: 0.6, up: 0.35, g: -0.15, size: [0.35, 1.3], alpha: 0.22 },
+  water: { n: 26, life: 0.7, c1: 0xcfe3ee, c2: 0x9cc2d6, spread: 0.25, up: 0.4, g: 9, size: [0.035, 0.02] },
+  soil: { n: 12, life: 0.7, c1: 0x5a4330, c2: 0x3b2b1f, spread: 0.9, up: 1.6, g: 9, size: [0.045, 0.03] },
+  suds: { n: 18, life: 1.6, c1: 0xf4f6f8, c2: 0xdfe8ee, spread: 0.35, up: 0.35, g: 0.2, size: [0.05, 0.11], alpha: 0.85 },
+  grain: { n: 26, life: 0.9, c1: 0xe0c172, c2: 0xb38f45, spread: 1.1, up: 0.8, g: 9, size: [0.025, 0.02] },
+  leaves: { n: 10, life: 1.4, c1: 0x6f8a3a, c2: 0xa3702e, spread: 0.6, up: 0.9, g: 2.2, size: [0.06, 0.05] },
+};
+
 export interface Flame {
   group: THREE.Group;
   light: THREE.PointLight | null;
@@ -260,6 +302,31 @@ export class Effects {
     p.renderOrder = 6;
     this.group.add(p);
     this.bursts.push({ points: p, until: this.time + 2.2 });
+  }
+
+  /** A burst of `kind` from `at`, thrown mostly along `aim` (x, z) if given. */
+  burst(kind: BurstKind, at: THREE.Vector3, aim?: { x: number; z: number }) {
+    const b = BURSTS[kind];
+    const p = points(
+      b.n,
+      BURST,
+      SOFT_DOT,
+      this.local(at, {
+        uBorn: { value: this.time },
+        uLife: { value: b.life },
+        uColor: { value: new THREE.Color(b.c1) },
+        uColor2: { value: new THREE.Color(b.c2) },
+        uThrow: { value: new THREE.Vector3(b.spread, b.up, b.g) },
+        uSize: { value: new THREE.Vector2(...b.size) },
+        uAim: { value: new THREE.Vector2(aim?.x ?? 0, aim?.z ?? 0) },
+        uAlpha: { value: b.alpha ?? 1 },
+      }),
+      THREE.NormalBlending,
+      (_i, r) => [r(), r(), r(), r()],
+    );
+    p.renderOrder = 6;
+    this.group.add(p);
+    this.bursts.push({ points: p, until: this.time + b.life * 1.4 + 0.2 });
   }
 
   /**

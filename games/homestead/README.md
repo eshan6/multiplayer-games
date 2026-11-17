@@ -56,10 +56,29 @@ swap to the lighter one past about 45 metres. A depth-based ambient occlusion
 pass darkens the creases where things meet, and a light film grade and SMAA
 finish the frame.
 
-The animals, the avatars and the crops are still the low-polygon Quaternius
-models, smoothed and given physically based materials. Next to the scanned
-world they are the least realistic thing on screen; see *What it does not do
-yet*.
+People are textured, clothed characters with proper faces, hair and hands
+(Quaternius' universal characters and outfits), moved by twenty-seven
+animations from one shared library. Walking, jogging and sprinting blend by
+speed from one shared step phase, so feet land where they fall instead of
+skating; people lean into turns and turn their heads toward what they could
+use. Everything you do is acted out: you walk up to the thing, face it, and
+chop the branch with an axe, water the row with a can, scatter grain for the
+hens, scrub the cow with a brush, throw the dog a stick, cook with a ladle,
+raise a building with a hammer. Chips, water, soil, suds and dust fly from
+the work, and the result lands at the moment the work does; a small bar
+says what you are doing and fills to that moment. Your partner sees you do
+it. Buildings go up inside timber scaffolding over a few seconds,
+course by course, and come with their working detail: hinges and battens,
+hay racks, troughs, a wired hen run, a five-bar gate, a rope on the well.
+The meadow gives way to them: grass is trodden flat under and round anything
+built, and the ground there wears to bare earth.
+
+![The six people you can be](shots/people.jpg)
+![Chopping, watering, sowing, washing, throwing a stick, building](shots/actions.jpg)
+
+The animals and the crops are still the low-polygon Quaternius models,
+smoothed and given physically based materials. Next to everything else they
+are the least realistic thing on screen; see *What it does not do yet*.
 
 A list of goals in the corner leads from the tent to a working farm.
 
@@ -162,10 +181,11 @@ The lines that matter:
 
 ## What it does not do yet
 
-- **Realistic people and animals.** The avatars, horses, livestock and crops
-  are smoothed low-polygon models. Free realistic, rigged and animated
-  replacements exist but sit behind accounts (Mixamo, Sketchfab) that this
-  project cannot sign in to.
+- **Realistic animals.** The horses, livestock, dog and crops are smoothed
+  low-polygon models. Free realistic, rigged and animated replacements exist
+  but sit behind accounts (Sketchfab) that this project cannot sign in to.
+- **Feet on slopes.** Feet are placed by the animation on flat ground; on a
+  steep hillside one can float a little above it.
 - **Performance on modest hardware is unmeasured.** A built-up farm is about
   2.3 million triangles and 1,000 draw calls per frame, with ambient
   occlusion and 4096-pixel shadows. Detail: Low turns occlusion and bloom off
@@ -186,5 +206,5 @@ renderer. Not yet measured: frame rate on real graphics hardware, and two
 real people in the published page at once.
 
 Surfaces, plants, props and furniture are Poly Haven (CC0); trees are
-generated with ez-tree (MIT); animals, avatars and crops are Quaternius
-(CC0). See [ASSETS.md](ASSETS.md).
+generated with ez-tree (MIT); people, their clothes and animations, animals
+and crops are Quaternius (CC0). See [ASSETS.md](ASSETS.md).

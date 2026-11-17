@@ -12,13 +12,15 @@ import { WORLD, waterDepth } from '../world/land';
 import type { Obstacle, Wall } from '../world/scatter';
 import type { Terrain } from '../world/terrain';
 import { Avatar } from './avatar';
+import type { BurstKind } from '../world/fx';
+import { MOVES, type MoveName } from './moves';
 import { angleTo, type Creature } from './creature';
 
-export const PACE = { stroll: 2.1, jog: 4.7, sprint: 6.6, amble: 2.3, canter: 6.4, gallop: 11.5, reverse: -1.3 } as const;
+export const PACE = { stroll: 1.5, jog: 4.2, sprint: 6.4, amble: 2.3, canter: 6.4, gallop: 11.5, reverse: -1.3 } as const;
 
 /** A horse will wade this deep and no deeper; on foot, you stop at the knees. */
 const WADE = { ride: 0.55, foot: 0.4 };
-const SEAT = { lift: -0.43, back: 0.05, lean: 0.06 };
+const SEAT = { lift: -0.45, back: 0.22, lean: 0.06 };
 
 export interface Solid {
   obstacles: Obstacle[];
@@ -72,12 +74,97 @@ export class Player {
   private readonly seat = new THREE.Vector3();
   private seatBone: THREE.Object3D | undefined;
   private idleFor = 0;
+  /** Something being done: first walked up to, then performed. */
+  private task: { move: MoveName; x: number; z: number; phase: 'approach' | 'act'; t: number; done: boolean; then?: () => void } | null = null;
 
   constructor(avatar: AvatarId) {
     this.avatar = new Avatar(avatar);
   }
 
+  /** Called for each burst a move throws up (chips, water, soil). Set by the game. */
+  onFx: ((kind: BurstKind, at: THREE.Vector3, aim: { x: number; z: number }) => void) | null = null;
+
+  /** What you are in the middle of doing, for your partner's screen. */
+  get doing(): MoveName | '' {
+    return this.task?.phase === 'act' ? this.task.move : '';
+  }
+
+  /** What you are doing and how far to the moment it lands (0..1), for the HUD. */
+  get work(): { verb: string; progress: number } | null {
+    const t = this.task;
+    if (!t || t.phase !== 'act') return null;
+    const def = MOVES[t.move];
+    return { verb: def.verb, progress: t.t / Math.max(0.01, def.contact) };
+  }
+
+  /** True while a task holds you (walking up to something, or doing it). */
+  get busy(): boolean {
+    return this.task !== null;
+  }
+
+  /**
+   * Walk up to (x, z), face it, and do `move`; `then` runs at the moment the
+   * deed is done. Pressing a movement key before then calls it off.
+   */
+  perform(move: MoveName, x: number, z: number, then?: () => void) {
+    if (this.mount) {
+      then?.();
+      return;
+    }
+    this.cancelTask();
+    this.task = { move, x, z, phase: 'approach', t: 0, done: false, then };
+  }
+
+  private cancelTask() {
+    if (!this.task) return;
+    this.avatar.stopPerformance(false);
+    this.task = null;
+  }
+
+  /** Advance the task; returns true while it holds the body still. */
+  private stepTask(dt: number, moving: boolean): { hold: boolean; walkTo?: [number, number] } {
+    const task = this.task;
+    if (!task) return { hold: false };
+    const def = MOVES[task.move];
+    if (moving && (task.phase === 'approach' || task.t < def.contact)) {
+      this.cancelTask();
+      return { hold: false };
+    }
+    const dx = task.x - this.position.x;
+    const dz = task.z - this.position.z;
+    const d = Math.hypot(dx, dz);
+    task.t += dt;
+    if (task.phase === 'approach') {
+      // A few steps closer if you stopped short, but never a long walk.
+      if (d > def.stand + 0.2 && task.t < 1.6) return { hold: false, walkTo: [task.x, task.z] };
+      task.phase = 'act';
+      task.t = 0;
+      this.avatar.perform(def);
+    }
+    // Face what you are working on.
+    if (d > 0.05) this.heading += angleTo(this.heading, Math.atan2(dx, dz)) * (1 - Math.exp(-dt * 9));
+    if (def.fx && this.onFx) {
+      for (const at of def.fx.at) {
+        if (task.t - dt < at && task.t >= at) {
+          // Between you and the work, where the tool meets it.
+          const k = Math.min(1, def.stand > 0 ? 0.85 : 0);
+          const x = this.position.x + dx * k;
+          const z = this.position.z + dz * k;
+          this.onFx(def.fx.kind, new THREE.Vector3(x, this.position.y + def.fx.y, z), { x: (dx / (d || 1)) * 0.4, z: (dz / (d || 1)) * 0.4 });
+        }
+      }
+    }
+    if (!task.done && task.t >= def.contact) {
+      task.done = true;
+      if (def.release) this.avatar.dropProps();
+      task.then?.();
+    }
+    if (task.t >= def.seconds) this.task = null;
+    return { hold: true };
+  }
+
   ride(id: string, horse: Creature) {
+    this.cancelTask();
     this.mount = { id, horse };
     this.seatBone = horse.bone('Torso2') ?? horse.bone('Torso');
     this.bob = null;
@@ -121,15 +208,23 @@ export class Player {
     const fz = -Math.cos(cameraYaw);
     let mx = fx * forward - fz * side;
     let mz = fz * forward + fx * side;
-    const len = Math.hypot(mx, mz);
-    const want = len > 0 ? (fast ? PACE.sprint : this.easy ? PACE.stroll : PACE.jog) : 0;
+    let len = Math.hypot(mx, mz);
+    const job = this.stepTask(dt, len > 0);
+    if (job.walkTo) {
+      mx = job.walkTo[0] - this.position.x;
+      mz = job.walkTo[1] - this.position.z;
+      len = Math.hypot(mx, mz);
+    }
+    const want = job.hold ? 0 : job.walkTo ? PACE.stroll * 1.2 : len > 0 ? (fast ? PACE.sprint : this.easy ? PACE.stroll : PACE.jog) : 0;
     if (len > 0) {
       mx /= len;
       mz /= len;
       const turn = angleTo(this.heading, Math.atan2(mx, mz));
-      this.heading += turn * (1 - Math.exp(-dt * 13));
+      // Turning on the spot is quick; at a run you swing round wider.
+      this.heading += turn * (1 - Math.exp(-dt * THREE.MathUtils.lerp(12, 6, Math.min(1, this.speed / PACE.sprint))));
     }
-    const rate = want > this.speed ? 22 : 30;
+    // Picking up speed takes a stride or two; stopping, a little less.
+    const rate = want > this.speed ? 9 : 14;
     this.speed += THREE.MathUtils.clamp(want - this.speed, -rate * dt, rate * dt);
 
     const p = this.position;

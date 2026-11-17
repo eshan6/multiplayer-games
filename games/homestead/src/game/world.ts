@@ -133,6 +133,8 @@ export interface Presence {
   /** Id of the animal being ridden, or ''. */
   riding: string;
   indoors: boolean;
+  /** The move being performed (entities/moves.ts), or ''. Only ever shown, never trusted. */
+  doing: string;
 }
 
 export interface Peer extends Presence {

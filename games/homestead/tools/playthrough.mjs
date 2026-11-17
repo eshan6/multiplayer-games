@@ -22,10 +22,16 @@ const result = await page.evaluate(async () => {
   const g = window.homestead, s = g.store;
   const key = (code) => { window.dispatchEvent(new KeyboardEvent('keydown', { code })); window.dispatchEvent(new KeyboardEvent('keyup', { code })); };
   const run = (n = 4, dt = 0.05) => { for (let i = 0; i < n; i++) g.step(dt); };
+  // Doing something takes as long as its animation: the deed lands partway through.
+  // Building also walks you over to the site first, so allow for that too.
+  const act = () => run(120);
   const prompt = () => document.getElementById('prompt').hidden ? null : document.getElementById('prompt-title').textContent + ' | ' + document.getElementById('prompt-actions').textContent;
   const have = (item) => [...s.all('ledgers').values()].reduce((n, l) => n + (l.items[item] ?? 0), 0);
   const out = {};
   const camp = [...s.all('structures')].find(([, d]) => d.kind === 'campfire')[1];
+  // Play through the rules without drawing every frame: a software renderer
+  // takes seconds a frame. Step 9 turns drawing back on to check it.
+  g.debug.draw = false;
   run();
 
   try { // 1.  Walk: hold W for a second on foot.
@@ -46,7 +52,11 @@ const result = await page.evaluate(async () => {
   }
   out.foundPrompt = found;
   const before = have('wood') + have('stone') + have('berries') + have('mushroom');
-  key('KeyE'); run(3);
+  key('KeyE'); run(24);
+  // Mid-way: the move is playing, a tool is in hand, and nothing has landed yet.
+  let held = null; g.player.avatar.root.traverse((o) => { if (o.name.startsWith('prop:')) held = o.name.slice(5); });
+  out.doing = `${g.player.doing} with ${held ?? 'bare hands'}`;
+  run(60);
   out.gathered = have('wood') + have('stone') + have('berries') + have('mushroom') - before;
   } catch (e) { out['error2'] = String(e.message || e); }
 
@@ -79,7 +89,7 @@ const result = await page.evaluate(async () => {
   out.hint = document.getElementById('tool-hint').textContent;
   g.input.clicked = true; run(1); run(3);
   out.builtBed = count() - n0;
-  key('Escape'); run(2);
+  key('Escape'); act();
   out.toolAway = document.getElementById('tool-hint').hidden;
   } catch (e) { out['error4'] = String(e.message || e); }
 
@@ -88,23 +98,27 @@ const result = await page.evaluate(async () => {
   g.player.position.x = bed.x - 1.25; g.player.position.z = bed.z - 0.62; run(4);
   out.bedPrompt = prompt();
   key('KeyE'); run(2);
-  [...document.querySelectorAll('#sheet-body .card')].find((b) => b.textContent.includes('Carrots')).click(); run(4);
+  [...document.querySelectorAll('#sheet-body .card')].find((b) => b.textContent.includes('Carrots')).click(); act();
   out.planted = s.all('crops').size;
   out.cropPrompt = prompt();
-  key('KeyE'); run(3);
+  key('KeyE'); act();
   out.watered = [...s.all('crops').values()][0]?.wateredAt > 0;
   g.debug.timeShift += 6 * 60000; run(12, 0.1);
   out.ripePrompt = prompt();
-  const c0 = have('carrot'); key('KeyE'); run(3);
+  const c0 = have('carrot'); key('KeyE'); act();
   out.harvested = have('carrot') - c0;
   } catch (e) { out['error5'] = String(e.message || e); }
 
   try { // 6. Cook over the fire.
-  g.player.position.x = camp.x + 1.4; g.player.position.z = camp.z; run(4);
+  // Approach from whichever side is clear: a horse may be standing at the fire.
+  for (let a = 0; a < 6.3; a += 0.5) {
+    g.player.position.x = camp.x + Math.cos(a) * 1.4; g.player.position.z = camp.z + Math.sin(a) * 1.4; run(4);
+    if (/Campfire|fire/i.test(prompt() ?? '') && !/horse/.test(prompt() ?? '')) break;
+  }
   out.firePrompt = prompt();
   key('KeyE'); run(2);
   const meals0 = have('meal');
-  [...document.querySelectorAll('#sheet-body .card')].find((b) => b.textContent.includes('Roasted mushrooms')).click(); run(2);
+  [...document.querySelectorAll('#sheet-body .card')].find((b) => b.textContent.includes('Roasted mushrooms')).click(); act();
   out.cooked = have('meal') - meals0;
   key('Escape'); run(2);
   } catch (e) { out['error6'] = String(e.message || e); }
@@ -114,7 +128,7 @@ const result = await page.evaluate(async () => {
   g.player.position.x = -8; g.player.position.z = -6; g.follow.yaw = 0; g.follow.pitch = 0.6; g.follow.distance = 14; g.follow.started = false; run(3);
   g.input.pointer.x = 0; g.input.pointer.y = 0.3; run(3);
   out.cottageHint = document.getElementById('tool-hint').textContent;
-  g.input.clicked = true; run(1); key('Escape'); run(4);
+  g.input.clicked = true; run(1); key('Escape'); act();
   out.cottage = [...s.all('structures').values()].some((d) => d.kind === 'cottage');
   const door = g.structures.door();
   if (door) { g.player.position.x = door.x; g.player.position.z = door.z; run(4); }
@@ -129,7 +143,7 @@ const result = await page.evaluate(async () => {
   [...document.querySelectorAll('#sheet-tabs button')].find((b) => b.textContent === 'Kitchen').click();
   [...document.querySelectorAll('#sheet-body .card')].find((b) => b.textContent.includes('stove')).click();
   g.input.pointer.x = 0; g.input.pointer.y = 0; run(3);
-  g.input.clicked = true; run(1); key('Escape'); run(3);
+  g.input.clicked = true; run(1); key('Escape'); act();
   out.furniture = s.all('furniture').size;
   const stove = [...s.all('furniture').values()][0];
   if (stove) { g.player.position.x = stove.x + 1; g.player.position.z = stove.z + 0.6; run(4); }
@@ -144,12 +158,13 @@ const result = await page.evaluate(async () => {
   const dog = g.stock.position('dog');
   g.player.position.x = dog.x + 0.8; g.player.position.z = dog.z; run(3);
   out.dogPrompt = prompt();
-  const fed0 = s.all('animals').get('dog').fedAt; key('KeyE'); run(2);
+  const fed0 = s.all('animals').get('dog').fedAt; key('KeyE'); act();
   out.fedDog = s.all('animals').get('dog').fedAt > fed0;
   } catch (e) { out['error8'] = String(e.message || e); }
 
   try { // 9. Low detail still draws the world. (It once switched off the pass
   // that draws the scene, and the screen went blank mid-game.)
+  g.debug.draw = true;
   const drawn = () => { g.renderer.info.autoReset = false; g.renderer.info.reset(); run(1); g.renderer.info.autoReset = true; return g.renderer.info.render.calls; };
   const detail = () => [...document.querySelectorAll('button')].find((b) => /Detail/.test(b.textContent));
   const high = drawn();

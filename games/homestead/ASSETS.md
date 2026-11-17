@@ -15,7 +15,9 @@ because it is deserved.
 | Horse, cow, dog, deer, fox | Quaternius, Ultimate Animated Animals | CC0 |
 | Pig | Quaternius, Farm Animals | CC0 |
 | Vegetables at four stages, berry bushes, mushrooms | Quaternius, Ultimate Crops | CC0 |
-| The six avatars | Quaternius, Ultimate Modular Women / Characters | CC0 |
+| The six people: bodies, heads, hair | Quaternius, [Universal Base Characters](https://quaternius.com/packs/universalbasecharacters.html) (free Standard edition) | CC0 |
+| Their clothes (peasant and ranger, two colourways each) | Quaternius, [Modular Character Outfits: Fantasy](https://quaternius.com/packs/modularcharacteroutfitsfantasy.html) (Standard) | CC0 |
+| How people move: walking, running, chopping, watering, planting, harvesting, scrubbing, throwing, eating, sitting… | Quaternius, [Universal Animation Library](https://quaternius.com/packs/universalanimationlibrary.html) 1 and 2 (Standard) | CC0 |
 
 Built in code, with no source file: the cottage, byre, stable, hen coop,
 pig sty, well, tent, vegetable beds, fences, paths, lantern posts, cart, hay
@@ -45,7 +47,14 @@ python tools/build_scan_textures.py work/ph/work/textures.json src/assets/scan
 python tools/build_grass_atlas.py   src/assets/scan/grass_cards.webp
 python tools/build_lawn.py          work/Grass004 src/assets/scan
 
-# Animals, avatars and crops (Quaternius)
+# People (Quaternius): download the four Standard packs named in the table
+# above (itch.io or quaternius.com) and unzip them. UAL 1's Unreal FBX is
+# converted to glTF by Blender first; see tools/build_people.mjs.
+python tools/build_people.py -- "<Universal Base Characters dir>" "<Outfits dir>" work/people   # Blender
+node   tools/build_people.mjs       work/people work/ual1.glb "<UAL2 dir>/Unreal-Godot/UAL2_Standard.glb" src/assets
+python tools/build_people_textures.py "<Universal Base Characters dir>" "<Outfits dir>" src/assets/people
+
+# Animals and crops (Quaternius)
 python tools/fetch_assets.py        work/dl
 python tools/build_static_assets.py -- work/dl work/out   # Blender: crops.glb and the pig
 node   tools/optimize_models.mjs    work/dl work/out src/assets

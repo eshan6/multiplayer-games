@@ -8,6 +8,7 @@ import type { Peer, Store } from '../game/world';
 import type { Terrain } from '../world/terrain';
 import { Avatar } from './avatar';
 import { angleTo } from './creature';
+import { MOVES, isMove } from './moves';
 import { seatRider } from './player';
 import type { Stock } from './stock';
 
@@ -21,6 +22,7 @@ interface Shown {
   indoors: boolean;
   bob: number | null;
   scratch: THREE.Vector3;
+  doing: string;
 }
 
 export class Peers {
@@ -58,7 +60,7 @@ export class Peers {
     for (const p of peers) {
       let s = this.shown.get(p.id);
       if (!s) {
-        s = { avatar: new Avatar(p.avatar), x: p.x, z: p.z, heading: p.heading, speed: 0, riding: '', indoors: p.indoors, bob: null, scratch: new THREE.Vector3() };
+        s = { avatar: new Avatar(p.avatar), x: p.x, z: p.z, heading: p.heading, speed: 0, riding: '', indoors: p.indoors, bob: null, scratch: new THREE.Vector3(), doing: '' };
         this.shown.set(p.id, s);
       }
       s.avatar.wear(p.avatar);
@@ -72,6 +74,11 @@ export class Peers {
       s.speed += (p.speed - s.speed) * k;
       s.indoors = p.indoors;
 
+      // Whatever they are doing, play it here too: by name, from our own list.
+      if (p.doing !== s.doing) {
+        s.doing = p.doing;
+        if (isMove(p.doing)) s.avatar.perform(MOVES[p.doing]);
+      }
       if (s.riding !== p.riding) {
         if (s.riding) this.stock.ridden.delete(s.riding);
         s.riding = p.riding;

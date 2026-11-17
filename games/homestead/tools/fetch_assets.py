@@ -12,7 +12,6 @@ Output layout, which the two build scripts expect:
 
     <dir>/farm/Pig.fbx         the pig, from Farm Animals
     <dir>/animals2/*.gltf      Ultimate Animated Animals
-    <dir>/women/, men/ *.gltf  Ultimate Modular Women / Characters
     <dir>/crops/*.fbx          Ultimate Crops
 """
 import os
@@ -27,8 +26,6 @@ UA = "Mozilla/5.0"
 # Drive folder ids, from the "Download" button on each pack's page.
 FOLDERS = {
     "animals2": "1yJXdB1iSrI8Db7hG77zxZ66vKsqIt0ry",  # quaternius.com/packs/ultimateanimatedanimals.html
-    "women": "1_FIjjIVE0SkQIrwgWJ3Q8NQku25ll5a2",  # quaternius.com/packs/ultimatemodularwomen.html
-    "men": "1qpSIycVWTwhKMgyA_bEFHPh1CfBBBa09",  # quaternius.com/packs/ultimatemodularcharacters.html
     "crops": "1r_WpDuffiJeQ3neYTvCEb0RI-yOB_afS",  # quaternius.com/packs/ultimatecrops.html
 }
 
@@ -38,8 +35,6 @@ PIG_ZIP = "https://opengameart.org/sites/default/files/Farm%20Animals%20by%20%40
 # folder -> regex of the file names wanted from it
 WANTED = {
     "animals2": r"^(Horse|Cow|ShibaInu|Deer|Fox)\.gltf$",
-    "women": r"^(Adventurer|Casual|Formal)\.gltf$",
-    "men": r"^(Farmer|Casual_2|Adventurer)\.gltf$",
     "crops": r"^((Carrot|Lettuce|Tomato|Corn|Pumpkin|Wheat)_[1-4]|BushBerries_4|BushBerries_Harvested|Mushroom_4)\.fbx$",
 }
 

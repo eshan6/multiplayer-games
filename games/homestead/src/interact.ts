@@ -5,6 +5,8 @@
  * hands back a list of `Spot`s; this picks the one nearest the player and the
  * HUD shows its actions. Nothing here knows what any action does.
  */
+import type { MoveName } from './entities/moves';
+
 export type ActionKey = 'E' | 'R' | 'T' | 'F';
 
 export interface SpotAction {
@@ -12,6 +14,11 @@ export interface SpotAction {
   label: string;
   /** Greyed out, with this as the reason, instead of hidden. */
   blocked?: string;
+  /**
+   * How it looks: the player walks up, plays this, and `run` happens at the
+   * moment the deed is done. Without one, `run` happens on the key press.
+   */
+  move?: MoveName;
   run(): void;
 }
 

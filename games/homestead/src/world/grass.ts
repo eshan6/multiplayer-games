@@ -36,9 +36,13 @@ import { wind } from '../assets';
 import { fbm, hash2, noise2, smoothstep } from '../noise';
 import { grassCards } from '../scans';
 import { WORLD, grassDensity, groundColor } from './land';
+import { paintFootprints, type Footprint } from './clearing';
 import type { Terrain } from './terrain';
 
 const TILE = 16;
+/** The clearing mask: this many pixels across `CLEAR_HALF * 2` metres. */
+const CLEAR_SIZE = 1024;
+const CLEAR_HALF = 180;
 /** Clumps per square metre at full density. */
 const PER_M2 = 4;
 const CLUMPS = Math.round(TILE * TILE * PER_M2);
@@ -121,13 +125,20 @@ export class Grass {
     uSeason: { value: new THREE.Color(1, 1, 1) },
     uCards: { value: null as THREE.Texture | null },
     uQuality: { value: 1 },
+    uClear: { value: null as THREE.Texture | null },
   };
+  /** Where buildings stand, as a mask over the play area: grass shrinks to nothing there. */
+  private readonly clearMask = new Uint8Array(CLEAR_SIZE * CLEAR_SIZE);
+  private readonly clearTexture = new THREE.DataTexture(this.clearMask, CLEAR_SIZE, CLEAR_SIZE, THREE.RedFormat);
 
   constructor(private readonly terrain: Terrain) {
     this.group.name = 'grass';
     // Nothing is drawn until the cards have arrived: an empty texture would
     // sample as solid black squares.
     this.group.visible = false;
+    this.clearTexture.magFilter = this.clearTexture.minFilter = THREE.LinearFilter;
+    this.clearTexture.needsUpdate = true;
+    this.uniforms.uClear.value = this.clearTexture;
     const cards = grassCards();
     this.uniforms.uCards.value = cards.tex;
     void cards.ready.then(() => (this.group.visible = true));
@@ -149,6 +160,7 @@ export class Grass {
           uniform float uQuality;
           uniform vec3 uRider;
           uniform vec2 uFade;
+          uniform sampler2D uClear;
           varying vec3 vTint;
           varying vec2 vCardUv;
           varying float vTip;
@@ -176,7 +188,9 @@ export class Grass {
           // And at the very edge of the drawn range, everything sinks into the turf.
           float edge = 1.0 - smoothstep(uFade.x, uFade.y, dist);
 
-          float height = aLook.a * alive * edge * mix(1.0, grow, 0.55);
+          // Under a building, or in its yard: trodden flat.
+          float cleared = texture2D(uClear, aRoot.xz / ${(CLEAR_HALF * 2).toFixed(1)} + 0.5).r;
+          float height = aLook.a * alive * edge * mix(1.0, grow, 0.55) * (1.0 - cleared);
           float width = aCard.y * alive * mix(1.0, grow, 0.85);
 
           float c = cos(aRoot.w);
@@ -251,6 +265,13 @@ export class Grass {
         );
     };
     this.material.customProgramCacheKey = () => 'grass-cards';
+  }
+
+  /** Flatten the grass wherever something has been built. */
+  clear(prints: Footprint[]) {
+    this.clearMask.fill(0);
+    paintFootprints(this.clearMask, CLEAR_SIZE, CLEAR_HALF, prints, 0.35, 0.9);
+    this.clearTexture.needsUpdate = true;
   }
 
   /** Tint the whole meadow: how the seasons reach the grass. Linear RGB multiplier. */

@@ -292,6 +292,7 @@ export class SharedStore extends BaseStore {
         speed: typeof p.speed === 'number' ? p.speed : 0,
         riding: typeof p.riding === 'string' ? p.riding : '',
         indoors: p.indoors === true,
+        doing: typeof p.doing === 'string' ? p.doing.slice(0, 16) : '',
       });
     }
     return out;

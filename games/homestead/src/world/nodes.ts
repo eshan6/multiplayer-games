@@ -6,6 +6,7 @@
  * timestamp per spot, from which "has it grown back yet?" is arithmetic.
  */
 import * as THREE from 'three';
+import type { MoveName } from '../entities/moves';
 import { modelOf, type Assets, type Model } from '../assets';
 import * as act from '../game/actions';
 import { NODES, type NodeKind } from '../game/catalog';
@@ -15,6 +16,9 @@ import { rng } from '../noise';
 import { WORLD, laneDistance, waterDepth, woodland } from './land';
 import type { Obstacle } from './scatter';
 import type { Terrain } from './terrain';
+
+/** How each kind of thing is gathered: branches are cut to length, berries picked into a basket. */
+const GATHER_MOVE: Record<NodeKind, MoveName> = { log: 'chop', rock: 'stones', berry: 'pick', mushroom: 'forage' };
 
 interface Node {
   id: string;
@@ -153,6 +157,7 @@ export class Nodes {
           {
             key: 'E',
             label: def.verb,
+            move: GATHER_MOVE[n.kind],
             run: () => {
               this.ui.say(act.gather(this.store, this.ui.moment(), n.id, n.kind), new THREE.Vector3(n.x, n.y + 1, n.z));
               this.stale = true;

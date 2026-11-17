@@ -372,10 +372,10 @@ export const ROOM = { width: 11, depth: 8.5, height: 3.1 } as const;
 
 export const AVATARS = {
   f_adventurer: 'Rambler',
-  f_casual: 'Summer clothes',
-  f_formal: 'Green dress',
+  f_casual: 'Farmhand',
+  f_formal: 'Homespun',
   m_farmer: 'Farmer',
-  m_casual: 'Shirtsleeves',
+  m_casual: 'Labourer',
   m_adventurer: 'Woodsman',
 } as const;
 

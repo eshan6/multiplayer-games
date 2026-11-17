@@ -239,6 +239,18 @@ export class Hud {
     }
   }
 
+  /** What you are busy doing, and how far to its moment (0..1); null when idle. Replaces the prompt. */
+  work(verb: string | null, progress = 0) {
+    const box = el('work');
+    box.hidden = !verb;
+    if (!verb) return;
+    el('prompt').hidden = true;
+    this.lastPrompt = '';
+    if (el('work-verb').textContent !== verb) el('work-verb').textContent = verb;
+    (el('work-bar').firstElementChild as HTMLElement).style.width = `${Math.round(Math.min(1, progress) * 100)}%`;
+    box.classList.toggle('done', progress >= 1);
+  }
+
   /** The line shown while a placement tool is in hand. */
   toolHint(text: string | null, bad = false) {
     const box = el('tool-hint');

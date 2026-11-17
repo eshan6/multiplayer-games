@@ -232,6 +232,11 @@ export class Builder {
     return why ? fail(why) : true;
   }
 
+  /** Where the tool is pointing, if anywhere. */
+  spot(): { x: number; z: number } | null {
+    return this.hasPoint ? { x: this.at.x, z: this.at.z } : null;
+  }
+
   /** The player clicked. Returns what happened, or null if the click meant nothing. */
   click(m: act.Moment, scene: THREE.Object3D): act.Outcome | null {
     const tool = this.tool;

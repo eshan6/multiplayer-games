@@ -15,6 +15,7 @@
  */
 import * as THREE from 'three';
 import { surfaceMaps } from '../scans';
+import { paintFootprints, type Footprint } from './clearing';
 import { WORLD, grassDensity, groundColor, heightAt, laneMask, woodland } from './land';
 
 const HALF = WORLD.meshHalfSize;
@@ -131,6 +132,34 @@ export class Terrain {
    * shade, painted later. Alpha is how thickly grass grows, so the ground can
    * darken under the sward exactly where grass cards are drawn.
    */
+  /** The lane as baked, so trampled ground can be repainted over it from scratch. */
+  private laneBase: Uint8Array | null = null;
+
+  /**
+   * Wear the ground to bare earth under and round buildings: the lane's
+   * texture, a little short of full strength, so a yard reads as trodden
+   * soil with grass at its edges rather than as a road.
+   */
+  trample(prints: Footprint[]) {
+    const n = CONTROL * CONTROL;
+    if (!this.laneBase) {
+      this.laneBase = new Uint8Array(n);
+      for (let i = 0; i < n; i++) this.laneBase[i] = this.control[i * 4]!;
+    }
+    for (let i = 0; i < n; i++) this.control[i * 4] = this.laneBase[i]!;
+    paintFootprints(
+      this.control,
+      CONTROL,
+      HALF,
+      prints.map((p) => ({ ...p, strength: p.strength * 0.46 })),
+      0.2,
+      1.1,
+      4,
+      0,
+    );
+    this.controlTexture.needsUpdate = true;
+  }
+
   private bakeControl(): THREE.DataTexture {
     for (let py = 0; py < CONTROL; py++) {
       const z = -HALF + ((py + 0.5) / CONTROL) * HALF * 2;

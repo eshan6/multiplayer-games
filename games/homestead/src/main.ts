@@ -23,6 +23,7 @@ import { Builder, type Tool } from './build';
 import { FollowCamera, type View } from './camera';
 import { Peers } from './entities/peers';
 import { Player } from './entities/player';
+import type { MoveName } from './entities/moves';
 import { Stock } from './entities/stock';
 import { Wild } from './entities/wild';
 import * as act from './game/actions';
@@ -58,14 +59,16 @@ async function boot() {
 
   const store: Store = (await SharedStore.connect().catch(() => null)) ?? new LocalStore();
   // Tests can move the clock; the game itself never does.
-  const debug = { timeShift: 0 };
+  // Tests can move the clock, and skip drawing while they play through the rules.
+  const debug = { timeShift: 0, draw: true };
   const now = () => Date.now() + debug.timeShift;
 
   let tool: Tool | null = null;
   const hud = new Hud(store, {
     pick: (t) => pick(t),
-    cook: (recipe, at) => say(act.cook(store, moment(), recipe, at)),
-    plant: (bed, slot, crop) => say(act.plant(store, moment(), bed, slot, crop)),
+    // Both come from a dialog opened at a spot: do the work there.
+    cook: (recipe, at) => perform(at === 'fire' ? 'cookFire' : 'cookStove', () => say(act.cook(store, moment(), recipe, at))),
+    plant: (bed, slot, crop) => perform('plant', () => say(act.plant(store, moment(), bed, slot, crop))),
     buyAnimal: (kind) => say(act.buyAnimal(store, moment(), kind)),
     paint: (what, index) => say(act.paint(store, moment(), what, index)),
     weather: (w) => act.setWeather(store, w),
@@ -130,15 +133,18 @@ async function boot() {
   if (!known) hud.toast('The shared world is slow to answer. What you do may not be saved.', { bad: true });
 
   const player = new Player(who.avatar);
+  player.onFx = (kind, at, aim) => (player.indoors ? indoorFx : fx).burst(kind, at, aim);
   scene.add(player.avatar.root);
   const outdoors = new THREE.Vector3();
 
   // What the world's systems call back into.
   const moment = (): act.Moment => ({ now: now(), together: peers.near(player.position.x, player.position.z, player.indoors, TOGETHER_RANGE) });
-  const say = (out: act.Outcome) => {
-    hud.say(out);
-    if (out.ok) player.avatar.gesture();
-  };
+  const say = (out: act.Outcome): void => hud.say(out);
+  /** Do `move` at the spot you are at (or where you stand), and `then` when it lands. */
+  function perform(move: MoveName, then: () => void) {
+    const at = spot ?? { x: player.position.x + Math.sin(player.heading), z: player.position.z + Math.cos(player.heading) };
+    player.perform(move, at.x, at.z, then);
+  }
   const bridge = {
     moment,
     say,
@@ -289,6 +295,7 @@ async function boot() {
 
   // ---- keys ------------------------------------------------------------------
   let spot: Spot | null = null;
+  const gaze = new THREE.Vector3();
   input.onPress = (code) => {
     if (code === 'Escape') {
       if (tool) pick(null);
@@ -311,7 +318,8 @@ async function boot() {
       if (KEY_CODES[key] !== code) continue;
       const action = spot?.actions.find((a) => a.key === key);
       if (action?.blocked) hud.toast(action.blocked, { bad: true });
-      else action?.run();
+      else if (action?.move && spot && !player.busy) player.perform(action.move, spot.x, spot.z, () => action.run());
+      else if (action && !action.move) action.run();
     }
   };
 
@@ -322,6 +330,7 @@ async function boot() {
   const roomView = new THREE.Vector3();
   let rain = 0;
   let spotClock = 0;
+  let clearedFor = -1;
   const advance = (dt: number) => {
     const t = now();
     const world = meta(store);
@@ -335,11 +344,17 @@ async function boot() {
     // Indoors the camera frames the room more than it chases you round it.
     const lookAt = indoors ? roomView.copy(player.position).multiplyScalar(0.4) : player.position;
     follow.update(dt, input, view, lookAt, player.heading, player.speed, indoors ? null : terrain);
-    store.present({ name: who.name, avatar: who.avatar, x: player.position.x, z: player.position.z, heading: player.heading, speed: player.speed, riding: player.mount?.id ?? '', indoors });
+    store.present({ name: who.name, avatar: who.avatar, x: player.position.x, z: player.position.z, heading: player.heading, speed: player.speed, riding: player.mount?.id ?? '', indoors, doing: player.doing });
 
     // ---- everyone else ---------------------------------------------------------
     const me = { x: indoors ? outdoors.x : player.position.x, z: indoors ? outdoors.z : player.position.z, heading: player.heading, speed: player.speed, indoors };
     structures.update(dt, t);
+    if (structures.clearings !== clearedFor) {
+      clearedFor = structures.clearings;
+      const prints = structures.footprints();
+      grass.clear(prints);
+      terrain.trample(prints);
+    }
     nodes.update(dt, t);
     stock.update(dt, t, me);
     wild.update(dt, me);
@@ -356,7 +371,15 @@ async function boot() {
         const name = store.all('animals').get(player.mount.id)?.name ?? 'your horse';
         spot = { x: px, z: pz, reach: 1, title: `Riding ${name}`, actions: [{ key: 'F', label: 'Get down', run: getDown }] };
       } else spot = nearest(indoors ? interior.spots() : [...structures.spots(t), ...nodes.spots(px, pz), ...stock.spots(t, px, pz)], px, pz);
-      hud.prompt(spot);
+      const work = player.work;
+      if (work) hud.work(work.verb, work.progress);
+      else {
+        hud.work(null);
+        hud.prompt(spot);
+      }
+      // Glance at what you could use, as people do.
+      if (spot && !player.mount && player.speed < 3) player.avatar.look = gaze.set(spot.x, (indoors ? 0 : terrain.height(spot.x, spot.z)) + (spot.height ?? 0.8) * 0.8, spot.z);
+      else player.avatar.look = null;
     }
 
     // ---- building ---------------------------------------------------------------
@@ -367,8 +390,12 @@ async function boot() {
         tool.type === 'remove' ? 'Click something to take it away  ·  Esc to stop' : tool.type === 'pick' ? 'Click a piece to pick it up  ·  Esc to stop' : `${name}: click to place  ·  R to turn  ·  Esc when done`;
       hud.toolHint(builder.problem || hint, !!builder.problem);
       if (input.clicked) {
+        const was = builder.tool;
+        const at = builder.spot();
         const out = builder.click(moment(), activeScene());
         if (out) say(out);
+        // Raise it with a hammer, or set it down by hand.
+        if (out?.ok && at && was && (was.type === 'structure' || was.type === 'furniture' || was.type === 'move')) player.perform(was.type === 'structure' ? 'build' : 'place', at.x, at.z);
         tool = builder.tool;
       }
     } else hud.toolHint(null);
@@ -402,7 +429,7 @@ async function boot() {
       renderer.toneMappingExposure = sky.exposure;
     }
     hud.tick(t, peers.list().map((p) => p.name), indoors);
-    composer.render(dt);
+    if (debug.draw) composer.render(dt);
   };
 
   const timer = new THREE.Clock();

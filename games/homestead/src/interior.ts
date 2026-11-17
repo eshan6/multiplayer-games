@@ -6,6 +6,7 @@
  * simply not drawn — the room opens like a doll's house from any angle.
  */
 import * as THREE from 'three';
+import type { MoveName } from './entities/moves';
 import type { Assets } from './assets';
 import { surface } from './scans';
 import * as act from './game/actions';
@@ -202,19 +203,19 @@ export class Interior {
       const def = furnitureDef(doc.kind);
       if (!def.use) continue;
       const here = new THREE.Vector3(doc.x, 1.4, doc.z);
-      const one = (label: string, fn: () => act.Outcome): Spot => ({
+      const one = (label: string, fn: () => act.Outcome, move?: MoveName): Spot => ({
         x: doc.x,
         z: doc.z,
         reach: def.solid + 1.2,
         title: def.name,
         height: 1.2,
-        actions: [{ key: 'E', label, run: () => ui.say(fn(), here) }],
+        actions: [{ key: 'E', label, move, run: () => ui.say(fn(), here) }],
       });
       if (def.use === 'cook') {
         out.push({ x: doc.x, z: doc.z, reach: def.solid + 1.2, title: def.name, height: 1.2, actions: [{ key: 'E', label: 'Cook', run: () => ui.openCook(doc.kind === 'stove' ? 'stove' : 'fire') }] });
       } else if (def.use === 'sleep') out.push(one('Sleep until morning', () => act.sleep(this.store, ui.moment())));
       else if (def.use === 'bathe') out.push(one('Have a bath', () => act.bathe(this.store, ui.moment())));
-      else if (def.use === 'eat') out.push(one('Sit down to a meal', () => act.shareMeal(this.store, ui.moment())));
+      else if (def.use === 'eat') out.push(one('Sit down to a meal', () => act.shareMeal(this.store, ui.moment()), 'eat'));
       else if (def.use === 'sit') out.push(one('Sit a while', () => act.sit(this.store, ui.moment())));
     }
     return out;

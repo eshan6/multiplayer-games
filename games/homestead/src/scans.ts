@@ -17,7 +17,10 @@ import { wind, type Model, type Part } from './assets';
 
 import wildUrl from './assets/scan/scan_wild.glb?url';
 
-const TEXTURES = import.meta.glob('./assets/scan/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+/** Every texture the game ships, by file name without its extension. */
+const TEXTURES = Object.fromEntries(
+  Object.entries(import.meta.glob(['./assets/scan/*.webp', './assets/people/*.webp'], { eager: true, query: '?url', import: 'default' }) as Record<string, string>).map(([path, url]) => [path.replace(/^.*\/|\.webp$/g, ''), url]),
+);
 const HOME_PACK = () => import('./assets/scan/scan_home.glb?url').then((m) => m.default);
 
 /** How sharp textures stay at glancing angles. Set once the renderer exists. */
@@ -36,7 +39,7 @@ const pending = new Set<Promise<unknown>>();
  * for the moment the image takes to arrive.
  */
 function texture(file: string, colour: boolean, repeat: boolean): { tex: THREE.Texture; ready: Promise<THREE.Texture> } | null {
-  const url = TEXTURES[`./assets/scan/${file}.webp`];
+  const url = TEXTURES[file];
   if (!url) return null;
   const key = `${file}|${repeat}`;
   const cached = textureCache.get(key);
@@ -93,6 +96,8 @@ export interface PbrOptions {
   metalness?: number;
   /** A private copy, not shared with anything else using the same textures (so it can be recoloured). */
   own?: string;
+  /** Take the normal and occlusion-roughness maps from this set instead: for colourways of one garment. */
+  shape?: string;
 }
 
 const materialCache = new Map<string, THREE.MeshStandardMaterial>();
@@ -102,8 +107,8 @@ export function pbr(key: string, opts: PbrOptions = {}): THREE.MeshStandardMater
   const id = `${key}|${JSON.stringify(opts)}`;
   const cached = materialCache.get(id);
   if (cached) return cached;
-  const arm = texture(`${key}_arm`, false, !!opts.repeat);
-  const normal = texture(`${key}_nor`, false, !!opts.repeat);
+  const arm = texture(`${opts.shape ?? key}_arm`, false, !!opts.repeat);
+  const normal = texture(`${opts.shape ?? key}_nor`, false, !!opts.repeat);
   const colour = texture(`${key}_diff`, true, !!opts.repeat);
   const m = new THREE.MeshStandardMaterial({
     name: key,
