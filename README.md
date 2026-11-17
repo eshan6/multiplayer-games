@@ -367,3 +367,12 @@ played from the other side: you lead the world's response while the pathogen
 adapts to you. It is a single self-contained `index.html` that works on laptops
 and phones. It shares no code with Standoff and is not part of its build. See
 its [README](games/containment/README.md).
+
+## Also in this repo: Homestead
+
+[`games/homestead/`](games/homestead/) is a separate 3D game for two: you
+start with a tent on a hilltop and build a life there together, with a shared
+basket of points, a cottage to furnish, crops, animals to look after, cooking,
+weather and seasons. It has its own `package.json` and tests, shares no code
+with Standoff and is not part of its build. See its
+[README](games/homestead/README.md).

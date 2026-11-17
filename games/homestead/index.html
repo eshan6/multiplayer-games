@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Homestead</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <canvas id="view"></canvas>
+
+    <div id="loading">
+      <div class="loading-card">
+        <h1>Homestead</h1>
+        <p id="loading-text">Waking the countryside</p>
+        <div class="bar"><div id="loading-bar"></div></div>
+      </div>
+    </div>
+
+    <section id="welcome" hidden>
+      <form id="welcome-form" class="sheet">
+        <h1>Homestead</h1>
+        <p class="lede">A hilltop, a tent, a fire, two horses and a dog. Everything else, you build together.</p>
+        <label for="welcome-name">What should we call you?</label>
+        <input id="welcome-name" type="text" maxlength="24" autocomplete="off" spellcheck="false" />
+        <span class="label">Who are you?</span>
+        <div id="welcome-avatars" class="avatars" role="radiogroup" aria-label="Avatar"></div>
+        <p id="welcome-mode" class="note"></p>
+        <button id="welcome-start" type="submit" class="primary">Ride in</button>
+      </form>
+    </section>
+
+    <div id="hud" hidden>
+      <header id="basket" class="panel">
+        <div class="basket-row">
+          <output id="basket-points">0</output>
+          <span class="basket-unit">points in<br />the basket</span>
+        </div>
+        <p id="basket-level"></p>
+        <div class="meter"><div id="basket-meter"></div></div>
+        <p id="goal"></p>
+      </header>
+
+      <aside id="world" class="panel">
+        <p id="world-clock"></p>
+        <p id="world-people"></p>
+        <div id="world-weather" class="segmented" role="group" aria-label="Weather"></div>
+      </aside>
+
+      <div id="toasts" aria-live="polite"></div>
+
+      <div id="prompt" class="panel" hidden>
+        <p id="prompt-title"></p>
+        <p id="prompt-detail"></p>
+        <div id="prompt-actions"></div>
+      </div>
+
+      <div id="work" class="panel" hidden>
+        <p id="work-verb"></p>
+        <div id="work-bar"><i></i></div>
+      </div>
+
+      <p id="tool-hint" class="panel" hidden></p>
+
+      <nav id="dock" class="panel">
+        <button type="button" data-open="build"><kbd>B</kbd> Build</button>
+        <button type="button" data-open="pantry"><kbd>I</kbd> Pantry</button>
+        <button type="button" data-open="help"><kbd>H</kbd> Help</button>
+        <button type="button" id="quality" title="Lower detail for slower computers">Detail: High</button>
+      </nav>
+
+      <section id="sheet" class="panel" hidden>
+        <header>
+          <h2 id="sheet-title"></h2>
+          <button type="button" id="sheet-close" aria-label="Close">Close</button>
+        </header>
+        <div id="sheet-tabs" class="segmented"></div>
+        <div id="sheet-body"></div>
+      </section>
+    </div>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
