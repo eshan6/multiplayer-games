@@ -63,7 +63,7 @@ export const SCANS = {
 
 /** Tiling surface textures: ground, walls, roofs, cloth. name -> stored edge in pixels. */
 export const SURFACES = {
-  leafy_grass: 1024,
+  // The meadow ground is ambientCG Grass004: tools/build_lawn.py.
   forest_floor: 1024,
   forest_leaves_02: 1024,
   stony_dirt_path: 1024,

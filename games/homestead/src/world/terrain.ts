@@ -6,7 +6,7 @@
  * same triangles the mesh draws, so a hoof, a tree root and a blade of grass
  * all meet the surface exactly.
  *
- * What it looks like comes from three scanned ground textures — meadow turf,
+ * What it looks like comes from three scanned ground textures — dense turf,
  * leaf litter under the trees, the stony dirt of the lane — blended per pixel
  * by a control map painted from the land's own functions. Each has a normal
  * map and a roughness map, so the ground catches light like ground. A second
@@ -15,7 +15,7 @@
  */
 import * as THREE from 'three';
 import { surfaceMaps } from '../scans';
-import { WORLD, groundColor, heightAt, laneMask, woodland } from './land';
+import { WORLD, grassDensity, groundColor, heightAt, laneMask, woodland } from './land';
 
 const HALF = WORLD.meshHalfSize;
 const CELL = 2.5;
@@ -126,7 +126,11 @@ export class Terrain {
     this.controlTexture.needsUpdate = true;
   }
 
-  /** Where the lane runs (red) and where the woods stand (green). Blue is shade, painted later. */
+  /**
+   * Where the lane runs (red) and where the woods stand (green). Blue is
+   * shade, painted later. Alpha is how thickly grass grows, so the ground can
+   * darken under the sward exactly where grass cards are drawn.
+   */
   private bakeControl(): THREE.DataTexture {
     for (let py = 0; py < CONTROL; py++) {
       const z = -HALF + ((py + 0.5) / CONTROL) * HALF * 2;
@@ -135,7 +139,7 @@ export class Terrain {
         const i = (py * CONTROL + px) * 4;
         this.control[i] = laneMask(x, z) * 255;
         this.control[i + 1] = woodland(x, z) * 255;
-        this.control[i + 3] = 255;
+        this.control[i + 3] = grassDensity(x, z, this.height(x, z)) * 255;
       }
     }
     const tex = new THREE.DataTexture(this.control, CONTROL, CONTROL, THREE.RGBAFormat);
@@ -170,7 +174,7 @@ export class Terrain {
   }
 
   private material(macro: THREE.Texture): THREE.MeshStandardMaterial {
-    const meadow = surfaceMaps('leafy_grass');
+    const meadow = surfaceMaps('lawn');
     const wood = surfaceMaps('forest_floor');
     const lane = surfaceMaps('stony_dirt_path');
     const m = new THREE.MeshStandardMaterial({ map: meadow.diff, normalMap: meadow.nor, roughness: 1, metalness: 0 });
@@ -218,7 +222,8 @@ export class Terrain {
           vec2 near = vMapUv;
           vec2 wide = vMapUv * 0.19 + 0.37;
           float far = smoothstep(14.0, 85.0, length(vViewPosition));
-          vec3 dMeadow = mix(texture2D(map, near).rgb, texture2D(map, wide).rgb, 0.25 + 0.6 * far);
+          // The turf scan is darker than the land colour it is pulled toward; bring it level.
+          vec3 dMeadow = mix(texture2D(map, near).rgb, texture2D(map, wide).rgb, 0.25 + 0.6 * far) * 1.38;
           // The scanned leaf litter is bright and dry; a wood floor in leaf is dark and damp.
           vec3 dWood = mix(texture2D(tWoodD, near).rgb, texture2D(tWoodD, wide).rgb, 0.25 + 0.6 * far) * vec3(0.5, 0.55, 0.42);
           // The scanned path is wet, dark earth; this lane is dry and trodden pale.
@@ -234,6 +239,11 @@ export class Terrain {
           albedo = mix(albedo, macro * (luma / 0.19), 0.62);
           albedo = mix(albedo, dLane * vec3(1.05, 0.98, 0.9), wLane);
           albedo *= mix(1.0, 0.5, ctl.b);
+          // Where grass cards stand, what shows between them is the bottom of
+          // the sward, in the blades' shade. Past the range the cards are
+          // drawn to, the ground is the sward's sunlit top.
+          float sward = smoothstep(0.2, 0.8, ctl.a) * (1.0 - wWood) * (1.0 - smoothstep(46.0, 64.0, length(vViewPosition)));
+          albedo *= mix(vec3(1.0), vec3(0.66, 0.7, 0.5), sward);
           diffuseColor.rgb *= albedo;
 
           gArm = mix(mix(texture2D(tMeadowArm, near).rgb, texture2D(tWoodArm, near).rgb, wWood), texture2D(tLaneArm, near * 0.8).rgb, wLane);
@@ -243,7 +253,10 @@ export class Terrain {
           diffuseColor.rgb *= mix(1.0, gArm.r, 0.7);
           `,
         )
-        .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = roughness * mix(gArm.g, 1.0, 0.25);')
+        // Turf is a mass of blades at every angle: it never shows a sheen. The
+        // scan's roughness map is for a flat photograph and turned the meadow
+        // frosty toward the sun, so only the wood floor and lane use theirs.
+        .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = roughness * mix(1.0, mix(gArm.g, 1.0, 0.25), max(wWood, wLane));')
         .replace(
           '#include <normal_fragment_maps>',
           /* glsl */ `

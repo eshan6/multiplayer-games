@@ -292,11 +292,15 @@ export function scatter(assets: Assets, terrain: Terrain): Scattered {
       }
     }
   }
-  // Tufts of longer grass, everywhere but thickest by the water.
+  // Scanned tufts of longer grass used to stand here. Scattered among the
+  // turf they read as odd blades poking out of bare ground, and the meadow is
+  // now card grass (grass.ts) instead. The random draws they made are still
+  // taken, so every rock placed after this stays where it has always been.
   around(2600, 10, 165, (x, z, w) => {
     const byPond = 1 - smoothstep(POND.radius, POND.radius + 10, Math.hypot(x - POND.x, z - POND.z));
     if (w > 0.6 || rand() > Math.max(0.45, byPond) || reserved(x, z, -1.5)) return;
-    place('wild', pick(variants('grass_medium_02', 5)), x, z, 1.5 + rand() * 1.4, { tintSpread: 0.2, shadows: false, into: small });
+    // pick(), the scale, and place()'s facing and two tint draws.
+    for (let k = 0; k < 5; k++) rand();
   });
 
   // ---- rocks -----------------------------------------------------------------

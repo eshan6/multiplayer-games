@@ -6,7 +6,8 @@ because it is deserved.
 | In the game | Source | Licence |
 | --- | --- | --- |
 | Ground, plaster, stone, thatch, roof tiles, timber, floorboards, cloth (photographed surfaces) | [Poly Haven](https://polyhaven.com) textures | CC0 |
-| Grass tufts, ferns, nettles, wildflowers, shrubs, mossy rocks, stumps, fallen trunks | Poly Haven models (photoscanned) | CC0 |
+| Ferns, nettles, wildflowers, shrubs, mossy rocks, stumps, fallen trunks | Poly Haven models (photoscanned) | CC0 |
+| Meadow turf under the grass | [ambientCG](https://ambientcg.com) Grass004 (`tools/build_lawn.py`) | CC0 |
 | Fire pit, barrel, crate, bucket, basket, lantern, bench, watering can | Poly Haven models | CC0 |
 | Beds, tables, chairs, armchair, sofa, rocking chair, cabinets, bookcase, stove, lamps, houseplants | Poly Haven models | CC0 |
 | Trees and bushes | Generated at load by [ez-tree](https://github.com/dgreenheck/ez-tree), with its bark and leaf textures | MIT |
@@ -19,7 +20,8 @@ because it is deserved.
 Built in code, with no source file: the cottage, byre, stable, hen coop,
 pig sty, well, tent, vegetable beds, fences, paths, lantern posts, cart, hay
 bale, gazebo, market stall, fireplace, tub and rugs (all out of the
-photographed surfaces above), the hens, and the terrain, meadow grass, sky,
+photographed surfaces above), the hens, the meadow's grass cards (painted
+by `tools/build_grass_atlas.py`), and the terrain, sky,
 clouds, mountains, water, weather, birds, butterflies, smoke, fire and
 fireflies.
 
@@ -37,6 +39,11 @@ python tools/polyhaven.py get work/ph/models <asset> …   # models named in too
 python tools/polyhaven.py tex work/ph/tex <surface> …     # surfaces named in tools/scans.config.mjs
 node   tools/build_scans.mjs        work/ph work/ph/work src/assets/scan
 python tools/build_scan_textures.py work/ph/work/textures.json src/assets/scan
+
+# The meadow: grass cards are painted (needs numpy and scipy too); the turf
+# under them is ambientCG Grass004, 2K JPG, downloaded by hand
+python tools/build_grass_atlas.py   src/assets/scan/grass_cards.webp
+python tools/build_lawn.py          work/Grass004 src/assets/scan
 
 # Animals, avatars and crops (Quaternius)
 python tools/fetch_assets.py        work/dl

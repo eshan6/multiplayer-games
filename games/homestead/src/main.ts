@@ -422,7 +422,7 @@ async function boot() {
   // Hooks for automated screenshots and for poking at the world from the console.
   Object.assign(window, {
     homestead: {
-      scene, renderer, sky, player, follow, stock, terrain, hud, composer, input, store, act, debug, interior, structures, builder, assets,
+      scene, renderer, sky, player, follow, stock, terrain, hud, composer, input, store, act, debug, interior, structures, builder, assets, grass,
       step: advance, pick, goIndoors, goOutdoors, moment, mount: bridge.mount, texturesReady,
       /** Move the test clock so the world reads this hour. */
       setHour: (hour: number) => {

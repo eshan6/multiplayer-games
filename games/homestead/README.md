@@ -32,10 +32,24 @@ what you spend to build. Doing things side by side earns half as much again.
 
 The world is built from photographed and photoscanned material (Poly Haven,
 CC0): the ground, the plaster and thatch of the cottage, the stone of the
-well, the floorboards, the grass, ferns, flowers and rocks, the furniture.
+well, the floorboards, ferns, flowers and rocks, the furniture.
 Every surface is physically based (colour, relief, roughness and occlusion)
 and lit by the sky that is actually overhead: a physical model of the
 atmosphere, captured into an environment map as the day turns.
+
+The meadow is drawn the way open-world games draw grass: as cards, not as
+blades. Each clump is three crossed quads carrying a painted picture of a
+couple of hundred blades (`tools/build_grass_atlas.py`), planted four to the
+square metre near the rider so no ground shows between them, thinning with
+distance while the survivors grow to cover. A clump is lit as the ground under
+it is, so the field shades as one mass; a low sun shines through the blade
+tips; length, colour and kind (turf, meadow, seeding, gone to straw, tussock)
+drift across the land in patches; and the grass is shorter, not sparser, where
+it is trodden. Between and beyond the clumps the ground is a dense turf scan
+(ambientCG), darkened where the sward stands over it.
+
+![The meadow at evening, lit through from behind](shots/meadow_evening.jpg)
+![Grass running down to the pond](shots/meadow_pond.jpg)
 
 Trees are grown at load from branching rules, at two levels of detail, and
 swap to the lighter one past about 45 metres. A depth-based ambient occlusion

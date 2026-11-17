@@ -63,6 +63,17 @@ function texture(file: string, colour: boolean, repeat: boolean): { tex: THREE.T
   return entry;
 }
 
+/**
+ * The grass card atlas (tools/build_grass_atlas.py): eight painted clumps of
+ * blades, colour in RGB and coverage in alpha. Clamped, not tiled, so mip
+ * levels do not bleed one card's roots into the next card's tips.
+ */
+export function grassCards(): { tex: THREE.Texture; ready: Promise<THREE.Texture> } {
+  const entry = texture('grass_cards', true, false);
+  if (!entry) throw new Error('grass_cards.webp is missing from src/assets/scan');
+  return entry;
+}
+
 /** Resolves once every texture asked for so far has arrived (or `ms` has passed). */
 export function texturesReady(ms = 20000): Promise<void> {
   const all = Promise.allSettled([...pending]).then(() => undefined);
