@@ -8,11 +8,16 @@
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { N8AOPass } from 'n8ao';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 import './ui.css';
-import { loadAssets, wind } from './assets';
+import { loadAssets, loadHome, wind } from './assets';
+import { GradeShader } from './grade';
+import { setAnisotropy, texturesReady } from './scans';
 import { Builder, type Tool } from './build';
 import { FollowCamera, type View } from './camera';
 import { Peers } from './entities/peers';
@@ -37,6 +42,7 @@ import { Sky } from './world/sky';
 import { Structures } from './world/structures';
 import { Terrain } from './world/terrain';
 import { Water } from './world/water';
+import { shapeObject } from './world/placed';
 
 /** Let the page paint before a long synchronous step. */
 const breathe = () => new Promise<void>((r) => requestAnimationFrame(() => setTimeout(r, 0)));
@@ -76,9 +82,10 @@ async function boot() {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  // Neutral keeps colours as painted; filmic curves grey out the saturated
-  // greens and warm light this look depends on.
-  renderer.toneMapping = THREE.NeutralToneMapping;
+  // A filmic curve: bright sky and sunlit plaster roll off softly instead of
+  // clipping to white, the way a camera sees them.
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  setAnisotropy(Math.min(16, renderer.capabilities.getMaxAnisotropy()));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   const scene = new THREE.Scene();
@@ -95,13 +102,15 @@ async function boot() {
 
   hud.loading('Planting the woods', 0.78);
   await breathe();
-  const sky = new Sky(scene);
+  const sky = new Sky(scene, renderer);
   const plants = scatter(assets, terrain);
   const water = new Water(terrain);
   const grass = new Grass(terrain);
   const fx = new Effects(terrain);
   const ambient = new Ambient(terrain);
-  const seasons = new Seasons(assets, grass, terrain.mesh.material as THREE.MeshLambertMaterial);
+  const seasons = new Seasons(assets, grass, terrain.mesh.material as THREE.MeshStandardMaterial);
+  // Darken the ground under every crown, out to where real shadows do not reach.
+  terrain.shade(plants.canopy);
   scene.add(plants.group, water.mesh, grass.group, fx.group, ambient.group);
 
   // ---- the shared world ------------------------------------------------------
@@ -135,7 +144,7 @@ async function boot() {
     hearts: (at: THREE.Vector3) => fx.hearts(at),
     openCook: (at: 'fire' | 'stove') => hud.cook(at),
     openPlant: (bed: string, slot: number) => hud.plant(bed, slot),
-    enterHouse: () => goIndoors(),
+    enterHouse: () => void goIndoors(),
     leaveHouse: () => goOutdoors(),
     mount: (id: string) => {
       const horse = stock.creature(id);
@@ -168,7 +177,17 @@ async function boot() {
     stock.ridden.delete(player.mount.id);
     player.dismount(scene);
   }
-  function goIndoors() {
+  let opening = false;
+  async function goIndoors() {
+    // The furniture is fetched the first time anyone goes in.
+    if (!assets.home.size) {
+      if (opening) return;
+      opening = true;
+      hud.toast('Opening the door…');
+      await loadHome(assets)
+        .then(() => texturesReady())
+        .finally(() => (opening = false));
+    }
     getDown();
     pick(null);
     hud.close();
@@ -208,13 +227,34 @@ async function boot() {
   // ---- drawing ---------------------------------------------------------------
   // Rendered into a floating-point buffer so the sun, the fire and lit windows
   // can be brighter than white and bloom; tone mapping happens at the very end.
-  const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
+  //
+  // The scene is drawn by the ambient-occlusion pass, which darkens the
+  // creases where things meet — under eaves, round the feet of trees, between
+  // stones — from the depth buffer. It is most of what makes objects sit in
+  // the world rather than on it. Hardware antialiasing does not survive it,
+  // so edges are smoothed afterwards by SMAA.
+  const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType });
   const composer = new EffectComposer(renderer, target);
-  const renderPass = new RenderPass(scene, follow.camera);
-  composer.addPass(renderPass);
-  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.32, 0.7, 0.92);
+  const ao = new N8AOPass(scene, follow.camera, 1, 1);
+  ao.configuration.gammaCorrection = false;
+  ao.configuration.aoRadius = 2.2;
+  ao.configuration.distanceFalloff = 0.6;
+  ao.configuration.intensity = 2.6;
+  ao.configuration.halfRes = true;
+  ao.setQualityMode('Medium');
+  composer.addPass(ao);
+  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.22, 0.6, 0.95);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
+  const grade = new ShaderPass(GradeShader);
+  composer.addPass(grade);
+  const smaa = new SMAAPass(1, 1);
+  composer.addPass(smaa);
+
+  // Indoors there is no sky to light by, so the room gets a soft studio of its own.
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  interior.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  interior.scene.environmentIntensity = 0.45;
 
   let detail: 'high' | 'low' = 'high';
   function applyDetail() {
@@ -230,7 +270,8 @@ async function boot() {
     follow.camera.updateProjectionMatrix();
     grass.quality = high ? 1 : 0.45;
     bloom.enabled = high;
-    sky.sun.shadow.mapSize.setScalar(high ? 2048 : 1024);
+    ao.enabled = high;
+    sky.sun.shadow.mapSize.setScalar(high ? 4096 : 2048);
     sky.sun.shadow.map?.dispose();
     sky.sun.shadow.map = null;
     hud.setDetail(detail);
@@ -334,7 +375,7 @@ async function boot() {
     wind.uStrength.value = 1 + rain * 0.9 + sky.overcast * 0.3;
     const night = 1 - sky.daylight;
     const lit = THREE.MathUtils.smoothstep(night, 0.25, 0.75);
-    renderPass.scene = activeScene();
+    ao.scene = activeScene();
     if (indoors) {
       interior.update(dt, sky.daylight, sky.fog.color);
       indoorFx.update(dt, null, follow.camera, renderer.domElement.height);
@@ -372,12 +413,17 @@ async function boot() {
     requestAnimationFrame(frame);
   };
 
+  // The buildings' materials are made on demand; ask for the common ones now
+  // and wait for every texture, so the world never appears untextured.
+  for (const def of Object.values(STRUCTURES)) if ('built' in def.shape) shapeObject(assets, def.shape);
+  hud.loading('Unpacking', 0.97);
+  await texturesReady();
   hud.loading('Ready', 1);
   // Hooks for automated screenshots and for poking at the world from the console.
   Object.assign(window, {
     homestead: {
-      scene, renderer, sky, player, follow, stock, terrain, hud, composer, input, store, act, debug, interior, structures, builder,
-      step: advance, pick, goIndoors, goOutdoors, moment, mount: bridge.mount,
+      scene, renderer, sky, player, follow, stock, terrain, hud, composer, input, store, act, debug, interior, structures, builder, assets,
+      step: advance, pick, goIndoors, goOutdoors, moment, mount: bridge.mount, texturesReady,
       /** Move the test clock so the world reads this hour. */
       setHour: (hour: number) => {
         const current = clock(meta(store), now()).hour;

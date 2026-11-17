@@ -1,126 +1,93 @@
 /**
- * The pond. A flat sheet whose colour, foam and sparkle are all painted by a
- * shader from one baked fact per vertex: how deep the water is there.
+ * The pond: a still sheet of water that reflects the sky actually overhead.
+ *
+ * It is a physically based surface with almost no roughness, so the scene's
+ * captured sky does the reflecting. Two layers of a real water normal map,
+ * drifting in different directions, break that reflection into ripples. How
+ * deep the water is at each point, baked once, decides how clear it is: a
+ * pale margin you can see the bottom through, deepening to dark green-blue.
  */
 import * as THREE from 'three';
+import { wind } from '../assets';
 import { POND, WATER_LEVEL } from './land';
 import type { Sky } from './sky';
 import type { Terrain } from './terrain';
 
+import normalsUrl from '../assets/scan/waternormals.jpg?url';
+
 export class Water {
   readonly mesh: THREE.Mesh;
-  private readonly uniforms = {
-    uTime: { value: 0 },
-    uShallow: { value: new THREE.Color(0x6fc3b4) },
-    uDeep: { value: new THREE.Color(0x1f6f8f) },
-    uSky: { value: new THREE.Color() },
-    uSun: { value: new THREE.Color() },
-    uSunDir: { value: new THREE.Vector3() },
-    uLight: { value: 1 },
-    fogColor: { value: new THREE.Color() },
-    fogNear: { value: 1 },
-    fogFar: { value: 1000 },
-  };
+  private readonly material: THREE.MeshStandardMaterial;
 
   constructor(terrain: Terrain) {
-    const size = POND.radius * 3.2;
-    const segs = 56;
+    const size = POND.radius * 3.4;
+    const segs = 64;
     const geo = new THREE.PlaneGeometry(size, size, segs, segs);
     geo.rotateX(-Math.PI / 2);
     geo.translate(POND.x, WATER_LEVEL, POND.z);
     const pos = geo.getAttribute('position');
     const depth = new Float32Array(pos.count);
-    for (let i = 0; i < pos.count; i++) {
-      depth[i] = WATER_LEVEL - terrain.height(pos.getX(i), pos.getZ(i));
-    }
+    for (let i = 0; i < pos.count; i++) depth[i] = WATER_LEVEL - terrain.height(pos.getX(i), pos.getZ(i));
     geo.setAttribute('aDepth', new THREE.BufferAttribute(depth, 1));
+    // Normal-map coordinates in metres.
+    const uv = geo.getAttribute('uv');
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / 9, pos.getZ(i) / 9);
 
-    const material = new THREE.ShaderMaterial({
-      uniforms: this.uniforms,
+    const normals = new THREE.TextureLoader().load(normalsUrl);
+    normals.wrapS = normals.wrapT = THREE.RepeatWrapping;
+    this.material = new THREE.MeshStandardMaterial({
+      color: 0x1d3a3c,
+      roughness: 0.04,
+      metalness: 0,
+      normalMap: normals,
       transparent: true,
       depthWrite: false,
-      vertexShader: /* glsl */ `
-        attribute float aDepth;
-        varying float vDepth;
-        varying vec3 vWorld;
-        varying float vFogDepth;
-        void main() {
-          vDepth = aDepth;
-          vec4 world = modelMatrix * vec4(position, 1.0);
-          vWorld = world.xyz;
-          vec4 mv = viewMatrix * world;
-          vFogDepth = -mv.z;
-          gl_Position = projectionMatrix * mv;
-        }
-      `,
-      fragmentShader: /* glsl */ `
-        uniform float uTime;
-        uniform vec3 uShallow;
-        uniform vec3 uDeep;
-        uniform vec3 uSky;
-        uniform vec3 uSun;
-        uniform vec3 uSunDir;
-        uniform float uLight;
-        uniform vec3 fogColor;
-        uniform float fogNear;
-        uniform float fogFar;
-        varying float vDepth;
-        varying vec3 vWorld;
-        varying float vFogDepth;
-
-        // Cheap moving ripple pattern: three sine sets crossing each other.
-        float ripples(vec2 p, float t) {
-          float a = sin(p.x * 1.9 + t * 1.1) * sin(p.y * 2.3 - t * 0.9);
-          float b = sin((p.x + p.y) * 1.3 - t * 0.7);
-          float c = sin((p.x - p.y) * 3.1 + t * 1.6);
-          return a * 0.5 + b * 0.3 + c * 0.2;
-        }
-
-        void main() {
-          if (vDepth < -0.02) discard;
-          float t = uTime;
-          float r = ripples(vWorld.xz, t);
-
-          // Clear at the margin, deepening to blue-green in the middle.
-          float d = smoothstep(0.0, 1.5, vDepth);
-          vec3 col = mix(uShallow, uDeep, d) * uLight;
-
-          // The surface mirrors more sky the more it is seen edge-on.
-          vec3 view = normalize(cameraPosition - vWorld);
-          vec3 n = normalize(vec3(r * 0.12, 1.0, ripples(vWorld.zx + 4.0, t) * 0.12));
-          float fres = pow(1.0 - max(dot(view, n), 0.0), 3.0);
-          col = mix(col, uSky, 0.18 + 0.6 * fres);
-
-          // Sun glitter.
-          vec3 h = normalize(view + uSunDir);
-          col += uSun * pow(max(dot(n, h), 0.0), 220.0) * 1.4;
-
-          // A line of foam where water meets land, breathing in and out.
-          float edge = 1.0 - smoothstep(0.0, 0.16 + 0.05 * sin(t * 1.3 + vWorld.x * 0.7), vDepth);
-          float lap = smoothstep(0.55, 0.9, sin(vDepth * 26.0 - t * 2.0) * 0.5 + 0.5) * (1.0 - smoothstep(0.1, 0.5, vDepth));
-          col = mix(col, vec3(1.0) * (0.55 + 0.45 * uLight), clamp(edge * 0.85 + lap * 0.25, 0.0, 1.0));
-
-          float alpha = mix(0.55, 0.93, d);
-          alpha = max(alpha, edge);
-          float fog = smoothstep(fogNear, fogFar, vFogDepth);
-          gl_FragColor = vec4(mix(col, fogColor, fog), alpha);
-        }
-      `,
     });
-    this.mesh = new THREE.Mesh(geo, material);
+    this.material.normalScale.setScalar(0.35);
+    this.material.onBeforeCompile = (shader) => {
+      shader.uniforms.uTime = wind.uTime;
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nattribute float aDepth;\nvarying float vDepth;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvDepth = aDepth;');
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform float uTime;\nvarying float vDepth;')
+        .replace(
+          '#include <normal_fragment_maps>',
+          /* glsl */ `
+          vec3 n1 = texture2D(normalMap, vNormalMapUv + vec2(uTime * 0.012, uTime * 0.008)).xyz * 2.0 - 1.0;
+          vec3 n2 = texture2D(normalMap, vNormalMapUv * 1.9 + vec2(-uTime * 0.009, uTime * 0.014)).xyz * 2.0 - 1.0;
+          vec3 mapN = normalize(vec3(n1.xy + n2.xy, n1.z * n2.z));
+          mapN.xy *= normalScale;
+          normal = normalize(tbn * mapN);`,
+        )
+        .replace(
+          '#include <color_fragment>',
+          /* glsl */ `#include <color_fragment>
+          if (vDepth < -0.02) discard;
+          float deep = smoothstep(0.0, 1.6, vDepth);
+          // Shallow water is clear and takes the colour of the silt under it.
+          diffuseColor.rgb = mix(vec3(0.32, 0.36, 0.26), diffuseColor.rgb, deep);
+          diffuseColor.a = mix(0.35, 0.94, deep);`,
+        )
+        .replace(
+          '#include <opaque_fragment>',
+          /* glsl */ `
+          // Seen edge-on, water is a mirror; looking straight down, you see in.
+          float facing = abs(dot(normalize(vViewPosition), normal));
+          float fresnel = 0.02 + 0.98 * pow(1.0 - facing, 5.0);
+          diffuseColor.a = clamp(max(diffuseColor.a, fresnel), 0.0, 1.0);
+          #include <opaque_fragment>`,
+        );
+    };
+    this.material.customProgramCacheKey = () => 'pond';
+    this.mesh = new THREE.Mesh(geo, this.material);
     this.mesh.name = 'pond';
     this.mesh.renderOrder = 2;
+    this.mesh.receiveShadow = true;
   }
 
-  update(dt: number, sky: Sky) {
-    const u = this.uniforms;
-    u.uTime.value += dt;
-    u.uSky.value.copy(sky.fog.color);
-    u.uSun.value.copy(sky.sun.color).multiplyScalar(Math.min(sky.sun.intensity / 3, 1));
-    u.uSunDir.value.copy(sky.lightDir);
-    u.uLight.value = 0.22 + 0.78 * sky.daylight;
-    u.fogColor.value.copy(sky.fog.color);
-    u.fogNear.value = sky.fog.near;
-    u.fogFar.value = sky.fog.far;
+  update(_dt: number, sky: Sky) {
+    // Rain roughens the surface; a still evening leaves it glassy.
+    this.material.normalScale.setScalar(0.3 + 0.5 * sky.overcast);
   }
 }

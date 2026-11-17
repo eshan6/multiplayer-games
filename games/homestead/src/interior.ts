@@ -6,12 +6,13 @@
  * simply not drawn — the room opens like a doll's house from any angle.
  */
 import * as THREE from 'three';
-import { modelOf, type Assets } from './assets';
+import type { Assets } from './assets';
+import { surface } from './scans';
 import * as act from './game/actions';
 import { FLOORS, FURNITURE, ROOM, WALLS, furnitureDef, type FurnitureId } from './game/catalog';
 import { meta, type Furniture, type Store } from './game/world';
 import type { Spot } from './interact';
-import { fitScale, instantiate } from './world/placed';
+import { shapeObject } from './world/placed';
 import type { Obstacle } from './world/scatter';
 
 export interface InteriorUi {
@@ -24,38 +25,23 @@ export interface InteriorUi {
 /** Where you stand when you come in, and where the way out is. */
 export const DOOR = { x: -ROOM.width / 2 + 0.9, z: ROOM.depth / 2 - 1.6 };
 
-function plankTexture(): THREE.Texture {
-  const c = document.createElement('canvas');
-  c.width = 512;
-  c.height = 512;
-  const g = c.getContext('2d')!;
-  // Boards of slightly different shades, with dark joints and the odd butt end.
-  const boards = 8;
-  for (let i = 0; i < boards; i++) {
-    const shade = 205 + Math.floor(Math.sin(i * 12.9898) * 43758.5453 % 1 * 40);
-    g.fillStyle = `rgb(${shade},${shade},${shade})`;
-    g.fillRect((i * 512) / boards, 0, 512 / boards, 512);
-    g.fillStyle = 'rgba(0,0,0,0.28)';
-    g.fillRect((i * 512) / boards, 0, 2, 512);
-    g.fillRect((i * 512) / boards, ((i * 197) % 512), 512 / boards, 2);
-  }
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.repeat.set(ROOM.width / 2.4, ROOM.depth / 2.4);
-  t.anisotropy = 8;
-  return t;
+/** A plane whose texture repeats every `tile` metres, so boards and plaster keep their real size. */
+function tiled(w: number, h: number, tile: number): THREE.PlaneGeometry {
+  const g = new THREE.PlaneGeometry(w, h);
+  const uv = g.getAttribute('uv');
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * w) / tile, (uv.getY(i) * h) / tile);
+  return g;
 }
 
 export class Interior {
   readonly scene = new THREE.Scene();
   obstacles: Obstacle[] = [];
   private readonly pieces = new Map<string, { doc: Furniture; group: THREE.Group }>();
-  private readonly floor: THREE.MeshLambertMaterial;
-  private readonly wall: THREE.MeshLambertMaterial;
+  private readonly floor: THREE.MeshStandardMaterial;
+  private readonly wall: THREE.MeshStandardMaterial;
   private readonly glass: THREE.MeshBasicMaterial;
   private readonly sun = new THREE.DirectionalLight(0xffffff, 2);
-  private readonly fill = new THREE.HemisphereLight(0xfff3df, 0x6a5a4a, 1.2);
+  private readonly fill = new THREE.HemisphereLight(0xfff3df, 0x6a5a4a, 0.5);
   private readonly hearth = new THREE.PointLight(0xffa860, 0, 14, 1.6);
   private stale = true;
   private time = 0;
@@ -68,24 +54,25 @@ export class Interior {
     const { width: w, depth: d, height: h } = ROOM;
     this.scene.background = new THREE.Color(0x14110e);
 
-    this.floor = new THREE.MeshLambertMaterial({ map: plankTexture() });
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), this.floor);
+    // Copies of their own, so painting the room does not repaint the cottage outside.
+    this.floor = surface('plank_flooring_02', { own: 'room' });
+    const floor = new THREE.Mesh(tiled(w, d, 2.2), this.floor);
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     this.scene.add(floor);
     // The ground the cottage stands on, so the room does not float in a void.
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshLambertMaterial({ color: 0x1f1b16 }));
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ color: 0x1f1b16, roughness: 1 }));
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.02;
     this.scene.add(ground);
 
-    this.wall = new THREE.MeshLambertMaterial({ color: 0xffffff });
-    const skirting = new THREE.MeshLambertMaterial({ color: 0x6f4a30 });
-    const frame = new THREE.MeshLambertMaterial({ color: 0x5c3d28 });
+    this.wall = surface('plastered_wall_04', { own: 'room' });
+    const skirting = surface('dark_wooden_planks', { tint: 0xb89878 });
+    const frame = skirting;
     this.glass = new THREE.MeshBasicMaterial({ color: 0xbfe0ff });
     const wallAt = (len: number, x: number, z: number, yaw: number, windows: number[], door?: number) => {
       const g = new THREE.Group();
-      const plane = new THREE.Mesh(new THREE.PlaneGeometry(len, h), this.wall);
+      const plane = new THREE.Mesh(tiled(len, h, 2.4), this.wall);
       plane.position.y = h / 2;
       plane.receiveShadow = true;
       const board = new THREE.Mesh(new THREE.PlaneGeometry(len, 0.16), skirting);
@@ -107,7 +94,7 @@ export class Interior {
       if (door !== undefined) {
         const leaf = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 2.2), frame);
         leaf.position.set(door, 1.1, 0.015);
-        const knob = new THREE.Mesh(new THREE.CircleGeometry(0.05, 10), new THREE.MeshLambertMaterial({ color: 0xd9b45a }));
+        const knob = new THREE.Mesh(new THREE.CircleGeometry(0.05, 10), new THREE.MeshStandardMaterial({ color: 0xd9b45a, metalness: 1, roughness: 0.35 }));
         knob.position.set(door + 0.4, 1.05, 0.02);
         g.add(leaf, knob);
       }
@@ -115,6 +102,16 @@ export class Interior {
       g.rotation.y = yaw;
       this.scene.add(g);
     };
+    // Oak posts in the corners and a beam along each wall at the eaves.
+    const oak = surface('dark_wooden_planks', { tint: 0xa08060 });
+    for (const sx of [-1, 1]) {
+      for (const sz of [-1, 1]) {
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.24, h, 0.24), oak);
+        post.position.set(sx * (w / 2 - 0.12), h / 2, sz * (d / 2 - 0.12));
+        post.castShadow = true;
+        this.scene.add(post);
+      }
+    }
     // Each wall's plane faces into the room.
     wallAt(w, 0, -d / 2, 0, [-2.6, 2.6]);
     wallAt(w, 0, d / 2, Math.PI, [0]);
@@ -188,10 +185,11 @@ export class Interior {
       this.sync();
     }
     this.glass.color.copy(skyColour).multiplyScalar(0.55 + 0.75 * daylight);
-    this.sun.intensity = 0.35 + 2.3 * daylight;
+    // Daylight comes in at the windows: soft, and much dimmer than outside.
+    this.sun.intensity = 0.15 + 1.25 * daylight;
     this.sun.color.setHex(0xfff1d8).lerp(skyColour, 0.25);
     // By night the room is lit from within: lamps, and the fire if there is one.
-    this.fill.intensity = 0.75 + 0.55 * daylight;
+    this.fill.intensity = 0.18 + 0.22 * daylight;
     this.assets.lampGlow.emissiveIntensity = 0.5 + 1.6 * (1 - daylight);
     const flicker = 0.85 + 0.1 * Math.sin(this.time * 11.3) + 0.06 * Math.sin(this.time * 23.7);
     this.hearth.intensity = this.hearth.userData.lit ? (6 + 12 * (1 - daylight)) * flicker : 0;
@@ -238,9 +236,5 @@ export class Interior {
 }
 
 export function furnitureObject(assets: Assets, kind: FurnitureId): THREE.Group {
-  const def = FURNITURE[kind];
-  const model = modelOf(assets, 'furniture', def.model);
-  const wrap = new THREE.Group();
-  wrap.add(instantiate(model, fitScale(model, def.fit)));
-  return wrap;
+  return shapeObject(assets, furnitureDef(kind).shape);
 }

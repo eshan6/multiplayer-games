@@ -17,9 +17,9 @@ import type { Terrain } from './terrain';
 
 const TILE = 16;
 /** Blades per tile at full density. */
-const BLADES = 4600;
+const BLADES = 12000;
 /** Tiles further than this from the rider are not drawn. */
-const RANGE = 78;
+const RANGE = 60;
 /** Stop building new tiles after this long in one frame, and carry on next frame. */
 const BUDGET_MS = 5;
 
@@ -57,17 +57,19 @@ export class Grass {
 
   private readonly tiles = new Map<string, Tile>();
   private readonly blade = bladeGeometry();
-  private readonly material: THREE.MeshLambertMaterial;
+  private readonly material: THREE.MeshStandardMaterial;
   private readonly uniforms = {
     uRider: { value: new THREE.Vector3() },
     uFade: { value: new THREE.Vector2(RANGE * 0.62, RANGE * 0.98) },
-    uTip: { value: new THREE.Color(0xc2d674) },
+    uTip: { value: new THREE.Color(0xa8b860) },
     uSeason: { value: new THREE.Color(1, 1, 1) },
   };
 
   constructor(private readonly terrain: Terrain) {
     this.group.name = 'grass';
-    this.material = new THREE.MeshLambertMaterial({ side: THREE.DoubleSide });
+    // Standard, not Lambert: the ambient light now comes from the captured
+    // sky, and only physically based materials receive it.
+    this.material = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, roughness: 0.82, metalness: 0 });
     this.material.onBeforeCompile = (shader) => {
       shader.uniforms.uTime = wind.uTime;
       shader.uniforms.uStrength = wind.uStrength;
@@ -101,7 +103,7 @@ export class Grass {
           float dist = distance(aRoot.xz, cameraPosition.xz);
           float fade = 1.0 - smoothstep(uFade.x, uFade.y, dist);
           height *= 0.35 + 0.65 * fade;
-          float width = mix(0.062, 0.19, smoothstep(10.0, uFade.y, dist)) * fade;
+          float width = mix(0.05, 0.16, smoothstep(8.0, uFade.y, dist)) * fade;
 
           float c = cos(aRoot.w);
           float s = sin(aRoot.w);
@@ -145,8 +147,9 @@ export class Grass {
           /* glsl */ `
           // Root: the ground's own colour, a touch darker where blades crowd.
           // Tip: lifted toward a sunlit yellow-green.
-          vec3 rootCol = vGrass * 0.82;
-          vec3 tipCol = mix(vGrass * 1.18, uTip, 0.26);
+          // Roots sit in the shade of the blades round them.
+          vec3 rootCol = vGrass * 0.42;
+          vec3 tipCol = mix(vGrass * 1.02, uTip, 0.2);
           diffuseColor.rgb = mix(rootCol, tipCol, vTip) * uSeason;
           `,
         );
@@ -193,7 +196,7 @@ export class Grass {
         this.group.add(tile.mesh);
       }
       // Blades are stored in shuffled order, so drawing the first N is an even thinning.
-      const lod = d < 28 ? 1 : d < 46 ? 0.45 : d < 62 ? 0.22 : 0.12;
+      const lod = d < 18 ? 1 : d < 30 ? 0.4 : d < 44 ? 0.16 : 0.07;
       tile.geometry.instanceCount = Math.floor(tile.count * lod * this.quality);
     }
 
@@ -226,11 +229,17 @@ export class Grass {
       root[n * 4 + 1] = y - 0.02;
       root[n * 4 + 2] = z;
       root[n * 4 + 3] = hash2(i, tx * 7919 + tz, 5) * Math.PI * 2;
-      look[n * 4] = colour.r * (0.9 + vary * 0.2);
-      look[n * 4 + 1] = colour.g * (0.9 + vary * 0.2);
-      look[n * 4 + 2] = colour.b * (0.9 + vary * 0.2);
+      // Darker and less yellow than the painted ground colour: under a real sky
+      // a field is mostly the deep green of blades in each other's shade.
+      // A blade in ten is dry straw-gold, as in any real field.
+      const dry = hash2(i, tx * 7919 + tz, 6) < 0.1;
+      const k = 0.8 + vary * 0.45;
+      look[n * 4] = dry ? 0.32 : colour.r * k * 0.9;
+      look[n * 4 + 1] = dry ? 0.27 : colour.g * k;
+      look[n * 4 + 2] = dry ? 0.1 : colour.b * k * 0.7;
       // Mostly short turf, with the odd tall tuft; shorter where it is sparse.
-      look[n * 4 + 3] = (0.2 + vary * vary * 0.44) * (0.55 + 0.45 * density);
+      // A meadow, not a lawn: mostly ankle height, with seed heads standing above.
+      look[n * 4 + 3] = (0.16 + vary * vary * 0.36) * (0.55 + 0.45 * density);
       if (y < minY) minY = y;
       if (y > maxY) maxY = y;
       n++;

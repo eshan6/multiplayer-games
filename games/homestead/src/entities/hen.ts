@@ -9,9 +9,9 @@ import type { Terrain } from '../world/terrain';
 import type { Gait } from './creature';
 
 const FEATHERS = [0xf3ead8, 0xb9773f, 0x8a5a36, 0x3b3532, 0xe0c090, 0xd9d2c4];
-const comb = new THREE.MeshLambertMaterial({ color: 0xc8362e });
-const beak = new THREE.MeshLambertMaterial({ color: 0xe9a53a });
-const eye = new THREE.MeshLambertMaterial({ color: 0x1b1a19 });
+const comb = new THREE.MeshStandardMaterial({ color: 0xc8362e, roughness: 0.7 });
+const beak = new THREE.MeshStandardMaterial({ color: 0xe9a53a, roughness: 0.6 });
+const eye = new THREE.MeshStandardMaterial({ color: 0x1b1a19, roughness: 0.2 });
 const bodyGeo = new THREE.IcosahedronGeometry(1, 2);
 const coneGeo = new THREE.ConeGeometry(1, 1, 6);
 const legGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.14, 4);
@@ -27,7 +27,7 @@ export class Hen {
   private t = Math.random() * 10;
 
   constructor(coat: number) {
-    const feather = new THREE.MeshLambertMaterial({ color: FEATHERS[Math.floor(coat * FEATHERS.length) % FEATHERS.length] });
+    const feather = new THREE.MeshStandardMaterial({ color: FEATHERS[Math.floor(coat * FEATHERS.length) % FEATHERS.length], roughness: 0.95 });
     const part = (geo: THREE.BufferGeometry, mat: THREE.Material, sx: number, sy: number, sz: number, x: number, y: number, z: number, parent: THREE.Object3D = this.body) => {
       const m = new THREE.Mesh(geo, mat);
       m.scale.set(sx, sy, sz);

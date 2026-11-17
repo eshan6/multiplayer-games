@@ -13,7 +13,7 @@ import { BED_SLOTS, CROPS, STRUCTURES, type CropId, type StructureId } from '../
 import { cropStage, isWatered, ripeness, slotId, type Crop, type Store, type Structure } from '../game/world';
 import type { Spot } from '../interact';
 import type { Effects, Flame } from './fx';
-import { BED_SLOT_AT, instantiate, shapeObject, wetPatch } from './placed';
+import { BED_SLOT_AT, COTTAGE, instantiate, shapeObject } from './placed';
 import type { Obstacle, Wall } from './scatter';
 import type { Terrain } from './terrain';
 
@@ -72,7 +72,7 @@ export class Structures {
     group.rotation.y = doc.rot;
     const b: Built = { doc, group };
     if (doc.kind === 'campfire') {
-      b.flame = this.fx.fire(this.at(doc, 0, 0.5, 0));
+      b.flame = this.fx.fire(this.at(doc, 0, 0.32, 0));
       this.group.add(b.flame.group);
     }
     if (doc.kind === 'cottage') {
@@ -103,39 +103,15 @@ export class Structures {
     this.built.delete(id);
   }
 
-  /** Top of the cottage's chimney in its own space: the middle of its highest stonework. */
-  private chimneyAt: [number, number, number] | null = null;
+  /** Top of the cottage's chimney, in the cottage's own space. */
   private chimney(): [number, number, number] {
-    if (this.chimneyAt) return this.chimneyAt;
-    const model = modelOf(this.assets, 'props', 'House_1');
-    const shape = STRUCTURES.cottage.shape;
-    const scale = 'scale' in shape ? (shape.scale ?? 1) : 1;
-    const stone = model.parts.filter((p) => p.material.name.startsWith('Stone'));
-    let top = -Infinity;
-    for (const p of stone) top = Math.max(top, p.geometry.boundingBox!.max.y);
-    const v = new THREE.Vector3();
-    let sx = 0;
-    let sz = 0;
-    let n = 0;
-    for (const p of stone) {
-      const pos = p.geometry.getAttribute('position');
-      for (let i = 0; i < pos.count; i++) {
-        v.fromBufferAttribute(pos, i);
-        if (v.y > top - 0.04) {
-          sx += v.x;
-          sz += v.z;
-          n++;
-        }
-      }
-    }
-    this.chimneyAt = n ? [(sx / n) * scale, top * scale, (sz / n) * scale] : [0, model.size.y * scale, 0];
-    return this.chimneyAt;
+    const [x, y, z] = COTTAGE.chimney;
+    return [x - 0.9, y + 0.3, z];
   }
 
   /** Half-depth of the cottage, for finding its door. */
   private cottageDepth(): number {
-    const shape = STRUCTURES.cottage.shape;
-    return (modelOf(this.assets, 'props', 'House_1').size.z * ('scale' in shape ? (shape.scale ?? 1) : 1)) / 2;
+    return COTTAGE.depth / 2;
   }
 
   /** Where the cottage door is, if there is a cottage. */
@@ -178,10 +154,11 @@ export class Structures {
       if (doc.kind === 'cottage') {
         // A row of circles along the building's length: round corners let
         // you slide past rather than snag.
-        const d = this.cottageDepth();
-        for (const k of [-0.55, 0, 0.55]) {
-          const p = this.at(doc, 0, 0, d * k);
-          this.obstacles.push({ x: p.x, z: p.z, r: 2.9 });
+        // A row of circles along the building's length: round corners let
+        // you slide past rather than snag.
+        for (const k of [-2.4, 0, 2.4]) {
+          const p = this.at(doc, k, 0, 0);
+          this.obstacles.push({ x: p.x, z: p.z, r: 3.3 });
         }
       } else if (doc.kind === 'fence') {
         const half = (def as { snaps: number }).snaps / 2;
@@ -200,7 +177,7 @@ export class Structures {
       if (!b.slots) continue;
       b.slots.forEach((slot, i) => {
         const crop = crops.get(slotId(id, i));
-        const key = crop ? `${crop.kind}${cropStage(crop, now)}${isWatered(crop, now) ? 'w' : ''}` : '';
+        const key = crop ? `${crop.kind}${cropStage(crop, now)}` : '';
         if (key === slot.key) return;
         slot.key = key;
         slot.holder.clear();
@@ -211,11 +188,6 @@ export class Structures {
         // Crops are small and many; their shadows cost more than they show.
         plant.traverse((o) => (o.castShadow = false));
         slot.holder.add(plant);
-        if (isWatered(crop, now)) {
-          const wet = wetPatch();
-          wet.position.y = 0.2;
-          slot.holder.add(wet);
-        }
       });
     }
   }

@@ -2,11 +2,12 @@
 Blender half of the asset pipeline: turns the Quaternius source files into
 geometry-only GLBs the game loads.
 
-  nature.glb      trees, bushes, flowers, rocks        Ultimate Stylized Nature
-  props.glb       cottage, barns, fences, well…        Medieval Village, Farm Buildings
-  furniture.glb   beds, tables, stove, rugs…           Ultimate Furniture, Home Interior
   crops.glb       vegetables at four stages of growth  Ultimate Crops
   pig.glb         the pig, skinned, with its idle      Farm Animals
+
+(Trees, plants, rocks, props and furniture used to come through here too.
+They are now photoscanned or generated: see tools/build_scans.mjs and
+src/world/trees.ts. Buildings are constructed in src/world/placed.ts.)
 
 Images and materials are deliberately NOT embedded. Each model is split into
 one object per material, and that object is tagged with the model it belongs
@@ -33,44 +34,8 @@ argv = sys.argv[sys.argv.index("--") + 1 :]
 SRC, OUT = argv[0], argv[1]
 os.makedirs(OUT, exist_ok=True)
 
-# A countryside, not a showcase of everything in the kit: no palms, and only
-# enough variants per species that a wood does not look stamped.
-NATURE = [
-    "NormalTree_1", "NormalTree_2", "NormalTree_3", "NormalTree_4", "NormalTree_5",
-    "BirchTree_2", "BirchTree_3", "BirchTree_5",
-    "MapleTree_1", "MapleTree_2", "MapleTree_4", "MapleTree_5",
-    "PineTree_1", "PineTree_2", "PineTree_3", "PineTree_4", "PineTree_5",
-    "DeadTree_3", "DeadTree_5",
-    "Bush", "Bush_Flowers", "Bush_Large", "Bush_Large_Flowers", "Bush_Small",
-    "Flower_1_Clump", "Flower_2_Clump", "Flower_3_Clump", "Flower_4_Clump", "Flower_5_Clump",
-    "Plant_1", "Plant_2", "Plant_Flowers",
-    "Grass_Large",
-    "Rock_1", "Rock_2", "Rock_4", "Rock_5",
-]
-
 # pack -> list of source files (relative to SRC). The model takes the file's name.
 PACKS = {
-    "props": [
-        "village/House_1.blend", "village/Stable.blend",
-        "props/Well.blend", "props/Fence.blend", "props/Bonfire_Lit.blend", "props/Barrel.blend",
-        "props/Cart.blend", "props/Crate.blend", "props/Hay.blend", "props/Bench_1.blend",
-        "props/Bench_2.blend", "props/Bags.blend", "props/Gazebo.blend", "props/MarketStand_1.blend",
-        "props/Path_Straight.blend", "props/Path_Square.blend",
-        "farm/ChickenCoop.fbx", "farm/SmallBarn.fbx", "farm/OpenBarn.fbx",
-    ],
-    "furniture": [
-        "furniture/BedDouble.fbx", "furniture/BedTwin.fbx", "furniture/Bookcase_Books.fbx",
-        "furniture/Chair.fbx", "furniture/Closet.fbx", "furniture/ShortCloset.fbx",
-        "furniture/NightStand.fbx", "furniture/Sofa.fbx", "furniture/Sofa_individual.fbx",
-        "furniture/Stool.fbx", "furniture/Table.fbx", "furniture/Table2.fbx", "furniture/Desk.fbx",
-        "interior/Fireplace.fbx", "interior/Kitchen_Oven.fbx", "interior/Kitchen_Sink.fbx",
-        "interior/Kitchen_Cabinet1.fbx", "interior/Kitchen_2Drawers.fbx", "interior/Bathroom_Bathtub.fbx",
-        "interior/Carpet_1.fbx", "interior/Carpet_2.fbx", "interior/Carpet_Round.fbx",
-        "interior/Houseplant_1.fbx", "interior/Houseplant_3.fbx", "interior/Houseplant_5.fbx",
-        "interior/Houseplant_7.fbx", "interior/Light_Floor1.fbx", "interior/Light_Stand1.fbx",
-        "interior/Light_Desk.fbx", "interior/Shelf_1.fbx", "interior/Table_RoundSmall.fbx",
-        "interior/Curtains_Double.fbx", "interior/Drawer_1.fbx", "interior/Couch_Small1.fbx",
-    ],
     "crops": [f"crops/{c}_{s}.fbx" for c in ("Carrot", "Lettuce", "Tomato", "Corn", "Pumpkin", "Wheat") for s in (1, 2, 3, 4)]
     + ["crops/BushBerries_4.fbx", "crops/BushBerries_Harvested.fbx", "crops/Mushroom_4.fbx"],
 }
@@ -172,14 +137,6 @@ def load_model(rel):
     return obj, name
 
 
-def build_nature():
-    bpy.ops.wm.open_mainfile(filepath=os.path.join(SRC, "nature_all.blend"))
-    pieces = []
-    for name in NATURE:
-        pieces += split_by_material(bpy.data.objects[name], name, "nature")
-    export(os.path.join(OUT, "nature.glb"), pieces)
-
-
 def build_pack(pack, files):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     pieces = []
@@ -207,7 +164,6 @@ def build_pig():
     print(f"[assets] wrote {path} ({os.path.getsize(path) / 1024:.0f} KB)")
 
 
-build_nature()
 for pack, files in PACKS.items():
     build_pack(pack, files)
 build_pig()

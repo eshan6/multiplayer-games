@@ -1,12 +1,19 @@
 /**
- * The sky, the sun and moon, and every light in the scene — all driven by one
- * number: the hour of the day.
+ * The sky, the sun and moon, the weather, and every light in the scene — all
+ * driven by one number: the hour of the day.
  *
- * The look of each hour is a keyframe in `KEYS`. Nothing else in the game sets
- * a light colour; they read what this file resolved for the current hour.
- * Weather will plug in here later as a second set of keys to blend toward.
+ * The air is a physical model (Preetham's, as shipped with three.js): give it
+ * where the sun is and it works out the colour of every part of the sky,
+ * including the red of a low sun and the glare round a high one. Over that
+ * goes a layer of procedural cloud, and under it, at night, stars and a moon.
+ *
+ * The same sky is then captured into an environment map, so everything in the
+ * world is lit and reflected by the sky that is actually overhead. That is
+ * the largest single reason a surface here looks like a material rather than
+ * a colour.
  */
 import * as THREE from 'three';
+import { Sky as Air } from 'three/addons/objects/Sky.js';
 import { rng } from '../noise';
 
 interface Key {
@@ -44,74 +51,105 @@ const KEYS: Key[] = [
   { hour: 24,   sun: 0x9db4ff, sunPower: 0.42, skyFill: 0x30457f, groundFill: 0x101a2e, fillPower: 0.95, zenith: 0x040a1e, horizon: 0x1a2a55, fog: 0x14203f, glow: 0.0, stars: 1.0, exposure: 1.05 },
 ];
 
-/** Sunrise and sunset, in hours. The sun's arc is fitted between them. */
-/** Half-width of the square of ground that receives shadows, centred on the rider. */
-const SHADOW_REACH = 50;
+/** Half-width of the square of ground that receives shadows, centred on you. */
+const SHADOW_REACH = 52;
 
+/** Sunrise and sunset, in hours. The sun's arc is fitted between them. */
 const SUNRISE = 5.6;
 const SUNSET = 19.9;
 
-const SKY_VERT = /* glsl */ `
-  varying vec3 vDir;
-  void main() {
-    vDir = normalize(position);
-    vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    gl_Position = p.xyww; // pinned to the far plane
-  }
-`;
-
-const SKY_FRAG = /* glsl */ `
-  uniform vec3 uZenith;
-  uniform vec3 uHorizon;
-  uniform vec3 uSunColor;
-  uniform vec3 uSunDir;
-  uniform vec3 uMoonDir;
-  uniform float uGlow;
+/** Added to the physical sky shader: night, overcast, stars and the moon. */
+const NIGHT_UNIFORMS = /* glsl */ `
+  uniform float uDay;
+  uniform float uGain;
+  uniform float uOvercast;
   uniform float uStars;
-  uniform float uSunDisc;
-  uniform float uMoonDisc;
+  uniform float uMoon;
   uniform float uTime;
-  varying vec3 vDir;
-
-  float hash(vec3 p) {
+  uniform vec3 uNightZenith;
+  uniform vec3 uNightHorizon;
+  uniform vec3 uGrey;
+  uniform vec3 uMoonDir;
+  float starHash(vec3 p) {
     p = fract(p * vec3(443.897, 441.423, 437.195));
     p += dot(p, p.yzx + 19.19);
     return fract((p.x + p.y) * p.z);
   }
+`;
+const NIGHT_BODY = /* glsl */ `
+  vec3 dir = normalize(vWorldPosition - cameraPosition);
+  float up = clamp(dir.y, 0.0, 1.0);
+  retColor *= uGain;
+  vec3 night = mix(uNightHorizon, uNightZenith, pow(up, 0.45));
+  retColor = mix(night, retColor, uDay);
+  retColor = mix(retColor, uGrey * (0.75 + 0.5 * up), uOvercast * 0.85);
+  if (uStars > 0.01 && dir.y > 0.0) {
+    vec3 cell = floor(dir * 300.0);
+    float h = starHash(cell);
+    float star = step(0.9972, h) * smoothstep(0.45, 0.0, length(fract(dir * 300.0) - 0.5));
+    float twinkle = 0.65 + 0.35 * sin(uTime * (1.5 + h * 4.0) + h * 80.0);
+    retColor += vec3(0.9, 0.95, 1.0) * star * twinkle * uStars * smoothstep(0.0, 0.25, dir.y) * 2.2;
+  }
+  float md = dot(dir, uMoonDir);
+  retColor += vec3(0.86, 0.9, 1.0) * uMoon * (smoothstep(0.99935, 0.99965, md) * 3.0 + pow(max(md, 0.0), 420.0) * 0.3);
+  gl_FragColor = vec4( retColor, 1.0 );
+`;
 
+const CLOUD_VERT = /* glsl */ `
+  varying vec3 vDir;
+  void main() {
+    vDir = normalize(position);
+    vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    gl_Position = p.xyww;
+  }
+`;
+const CLOUD_FRAG = /* glsl */ `
+  uniform float uTime;
+  uniform float uCover;
+  uniform vec3 uLit;
+  uniform vec3 uShade;
+  uniform vec3 uSunDir;
+  varying vec3 vDir;
+
+  float hash(vec2 p) {
+    p = fract(p * vec2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+    return fract(p.x * p.y);
+  }
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+  }
+  float fbm(vec2 p) {
+    float sum = 0.0;
+    float amp = 0.5;
+    for (int i = 0; i < 5; i++) {
+      sum += noise(p) * amp;
+      p = p * 2.03 + vec2(17.1, 9.2);
+      amp *= 0.5;
+    }
+    return sum;
+  }
   void main() {
     vec3 d = normalize(vDir);
-    float up = clamp(d.y, -0.15, 1.0);
-
-    // Horizon → zenith, with most of the change low down, the way a real sky does it.
-    float t = pow(smoothstep(-0.04, 0.8, up), 0.5);
-    vec3 col = mix(uHorizon, uZenith, t);
-
-    // The sun's side of the sky glows warm near the horizon.
-    float toSun = max(dot(d, uSunDir), 0.0);
-    float low = 1.0 - smoothstep(0.0, 0.55, up);
-    col += uSunColor * uGlow * (pow(toSun, 6.0) * 0.32 * low + pow(toSun, 48.0) * 0.35);
-
-    // Sun disc with a soft halo.
-    float sd = dot(d, uSunDir);
-    col += uSunColor * uSunDisc * (smoothstep(0.99935, 0.99975, sd) * 14.0 + pow(max(sd, 0.0), 900.0) * 1.6);
-
-    // Moon: a pale disc, a little larger than life.
-    float md = dot(d, uMoonDir);
-    col += vec3(0.85, 0.9, 1.0) * uMoonDisc * (smoothstep(0.99925, 0.9996, md) * 2.4 + pow(max(md, 0.0), 500.0) * 0.25);
-
-    // Stars: a hashed grid on the dome, twinkling.
-    if (uStars > 0.01 && d.y > 0.0) {
-      vec3 g = floor(d * 260.0);
-      float h = hash(g);
-      float star = step(0.9965, h);
-      float tw = 0.65 + 0.35 * sin(uTime * (1.5 + h * 4.0) + h * 80.0);
-      vec3 f = fract(d * 260.0) - 0.5;
-      star *= smoothstep(0.45, 0.0, length(f));
-      col += vec3(0.9, 0.95, 1.0) * star * tw * uStars * smoothstep(0.0, 0.25, d.y) * 1.6;
-    }
-
-    gl_FragColor = vec4(col, 1.0);
+    if (d.y < 0.015) discard;
+    // Project the dome onto a flat layer: clouds bunch toward the horizon as real ones do.
+    vec2 uv = d.xz / (d.y + 0.16) * 1.15 + vec2(uTime * 0.006, uTime * 0.0025);
+    float n = fbm(uv) + 0.35 * fbm(uv * 3.1 + 7.0) - 0.17;
+    float edge = mix(0.62, 0.24, uCover);
+    float density = smoothstep(edge, edge + 0.26, n);
+    if (density < 0.004) discard;
+    // Cheap self-shadowing: a cloud is brighter on the side its sun is on.
+    vec2 toSun = normalize(uSunDir.xz + vec2(0.0001)) * 0.11;
+    float toward = fbm(uv + toSun) + 0.35 * fbm((uv + toSun) * 3.1 + 7.0) - 0.17;
+    float light = clamp(0.62 + (n - toward) * 2.8, 0.0, 1.0);
+    // Thick cloud is darker underneath.
+    light *= mix(1.0, 0.72, smoothstep(0.5, 1.0, density) * uCover);
+    vec3 col = mix(uShade, uLit, light);
+    float fade = smoothstep(0.015, 0.2, d.y);
+    gl_FragColor = vec4(col, density * fade);
   }
 `;
 
@@ -125,8 +163,8 @@ export class Sky {
   private wantMist = 0;
 
   readonly sun = new THREE.DirectionalLight(0xffffff, 3);
-  readonly fill = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
-  readonly fog = new THREE.Fog(0xffffff, 75, 440);
+  readonly fill = new THREE.HemisphereLight(0xffffff, 0x444444, 0.3);
+  readonly fog = new THREE.Fog(0xffffff, 70, 330);
 
   /** Direction *towards* whichever body is lighting the scene. */
   readonly lightDir = new THREE.Vector3(0, 1, 0);
@@ -135,49 +173,87 @@ export class Sky {
   daylight = 1;
   exposure = 1;
 
-  private readonly dome: THREE.Mesh;
-  private readonly uniforms: Record<string, THREE.IUniform>;
-  private readonly clouds = new THREE.Group();
+  private readonly air = new Air();
+  private readonly clouds: THREE.Mesh;
+  private readonly cloudUniforms: Record<string, THREE.IUniform>;
   private readonly mountains: THREE.Mesh;
-  private readonly cloudMaterial: THREE.MeshLambertMaterial;
   private readonly moonDir = new THREE.Vector3();
+  private readonly horizon = new THREE.Color();
+  private readonly zenith = new THREE.Color();
   private readonly tmpA = new THREE.Color();
   private readonly tmpB = new THREE.Color();
   private time = 0;
 
-  constructor(scene: THREE.Scene) {
-    this.uniforms = {
-      uZenith: { value: new THREE.Color() },
-      uHorizon: { value: new THREE.Color() },
-      uSunColor: { value: new THREE.Color() },
-      uSunDir: { value: this.sunDir },
-      uMoonDir: { value: this.moonDir },
-      uGlow: { value: 0 },
-      uStars: { value: 0 },
-      uSunDisc: { value: 1 },
-      uMoonDisc: { value: 0 },
-      uTime: { value: 0 },
-    };
-    this.dome = new THREE.Mesh(
-      new THREE.SphereGeometry(1, 48, 24),
-      new THREE.ShaderMaterial({
-        uniforms: this.uniforms,
-        vertexShader: SKY_VERT,
-        fragmentShader: SKY_FRAG,
-        side: THREE.BackSide,
-        depthWrite: false,
-        depthTest: true,
-        fog: false,
-      }),
-    );
-    this.dome.frustumCulled = false;
-    this.dome.renderOrder = -10;
-    scene.add(this.dome);
+  // The sky captured for lighting: a second copy of the air and clouds, in a
+  // scene of their own, photographed into a cube map every so often.
+  private readonly pmrem: THREE.PMREMGenerator;
+  private readonly envScene = new THREE.Scene();
+  private envTarget: THREE.WebGLRenderTarget | null = null;
+  private envClock = 0;
+  private envHour = -99;
+  private envCover = -99;
 
-    // Shadows: one cascade that follows the rider. Big enough to cover the
-    // cottage from across the yard, small enough to stay crisp.
+  constructor(
+    private readonly scene: THREE.Scene,
+    renderer: THREE.WebGLRenderer,
+  ) {
+    // ---- the air ---------------------------------------------------------------
+    const mat = this.air.material as THREE.ShaderMaterial;
+    Object.assign(mat.uniforms, {
+      uDay: { value: 1 },
+      uGain: { value: 1 },
+      uOvercast: { value: 0 },
+      uStars: { value: 0 },
+      uMoon: { value: 0 },
+      uTime: { value: 0 },
+      uNightZenith: { value: new THREE.Color() },
+      uNightHorizon: { value: new THREE.Color() },
+      uGrey: { value: new THREE.Color() },
+      uMoonDir: { value: this.moonDir },
+    });
+    mat.fragmentShader = mat.fragmentShader.replace('void main() {', `${NIGHT_UNIFORMS}\nvoid main() {`).replace('gl_FragColor = vec4( retColor, 1.0 );', NIGHT_BODY);
+    mat.uniforms.mieCoefficient!.value = 0.004;
+    mat.uniforms.mieDirectionalG!.value = 0.82;
+    this.air.scale.setScalar(5000);
+    this.air.frustumCulled = false;
+    this.air.renderOrder = -10;
+    scene.add(this.air);
+
+    // ---- cloud -----------------------------------------------------------------
+    this.cloudUniforms = {
+      uTime: { value: 0 },
+      uCover: { value: 0.3 },
+      uLit: { value: new THREE.Color() },
+      uShade: { value: new THREE.Color() },
+      uSunDir: { value: this.sunDir },
+    };
+    const cloudMaterial = new THREE.ShaderMaterial({
+      uniforms: this.cloudUniforms,
+      vertexShader: CLOUD_VERT,
+      fragmentShader: CLOUD_FRAG,
+      side: THREE.BackSide,
+      transparent: true,
+      depthWrite: false,
+      fog: false,
+    });
+    this.clouds = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 24), cloudMaterial);
+    this.clouds.scale.setScalar(3000);
+    this.clouds.frustumCulled = false;
+    this.clouds.renderOrder = -8;
+    this.clouds.name = 'clouds';
+    this.mountains = this.buildMountains();
+    scene.add(this.mountains, this.clouds);
+
+    const envAir = new THREE.Mesh(this.air.geometry, mat);
+    envAir.scale.setScalar(900);
+    const envClouds = new THREE.Mesh(this.clouds.geometry, cloudMaterial);
+    envClouds.scale.setScalar(600);
+    this.envScene.add(envAir, envClouds);
+    this.pmrem = new THREE.PMREMGenerator(renderer);
+
+    // ---- light -----------------------------------------------------------------
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(2048, 2048);
+    this.sun.shadow.mapSize.set(4096, 4096);
     const cam = this.sun.shadow.camera;
     cam.left = -SHADOW_REACH;
     cam.right = SHADOW_REACH;
@@ -185,22 +261,15 @@ export class Sky {
     cam.bottom = -SHADOW_REACH;
     cam.near = 1;
     cam.far = 420;
-    this.sun.shadow.bias = -0.0004;
-    this.sun.shadow.normalBias = 0.06;
-    this.sun.shadow.radius = 2.2;
+    this.sun.shadow.bias = -0.0003;
+    this.sun.shadow.normalBias = 0.05;
+    this.sun.shadow.radius = 1.6;
     scene.add(this.sun, this.sun.target, this.fill);
     scene.fog = this.fog;
-
-    this.cloudMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff, fog: false, flatShading: false });
-    this.buildClouds();
-    this.clouds.name = 'clouds';
-    this.mountains = this.buildMountains();
-    scene.add(this.mountains, this.clouds);
 
     this.resolve();
   }
 
-  /** Puffy low-poly clouds: a few squashed spheres welded into one shape each. */
   /**
    * A far ring of mountains, drawn as flat silhouettes in the sky's own
    * colours. They give the valley an edge, and the eye somewhere to rest.
@@ -275,44 +344,19 @@ export class Sky {
     this.wantMist = kind === 'mist' ? 1 : kind === 'rain' ? 0.35 : 0;
   }
 
-  private buildClouds() {
-    const rand = rng(404);
-    const sphere = new THREE.IcosahedronGeometry(1, 2);
-    for (let i = 0; i < 42; i++) {
-      const cloud = new THREE.Group();
-      const puffs = 4 + Math.floor(rand() * 5);
-      const length = 44 + rand() * 60;
-      for (let p = 0; p < puffs; p++) {
-        const m = new THREE.Mesh(sphere, this.cloudMaterial);
-        const along = (p / (puffs - 1) - 0.5) * length;
-        const bulge = 1 - Math.abs(p / (puffs - 1) - 0.5) * 1.2;
-        const r = (12 + rand() * 13) * (0.55 + bulge * 0.6);
-        m.position.set(along + (rand() - 0.5) * 9, r * 0.28 + (rand() - 0.5) * 3, (rand() - 0.5) * 20);
-        m.scale.set(r * 1.25, r * 0.62, r);
-        cloud.add(m);
-      }
-      const angle = rand() * Math.PI * 2;
-      const dist = 240 + rand() * 330;
-      cloud.position.set(Math.cos(angle) * dist, 95 + rand() * 85, Math.sin(angle) * dist);
-      cloud.rotation.y = rand() * Math.PI;
-      cloud.userData.speed = 1.1 + rand() * 1.3;
-      this.clouds.add(cloud);
-    }
-  }
-
-  /** Advance the clock and re-resolve the lighting. `focus` is what the shadows follow. */
+  /** Advance and re-resolve the lighting. `focus` is what the shadows follow. */
   update(dt: number, focus: THREE.Vector3, camera: THREE.Camera) {
     this.time += dt;
     const ease = 1 - Math.exp(-dt * 0.5);
     this.overcast += (this.wantOvercast - this.overcast) * ease;
     this.mist += (this.wantMist - this.mist) * ease;
     this.resolve();
+
+    this.air.position.copy(camera.position);
+    this.clouds.position.copy(camera.position);
     this.mountains.position.set(camera.position.x, 0, camera.position.z);
 
-    this.dome.position.copy(camera.position);
-    this.dome.scale.setScalar(900);
-
-    // Keep the shadow camera on the rider, snapped to whole shadow texels so
+    // Keep the shadow camera on you, snapped to whole shadow texels so
     // shadow edges do not crawl as the camera moves.
     const texel = (SHADOW_REACH * 2) / this.sun.shadow.mapSize.x;
     const fx = Math.round(focus.x / texel) * texel;
@@ -320,18 +364,26 @@ export class Sky {
     this.sun.target.position.set(fx, focus.y, fz);
     this.sun.position.set(fx, focus.y, fz).addScaledVector(this.lightDir, 190);
 
-    this.clouds.children.forEach((cloud, i) => {
-      cloud.position.x += (cloud.userData.speed as number) * dt * (1 + this.overcast);
-      if (cloud.position.x > 620) cloud.position.x = -620;
-      // Fair weather shows a third of the clouds; an overcast sky, all of them.
-      cloud.visible = i % 3 === 0 || this.overcast > 0.12 + (i % 7) * 0.07;
-    });
-    this.clouds.position.set(camera.position.x * 0.9, 0, camera.position.z * 0.9);
+    // Re-photograph the sky for lighting when it has changed enough to matter.
+    this.envClock -= dt;
+    const moved = Math.abs(this.hour - this.envHour) > 0.06 || Math.abs(this.overcast - this.envCover) > 0.04;
+    if (moved && this.envClock <= 0) {
+      this.envClock = 1.2;
+      this.envHour = this.hour;
+      this.envCover = this.overcast;
+      const next = this.pmrem.fromScene(this.envScene, 0, 1, 2000);
+      this.scene.environment = next.texture;
+      // Skylight fills the shadows but should not flatten them.
+      this.scene.environmentIntensity = 0.75;
+      this.envTarget?.dispose();
+      this.envTarget = next;
+    }
   }
 
   /** Jump the clock without waiting for a frame. */
   setHour(hour: number) {
     this.hour = ((hour % 24) + 24) % 24;
+    this.envHour = -99;
     this.resolve();
   }
 
@@ -342,24 +394,20 @@ export class Sky {
     const a = KEYS[i]!;
     const b = KEYS[i + 1]!;
     const t = (h - a.hour) / (b.hour - a.hour);
-    const mix = (ka: number, kb: number, into: THREE.Color) =>
-      into.copy(this.tmpA.setHex(ka)).lerp(this.tmpB.setHex(kb), t);
+    const mix = (ka: number, kb: number, into: THREE.Color) => into.copy(this.tmpA.setHex(ka)).lerp(this.tmpB.setHex(kb), t);
     const num = (ka: number, kb: number) => ka + (kb - ka) * t;
 
     // The sun's arc: up in the east, over the south, down in the west, tilted
     // so shadows always have some length to them.
-    const dayT = (h - SUNRISE) / (SUNSET - SUNRISE);
-    const ang = dayT * Math.PI;
+    const ang = ((h - SUNRISE) / (SUNSET - SUNRISE)) * Math.PI;
     this.sunDir.set(Math.cos(ang) * 0.92, Math.sin(ang) * 0.9, 0.42 - 0.2 * Math.sin(ang)).normalize();
     // The moon keeps the opposite appointment, on a slightly different tilt.
-    const nightT = ((h - SUNSET + 24) % 24) / (24 - (SUNSET - SUNRISE));
-    const mang = nightT * Math.PI;
+    const mang = (((h - SUNSET + 24) % 24) / (24 - (SUNSET - SUNRISE))) * Math.PI;
     this.moonDir.set(Math.cos(mang) * 0.85, Math.sin(mang) * 0.8 + 0.12, -0.5).normalize();
 
     const sunUp = this.sunDir.y;
     this.daylight = THREE.MathUtils.smoothstep(sunUp, -0.08, 0.16);
-    // Whichever body is higher lights the scene. The keyframes take the direct
-    // light almost to nothing at the handover, which hides the switch.
+    // Whichever body is higher lights the scene.
     const useSun = sunUp > -0.02;
     this.lightDir.copy(useSun ? this.sunDir : this.moonDir);
     // Never let the light come in flatter than this, or shadows smear across the map.
@@ -372,49 +420,65 @@ export class Sky {
     // Dip the direct light to nothing for the instant the sun hands over to
     // the moon, so shadows fade out and back in rather than jumping across.
     const handover = THREE.MathUtils.smoothstep(Math.abs(sunUp + 0.02), 0, 0.05);
-    this.sun.intensity = num(a.sunPower, b.sunPower) * handover;
+    this.sun.intensity = num(a.sunPower, b.sunPower) * 1.25 * handover;
     mix(a.skyFill, b.skyFill, this.fill.color);
     mix(a.groundFill, b.groundFill, this.fill.groundColor);
-    this.fill.intensity = num(a.fillPower, b.fillPower);
+    // Most ambient light now comes from the captured sky; this is only a floor
+    // under it, so the darkest shadow at night is still readable.
+    this.fill.intensity = num(a.fillPower, b.fillPower) * (0.16 + 0.3 * (1 - this.daylight));
     mix(a.fog, b.fog, this.fog.color);
     this.exposure = num(a.exposure, b.exposure);
+    mix(a.zenith, b.zenith, this.zenith);
+    mix(a.horizon, b.horizon, this.horizon);
 
-    const u = this.uniforms;
-    mix(a.zenith, b.zenith, u.uZenith!.value as THREE.Color);
-    mix(a.horizon, b.horizon, u.uHorizon!.value as THREE.Color);
-    (u.uSunColor!.value as THREE.Color).copy(this.sun.color);
-    if (!useSun) mix(a.horizon, b.horizon, u.uSunColor!.value as THREE.Color);
-    u.uGlow!.value = num(a.glow, b.glow);
-    u.uStars!.value = num(a.stars, b.stars);
-    u.uSunDisc!.value = THREE.MathUtils.smoothstep(sunUp, -0.06, 0.02);
-    u.uMoonDisc!.value = THREE.MathUtils.smoothstep(this.moonDir.y, -0.02, 0.08) * (1 - this.daylight);
+    // ---- the air ---------------------------------------------------------------
+    const o = this.overcast;
+    const u = (this.air.material as THREE.ShaderMaterial).uniforms;
+    (u.sunPosition!.value as THREE.Vector3).copy(this.sunDir);
+    // Hazier air scatters more: a white-ish sky and a softer sun.
+    u.turbidity!.value = THREE.MathUtils.lerp(2.2, 9, Math.max(o, this.mist));
+    u.rayleigh!.value = THREE.MathUtils.lerp(1.6, 2.8, THREE.MathUtils.smoothstep(sunUp, 0.3, 0.0));
+    u.uDay!.value = THREE.MathUtils.smoothstep(sunUp, -0.16, 0.04);
+    // The physical model is in absolute units; this brings it to the same
+    // exposure as the rest of the scene. Too high and the sky goes white.
+    u.uGain!.value = 0.42;
+    u.uOvercast!.value = o;
+    u.uStars!.value = num(a.stars, b.stars) * (1 - o);
+    u.uMoon!.value = THREE.MathUtils.smoothstep(this.moonDir.y, -0.02, 0.08) * (1 - this.daylight) * (1 - o);
     u.uTime!.value = this.time;
+    (u.uNightZenith!.value as THREE.Color).setHex(0x03060f);
+    (u.uNightHorizon!.value as THREE.Color).setHex(0x101c38);
+    const grey = (u.uGrey!.value as THREE.Color).setHex(0xaab2b8).multiplyScalar(0.1 + 0.75 * this.daylight);
 
-    // Weather: cloud takes the colour out of the sky and the edge off the
-    // shadows; mist closes the distance in.
-    if (this.overcast > 0.002 || this.mist > 0.002) {
-      const o = this.overcast;
-      const grey = this.tmpA.setHex(0xaab2b8).multiplyScalar(0.18 + 0.82 * this.daylight);
-      (u.uZenith!.value as THREE.Color).lerp(grey, o * 0.78);
-      (u.uHorizon!.value as THREE.Color).lerp(grey, o * 0.6);
+    // ---- weather ---------------------------------------------------------------
+    if (o > 0.002 || this.mist > 0.002) {
       this.fog.color.lerp(grey, Math.max(o * 0.6, this.mist * 0.7));
-      this.sun.intensity *= 1 - 0.62 * o;
-      this.fill.intensity *= 1 + 0.12 * o;
-      this.fill.color.lerp(grey, o * 0.5);
-      u.uSunDisc!.value *= 1 - o;
-      u.uGlow!.value *= 1 - 0.7 * o;
-      u.uStars!.value *= 1 - o;
+      this.sun.intensity *= 1 - 0.7 * o;
+      this.zenith.lerp(grey, o * 0.78);
+      this.horizon.lerp(grey, o * 0.6);
     }
-    this.fog.near = THREE.MathUtils.lerp(THREE.MathUtils.lerp(75, 45, this.overcast), 6, this.mist);
-    this.fog.far = THREE.MathUtils.lerp(THREE.MathUtils.lerp(440, 330, this.overcast), 95, this.mist);
+    // Clear air: only the far hills go blue with distance.
+    this.fog.near = THREE.MathUtils.lerp(THREE.MathUtils.lerp(140, 60, o), 6, this.mist);
+    this.fog.far = THREE.MathUtils.lerp(THREE.MathUtils.lerp(900, 420, o), 95, this.mist);
+
+    // ---- cloud -----------------------------------------------------------------
+    const c = this.cloudUniforms;
+    c.uTime!.value = this.time;
+    c.uCover!.value = 0.24 + 0.76 * o;
+    // Sunlit tops take the sun's colour; undersides take the sky's.
+    (c.uLit!.value as THREE.Color)
+      .copy(this.sun.color)
+      .multiplyScalar(0.25 + 0.95 * this.daylight)
+      .lerp(this.tmpA.setRGB(1, 1, 1), 0.25 * this.daylight)
+      .multiplyScalar(1 - 0.35 * o);
+    (c.uShade!.value as THREE.Color)
+      .copy(this.fill.color)
+      .multiplyScalar(0.12 + 0.62 * this.daylight)
+      .multiplyScalar(1 - 0.3 * o);
 
     // The mountains are painted in the sky's own colours, so they sit in it.
     const mu = (this.mountains.material as THREE.ShaderMaterial).uniforms;
-    (mu.uFar!.value as THREE.Color).copy(u.uHorizon!.value as THREE.Color).lerp(u.uZenith!.value as THREE.Color, 0.42);
+    (mu.uFar!.value as THREE.Color).copy(this.horizon).lerp(this.zenith, 0.42);
     (mu.uNear!.value as THREE.Color).copy(mu.uFar!.value as THREE.Color).lerp(this.fog.color, 0.35).multiplyScalar(0.8);
-
-    // Clouds take the sun's colour by day and sink into the sky colour at night.
-    this.cloudMaterial.color.copy(this.fill.color).lerp(this.tmpA.setHex(0xffffff), 0.35 + 0.5 * this.daylight).multiplyScalar(1 - 0.38 * this.overcast);
-    this.cloudMaterial.emissive.copy(u.uHorizon!.value as THREE.Color).multiplyScalar(0.28 + 0.22 * this.daylight);
   }
 }

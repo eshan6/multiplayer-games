@@ -216,10 +216,15 @@ export const COMFORT_POINTS = 10;
 
 // ------------------------------------------------------------ structures ----
 
+/** Things the game constructs itself rather than loading as a model. */
+export type Built =
+  | 'cottage' | 'byre' | 'coop' | 'sty' | 'stable' | 'well' | 'tent' | 'bed' | 'fence' | 'path' | 'lantern' | 'scarecrow' | 'flowerbed'
+  | 'trough' | 'campfire' | 'cart' | 'hay' | 'gazebo' | 'market' | 'rug_long' | 'rug_square' | 'rug_round' | 'fireplace' | 'tub' | 'washstand' | 'floor_lamp';
+
 /** How a catalogue entry gets its shape. */
 export type Shape =
-  | { model: string; pack: 'props' | 'nature' | 'furniture'; /** Uniform scale, or fit one axis to a size in metres. */ scale?: number; fit?: { axis: 'x' | 'y' | 'z'; size: number } }
-  | { built: 'tent' | 'bed' | 'lantern' | 'scarecrow' | 'flowerbed' | 'trough' };
+  | { model: string; pack: 'tree' | 'wild' | 'home'; /** Uniform scale, or fit one axis to a size in metres. */ scale?: number; fit?: { axis: 'x' | 'y' | 'z'; size: number } }
+  | { built: Built };
 
 export interface StructureDef {
   name: string;
@@ -244,42 +249,44 @@ export interface StructureDef {
   glow?: boolean;
 }
 
-const village = (model: string, scale = 2.9): Shape => ({ model, pack: 'props', scale });
+const built = (kind: Built): Shape => ({ built: kind });
+const scan = (model: string, scale = 1): Shape => ({ model, pack: 'wild', scale });
+const tree = (model: string, scale = 1): Shape => ({ model, pack: 'tree', scale });
 
 export const STRUCTURES = {
-  tent: { name: 'Tent', blurb: 'Canvas and two poles. Where it all starts.', group: 'Home', cost: 20, level: 0, shape: { built: 'tent' }, solid: 1.3 },
-  campfire: { name: 'Campfire', blurb: 'Warmth, light, and somewhere to cook.', group: 'Home', cost: 15, materials: { wood: 2, stone: 2 }, level: 0, shape: village('Bonfire_Lit', 3.6), solid: 0.8, cook: 'fire', glow: true },
-  cottage: { name: 'Cottage', blurb: 'A real roof. Walk up to the door to go inside.', group: 'Home', cost: 220, materials: { wood: 14, stone: 8 }, level: 0, shape: village('House_1'), solid: 3.4, limit: 1, enter: true },
-  well: { name: 'Well', blurb: 'Cold, clean water by the door.', group: 'Home', cost: 55, materials: { stone: 6 }, level: 1, shape: village('Well'), solid: 1.2 },
+  tent: { name: 'Tent', blurb: 'Canvas and two poles. Where it all starts.', group: 'Home', cost: 20, level: 0, shape: built('tent'), solid: 1.4 },
+  campfire: { name: 'Campfire', blurb: 'Warmth, light, and somewhere to cook.', group: 'Home', cost: 15, materials: { wood: 2, stone: 2 }, level: 0, shape: built('campfire'), solid: 0.8, cook: 'fire', glow: true },
+  cottage: { name: 'Cottage', blurb: 'Oak frame, lime plaster, thatch. Walk up to the door to go inside.', group: 'Home', cost: 220, materials: { wood: 14, stone: 8 }, level: 0, shape: built('cottage'), solid: 3.4, limit: 1, enter: true },
+  well: { name: 'Well', blurb: 'Cold, clean water by the door.', group: 'Home', cost: 55, materials: { stone: 6 }, level: 1, shape: built('well'), solid: 1.2 },
 
-  bed: { name: 'Vegetable bed', blurb: 'Six rows of tilled earth. Plant, water, harvest.', group: 'Farm', cost: 25, level: 0, shape: { built: 'bed' }, solid: 0 },
-  scarecrow: { name: 'Scarecrow', blurb: 'Keeps watch over the beds.', group: 'Farm', cost: 30, materials: { wood: 2 }, level: 1, shape: { built: 'scarecrow' }, solid: 0.4 },
-  market: { name: 'Market stall', blurb: 'For the day you have more than you can eat.', group: 'Farm', cost: 110, materials: { wood: 6 }, level: 3, shape: village('MarketStand_1'), solid: 1.6 },
+  bed: { name: 'Vegetable bed', blurb: 'Six rows of tilled earth. Plant, water, harvest.', group: 'Farm', cost: 25, level: 0, shape: built('bed'), solid: 0 },
+  scarecrow: { name: 'Scarecrow', blurb: 'Keeps watch over the beds.', group: 'Farm', cost: 30, materials: { wood: 2 }, level: 1, shape: built('scarecrow'), solid: 0.4 },
+  market: { name: 'Market stall', blurb: 'For the day you have more than you can eat.', group: 'Farm', cost: 110, materials: { wood: 6 }, level: 3, shape: built('market'), solid: 1.6 },
 
-  coop: { name: 'Hen coop', blurb: 'Comes with three hens. Eggs every morning.', group: 'Animals', cost: 130, materials: { wood: 8 }, level: 1, shape: { model: 'ChickenCoop', pack: 'props', scale: 1.05 }, solid: 1.5, brings: { kind: 'hen', count: 3 } },
-  sty: { name: 'Pig sty', blurb: 'Comes with two pigs, who will find you truffles.', group: 'Animals', cost: 180, materials: { wood: 10, stone: 4 }, level: 2, shape: { model: 'OpenBarn', pack: 'props', scale: 0.62 }, solid: 2.2, brings: { kind: 'pig', count: 2 } },
-  byre: { name: 'Cow byre', blurb: 'Comes with a cow. Milk for the kitchen.', group: 'Animals', cost: 240, materials: { wood: 12, stone: 6 }, level: 2, shape: { model: 'SmallBarn', pack: 'props', scale: 0.78 }, solid: 2.8, brings: { kind: 'cow', count: 1 } },
-  stable: { name: 'Stable', blurb: 'Comes with another horse. Room for two.', group: 'Animals', cost: 260, materials: { wood: 14, stone: 6 }, level: 2, shape: village('Stable', 1.9), solid: 3.6, brings: { kind: 'horse', count: 1 } },
-  trough: { name: 'Water trough', blurb: 'Somewhere to wash a muddy pig.', group: 'Animals', cost: 35, materials: { wood: 3 }, level: 1, shape: { built: 'trough' }, solid: 0.7 },
+  coop: { name: 'Hen coop', blurb: 'Comes with three hens. Eggs every morning.', group: 'Animals', cost: 130, materials: { wood: 8 }, level: 1, shape: built('coop'), solid: 1.5, brings: { kind: 'hen', count: 3 } },
+  sty: { name: 'Pig sty', blurb: 'Comes with two pigs, who will find you truffles.', group: 'Animals', cost: 180, materials: { wood: 10, stone: 4 }, level: 2, shape: built('sty'), solid: 2.2, brings: { kind: 'pig', count: 2 } },
+  byre: { name: 'Cow byre', blurb: 'Comes with a cow. Milk for the kitchen.', group: 'Animals', cost: 240, materials: { wood: 12, stone: 6 }, level: 2, shape: built('byre'), solid: 3.4, brings: { kind: 'cow', count: 1 } },
+  stable: { name: 'Stable', blurb: 'Comes with another horse. Room for two.', group: 'Animals', cost: 260, materials: { wood: 14, stone: 6 }, level: 2, shape: built('stable'), solid: 3.6, brings: { kind: 'horse', count: 1 } },
+  trough: { name: 'Water trough', blurb: 'Somewhere to wash a muddy pig.', group: 'Animals', cost: 35, materials: { wood: 3 }, level: 1, shape: built('trough'), solid: 0.7 },
 
-  oak: { name: 'Oak', blurb: 'Plant it now. Sit under it later.', group: 'Garden', cost: 22, level: 0, shape: { model: 'NormalTree_2', pack: 'nature', scale: 1.9 }, solid: 0.5 },
-  birch: { name: 'Birch', blurb: 'Pale bark and bright leaves.', group: 'Garden', cost: 20, level: 0, shape: { model: 'BirchTree_3', pack: 'nature', scale: 1.7 }, solid: 0.4 },
-  maple: { name: 'Maple', blurb: 'Turns first in autumn.', group: 'Garden', cost: 24, level: 1, shape: { model: 'MapleTree_2', pack: 'nature', scale: 1.8 }, solid: 0.5 },
-  pine: { name: 'Pine', blurb: 'Green all winter.', group: 'Garden', cost: 18, level: 0, shape: { model: 'PineTree_2', pack: 'nature', scale: 2.0 }, solid: 0.4 },
-  shrub: { name: 'Flowering shrub', blurb: 'Fills a corner.', group: 'Garden', cost: 9, level: 0, shape: { model: 'Bush_Flowers', pack: 'nature', scale: 1.5 }, solid: 0.5 },
-  flowerbed: { name: 'Flower bed', blurb: 'A ring of stones and whatever is in bloom.', group: 'Garden', cost: 18, materials: { stone: 2 }, level: 0, shape: { built: 'flowerbed' }, solid: 0 },
-  blooms: { name: 'Wildflowers', blurb: 'A handful of seed, scattered.', group: 'Garden', cost: 5, level: 0, shape: { model: 'Flower_3_Clump', pack: 'nature', scale: 1.5 }, solid: 0 },
-  boulder: { name: 'Garden stone', blurb: 'Something for the moss to grow on.', group: 'Garden', cost: 6, level: 0, shape: { model: 'Rock_2', pack: 'nature', scale: 1.2 }, solid: 0.6 },
+  oak: { name: 'Oak', blurb: 'Plant it now. Sit under it later.', group: 'Garden', cost: 22, level: 0, shape: tree('oak_c', 0.8), solid: 0.5 },
+  birch: { name: 'Aspen', blurb: 'Pale bark and leaves that never keep still.', group: 'Garden', cost: 20, level: 0, shape: tree('aspen_b', 0.8), solid: 0.4 },
+  maple: { name: 'Ash', blurb: 'Tall, open and airy.', group: 'Garden', cost: 24, level: 1, shape: tree('ash_b', 0.8), solid: 0.5 },
+  pine: { name: 'Pine', blurb: 'Green all winter.', group: 'Garden', cost: 18, level: 0, shape: tree('pine_b', 0.75), solid: 0.4 },
+  shrub: { name: 'Shrub', blurb: 'Fills a corner.', group: 'Garden', cost: 9, level: 0, shape: scan('shrub_02_1', 0.8), solid: 0.5 },
+  flowerbed: { name: 'Flower bed', blurb: 'A ring of stones and whatever is in bloom.', group: 'Garden', cost: 18, materials: { stone: 2 }, level: 0, shape: built('flowerbed'), solid: 0 },
+  blooms: { name: 'Wildflowers', blurb: 'A handful of seed, scattered.', group: 'Garden', cost: 5, level: 0, shape: scan('periwinkle_plant_1', 2.2), solid: 0 },
+  boulder: { name: 'Garden stone', blurb: 'Something for the moss to grow on.', group: 'Garden', cost: 6, level: 0, shape: scan('rock_moss_set_01_2', 0.9), solid: 0.6 },
 
-  fence: { name: 'Fence', blurb: 'One panel. Lay them end to end.', group: 'Yard', cost: 5, materials: { wood: 1 }, level: 0, shape: village('Fence'), solid: 0, snaps: 2.3 },
-  path: { name: 'Stone path', blurb: 'Flagstones, so the door is not all mud.', group: 'Yard', cost: 4, materials: { stone: 1 }, level: 0, shape: village('Path_Straight'), solid: 0, snaps: 2.84 },
-  lantern: { name: 'Lantern post', blurb: 'Lights itself at dusk.', group: 'Yard', cost: 22, materials: { wood: 1 }, level: 0, shape: { built: 'lantern' }, solid: 0.25, glow: true },
-  bench: { name: 'Bench', blurb: 'For two.', group: 'Yard', cost: 16, materials: { wood: 2 }, level: 0, shape: village('Bench_1'), solid: 0.8 },
-  cart: { name: 'Cart', blurb: 'Every yard has one.', group: 'Yard', cost: 34, materials: { wood: 4 }, level: 1, shape: village('Cart'), solid: 1.3 },
-  barrel: { name: 'Barrel', blurb: 'Rainwater, or cider.', group: 'Yard', cost: 8, level: 0, shape: village('Barrel'), solid: 0.35 },
-  crate: { name: 'Crate', blurb: 'Stack a few.', group: 'Yard', cost: 6, level: 0, shape: village('Crate'), solid: 0.35 },
-  hay: { name: 'Hay', blurb: 'A sheaf or two by the stable.', group: 'Yard', cost: 6, level: 0, shape: village('Hay'), solid: 0.3 },
-  gazebo: { name: 'Gazebo', blurb: 'A roof with a view.', group: 'Yard', cost: 190, materials: { wood: 12 }, level: 3, shape: village('Gazebo'), solid: 0 },
+  fence: { name: 'Fence', blurb: 'One panel. Lay them end to end.', group: 'Yard', cost: 5, materials: { wood: 1 }, level: 0, shape: built('fence'), solid: 0, snaps: 2.3 },
+  path: { name: 'Stone path', blurb: 'Flagstones, so the door is not all mud.', group: 'Yard', cost: 4, materials: { stone: 1 }, level: 0, shape: built('path'), solid: 0, snaps: 2.84 },
+  lantern: { name: 'Lantern post', blurb: 'Lights itself at dusk.', group: 'Yard', cost: 22, materials: { wood: 1 }, level: 0, shape: built('lantern'), solid: 0.25, glow: true },
+  bench: { name: 'Bench', blurb: 'For two.', group: 'Yard', cost: 16, materials: { wood: 2 }, level: 0, shape: scan('painted_wooden_bench', 1.15), solid: 0.8 },
+  cart: { name: 'Handcart', blurb: 'Every yard has one.', group: 'Yard', cost: 34, materials: { wood: 4 }, level: 1, shape: built('cart'), solid: 1.2 },
+  barrel: { name: 'Barrel', blurb: 'Rainwater, or cider.', group: 'Yard', cost: 8, level: 0, shape: scan('Barrel_01', 1.05), solid: 0.4 },
+  crate: { name: 'Crate', blurb: 'Stack a few.', group: 'Yard', cost: 6, level: 0, shape: scan('wooden_crate_01', 1), solid: 0.45 },
+  hay: { name: 'Hay bale', blurb: 'One by the stable, one to sit on.', group: 'Yard', cost: 6, level: 0, shape: built('hay'), solid: 0.6 },
+  gazebo: { name: 'Gazebo', blurb: 'A roof with a view.', group: 'Yard', cost: 190, materials: { wood: 12 }, level: 3, shape: built('gazebo'), solid: 0 },
 } satisfies Record<string, StructureDef>;
 
 export type StructureId = keyof typeof STRUCTURES;
@@ -291,9 +298,8 @@ export interface FurnitureDef {
   group: 'Rest' | 'Kitchen' | 'Living' | 'Decor';
   cost: number;
   level: number;
-  model: string;
-  fit: { axis: 'x' | 'y' | 'z'; size: number };
-  /** Half-extent used to keep it inside the walls. */
+  shape: Shape;
+  /** Half-extent used to keep it clear of other furniture and the walls. */
   solid: number;
   use?: 'cook' | 'sleep' | 'bathe' | 'eat' | 'sit';
   /** Lies flat: you can walk across it and stand furniture on it. */
@@ -301,42 +307,42 @@ export interface FurnitureDef {
   glow?: boolean;
 }
 
+const home = (model: string, axis: 'x' | 'y' | 'z', size: number): Shape => ({ model, pack: 'home', fit: { axis, size } });
+
 export const FURNITURE = {
-  bed_double: { name: 'Double bed', group: 'Rest', cost: 85, level: 0, model: 'BedDouble', fit: { axis: 'z', size: 2.3 }, solid: 1.1, use: 'sleep' },
-  bed_twin: { name: 'Single bed', group: 'Rest', cost: 50, level: 0, model: 'BedTwin', fit: { axis: 'z', size: 2.2 }, solid: 0.9, use: 'sleep' },
-  nightstand: { name: 'Nightstand', group: 'Rest', cost: 14, level: 0, model: 'NightStand', fit: { axis: 'y', size: 0.55 }, solid: 0.35 },
-  closet: { name: 'Wardrobe', group: 'Rest', cost: 42, level: 1, model: 'Closet', fit: { axis: 'y', size: 2.1 }, solid: 0.6 },
-  dresser: { name: 'Dresser', group: 'Rest', cost: 30, level: 0, model: 'ShortCloset', fit: { axis: 'y', size: 1.45 }, solid: 0.6 },
-  bathtub: { name: 'Bathtub', group: 'Rest', cost: 75, level: 1, model: 'Bathroom_Bathtub', fit: { axis: 'z', size: 1.8 }, solid: 0.9, use: 'bathe' },
+  bed_double: { name: 'Carved bed', group: 'Rest', cost: 85, level: 0, shape: home('GothicBed_01', 'z', 2.15), solid: 1.1, use: 'sleep' },
+  bed_twin: { name: 'Day bed', group: 'Rest', cost: 50, level: 0, shape: home('vintage_day_bed', 'x', 2.0), solid: 0.9, use: 'sleep' },
+  nightstand: { name: 'Nightstand', group: 'Rest', cost: 14, level: 0, shape: home('ClassicNightstand_01', 'y', 0.62), solid: 0.35 },
+  closet: { name: 'Glazed cabinet', group: 'Rest', cost: 42, level: 1, shape: home('vintage_cabinet_01', 'y', 2.1), solid: 0.8 },
+  dresser: { name: 'Painted cupboard', group: 'Rest', cost: 30, level: 0, shape: home('painted_wooden_cabinet', 'y', 1.5), solid: 0.6 },
+  bathtub: { name: 'Wooden tub', group: 'Rest', cost: 75, level: 1, shape: built('tub'), solid: 0.7, use: 'bathe' },
 
-  stove: { name: 'Stove', group: 'Kitchen', cost: 70, level: 0, model: 'Kitchen_Oven', fit: { axis: 'y', size: 0.95 }, solid: 0.4, use: 'cook' },
-  sink: { name: 'Sink', group: 'Kitchen', cost: 40, level: 0, model: 'Kitchen_Sink', fit: { axis: 'y', size: 1.12 }, solid: 0.4 },
-  counter: { name: 'Counter', group: 'Kitchen', cost: 24, level: 0, model: 'Kitchen_2Drawers', fit: { axis: 'y', size: 0.95 }, solid: 0.4 },
-  cupboard: { name: 'Cupboard', group: 'Kitchen', cost: 24, level: 0, model: 'Kitchen_Cabinet1', fit: { axis: 'y', size: 0.95 }, solid: 0.4 },
-  table: { name: 'Dining table', group: 'Kitchen', cost: 40, level: 0, model: 'Table', fit: { axis: 'z', size: 2.0 }, solid: 0.9, use: 'eat' },
-  round_table: { name: 'Round table', group: 'Kitchen', cost: 30, level: 0, model: 'Table_RoundSmall', fit: { axis: 'x', size: 1.1 }, solid: 0.6, use: 'eat' },
-  chair: { name: 'Chair', group: 'Kitchen', cost: 10, level: 0, model: 'Chair', fit: { axis: 'y', size: 0.98 }, solid: 0.3 },
-  stool: { name: 'Stool', group: 'Kitchen', cost: 7, level: 0, model: 'Stool', fit: { axis: 'y', size: 0.5 }, solid: 0.25 },
+  stove: { name: 'Iron stove', group: 'Kitchen', cost: 70, level: 0, shape: home('barrel_stove', 'y', 1.05), solid: 0.45, use: 'cook' },
+  sink: { name: 'Washstand', group: 'Kitchen', cost: 40, level: 0, shape: built('washstand'), solid: 0.5 },
+  counter: { name: 'Kitchen cupboard', group: 'Kitchen', cost: 24, level: 0, shape: home('painted_wooden_cabinet_02', 'y', 1.0), solid: 0.5 },
+  cupboard: { name: 'Commode', group: 'Kitchen', cost: 24, level: 0, shape: home('GothicCommode_01', 'y', 0.95), solid: 0.5 },
+  table: { name: 'Dining table', group: 'Kitchen', cost: 40, level: 0, shape: home('WoodenTable_01', 'x', 1.9), solid: 0.9, use: 'eat' },
+  round_table: { name: 'Round table', group: 'Kitchen', cost: 30, level: 0, shape: home('round_wooden_table_01', 'x', 1.15), solid: 0.6, use: 'eat' },
+  chair: { name: 'Chair', group: 'Kitchen', cost: 10, level: 0, shape: home('WoodenChair_01', 'y', 1.0), solid: 0.3 },
+  stool: { name: 'Stool', group: 'Kitchen', cost: 7, level: 0, shape: home('wooden_stool_01', 'y', 0.48), solid: 0.25 },
 
-  fireplace: { name: 'Fireplace', group: 'Living', cost: 95, level: 0, model: 'Fireplace', fit: { axis: 'x', size: 1.9 }, solid: 0.9, use: 'cook', glow: true },
-  sofa: { name: 'Sofa', group: 'Living', cost: 62, level: 1, model: 'Sofa', fit: { axis: 'x', size: 2.1 }, solid: 1.0, use: 'sit' },
-  armchair: { name: 'Armchair', group: 'Living', cost: 34, level: 0, model: 'Sofa_individual', fit: { axis: 'x', size: 0.95 }, solid: 0.5, use: 'sit' },
-  loveseat: { name: 'Love seat', group: 'Living', cost: 48, level: 1, model: 'Couch_Small1', fit: { axis: 'x', size: 1.5 }, solid: 0.7, use: 'sit' },
-  bookcase: { name: 'Bookcase', group: 'Living', cost: 46, level: 0, model: 'Bookcase_Books', fit: { axis: 'y', size: 2.0 }, solid: 0.55 },
-  desk: { name: 'Writing desk', group: 'Living', cost: 30, level: 0, model: 'Desk', fit: { axis: 'x', size: 1.3 }, solid: 0.6 },
-  drawers: { name: 'Chest of drawers', group: 'Living', cost: 30, level: 0, model: 'Drawer_1', fit: { axis: 'x', size: 1.3 }, solid: 0.6 },
-  shelf: { name: 'Tall shelf', group: 'Living', cost: 22, level: 0, model: 'Shelf_1', fit: { axis: 'y', size: 1.9 }, solid: 0.3 },
+  fireplace: { name: 'Fireplace', group: 'Living', cost: 95, level: 0, shape: built('fireplace'), solid: 0.9, use: 'cook', glow: true },
+  sofa: { name: 'Sofa', group: 'Living', cost: 62, level: 1, shape: home('Sofa_01', 'x', 1.9), solid: 0.9, use: 'sit' },
+  armchair: { name: 'Armchair', group: 'Living', cost: 34, level: 0, shape: home('ArmChair_01', 'x', 0.9), solid: 0.5, use: 'sit' },
+  loveseat: { name: 'Rocking chair', group: 'Living', cost: 38, level: 0, shape: home('Rockingchair_01', 'y', 1.05), solid: 0.5, use: 'sit' },
+  ottoman: { name: 'Footstool', group: 'Living', cost: 14, level: 0, shape: home('Ottoman_01', 'x', 0.6), solid: 0.3 },
+  bookcase: { name: 'Bookcase', group: 'Living', cost: 46, level: 0, shape: home('wooden_bookshelf_worn', 'y', 2.0), solid: 0.6 },
+  drawers: { name: 'Chest of drawers', group: 'Living', cost: 30, level: 0, shape: home('vintage_wooden_drawer_01', 'x', 1.1), solid: 0.5 },
+  shelf: { name: 'Painted shelves', group: 'Living', cost: 22, level: 0, shape: home('painted_wooden_shelves', 'y', 1.7), solid: 0.4 },
 
-  rug_long: { name: 'Hearth rug', group: 'Decor', cost: 18, level: 0, model: 'Carpet_1', fit: { axis: 'z', size: 2.4 }, solid: 0, flat: true },
-  rug_square: { name: 'Square rug', group: 'Decor', cost: 24, level: 0, model: 'Carpet_2', fit: { axis: 'x', size: 2.6 }, solid: 0, flat: true },
-  rug_round: { name: 'Round rug', group: 'Decor', cost: 20, level: 0, model: 'Carpet_Round', fit: { axis: 'x', size: 2.0 }, solid: 0, flat: true },
-  fern: { name: 'Fern', group: 'Decor', cost: 10, level: 0, model: 'Houseplant_1', fit: { axis: 'y', size: 0.8 }, solid: 0.3 },
-  cactus: { name: 'Potted cactus', group: 'Decor', cost: 9, level: 0, model: 'Houseplant_3', fit: { axis: 'y', size: 0.7 }, solid: 0.2 },
-  succulent: { name: 'Succulent', group: 'Decor', cost: 8, level: 0, model: 'Houseplant_5', fit: { axis: 'y', size: 0.4 }, solid: 0.2 },
-  palm: { name: 'Big houseplant', group: 'Decor', cost: 16, level: 0, model: 'Houseplant_7', fit: { axis: 'y', size: 1.2 }, solid: 0.4 },
-  floor_lamp: { name: 'Floor lamp', group: 'Decor', cost: 20, level: 0, model: 'Light_Floor1', fit: { axis: 'y', size: 1.6 }, solid: 0.2, glow: true },
-  tall_lamp: { name: 'Standing lamp', group: 'Decor', cost: 26, level: 0, model: 'Light_Stand1', fit: { axis: 'y', size: 1.8 }, solid: 0.3, glow: true },
-  desk_lamp: { name: 'Reading lamp', group: 'Decor', cost: 12, level: 0, model: 'Light_Desk', fit: { axis: 'y', size: 0.5 }, solid: 0.15, glow: true },
+  rug_long: { name: 'Hearth rug', group: 'Decor', cost: 18, level: 0, shape: built('rug_long'), solid: 0, flat: true },
+  rug_square: { name: 'Blue rug', group: 'Decor', cost: 24, level: 0, shape: built('rug_square'), solid: 0, flat: true },
+  rug_round: { name: 'Round rug', group: 'Decor', cost: 20, level: 0, shape: built('rug_round'), solid: 0, flat: true },
+  fern: { name: 'Potted fern', group: 'Decor', cost: 10, level: 0, shape: home('potted_plant_02', 'y', 0.9), solid: 0.3 },
+  palm: { name: 'Big houseplant', group: 'Decor', cost: 16, level: 0, shape: home('potted_plant_04', 'y', 1.2), solid: 0.35 },
+  floor_lamp: { name: 'Floor lamp', group: 'Decor', cost: 20, level: 0, shape: built('floor_lamp'), solid: 0.2, glow: true },
+  tall_lamp: { name: 'Brass lantern', group: 'Decor', cost: 18, level: 0, shape: home('Lantern_01', 'y', 0.45), solid: 0.15, glow: true },
+  desk_lamp: { name: 'Oil lamp', group: 'Decor', cost: 12, level: 0, shape: home('vintage_oil_lamp', 'y', 0.4), solid: 0.15, glow: true },
 } satisfies Record<string, FurnitureDef>;
 
 export type FurnitureId = keyof typeof FURNITURE;
@@ -352,10 +358,11 @@ export const WALLS = [
 ] as const;
 
 export const FLOORS = [
-  { name: 'Pine boards', tint: 0xb98a5c, cost: 0 },
-  { name: 'Dark oak', tint: 0x6f4a30, cost: 24 },
-  { name: 'Pale ash', tint: 0xd6bd96, cost: 24 },
-  { name: 'Flagstone', tint: 0x9a968c, cost: 30 },
+  // Multiplied over photographed floorboards: white leaves them as they are.
+  { name: 'Pine boards', tint: 0xd8c4b0, cost: 0 },
+  { name: 'Dark oak', tint: 0x7a5e48, cost: 24 },
+  { name: 'Pale ash', tint: 0xf2ece4, cost: 24 },
+  { name: 'Limed boards', tint: 0xc9c8c2, cost: 30 },
 ] as const;
 
 /** Size of the cottage's room, in metres. */

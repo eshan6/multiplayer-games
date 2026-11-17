@@ -1,24 +1,36 @@
 /**
- * The ground you ride on: one mesh, one baked colour texture.
+ * The ground: one mesh, dressed in photographed textures.
  *
  * `land.ts` says what the land *should* be; this file samples it onto a grid
  * and from then on the grid is the truth. `Terrain.height()` interpolates the
  * same triangles the mesh draws, so a hoof, a tree root and a blade of grass
- * all meet the surface exactly instead of hovering a few centimetres off the
- * analytic curve.
+ * all meet the surface exactly.
+ *
+ * What it looks like comes from three scanned ground textures — meadow turf,
+ * leaf litter under the trees, the stony dirt of the lane — blended per pixel
+ * by a control map painted from the land's own functions. Each has a normal
+ * map and a roughness map, so the ground catches light like ground. A second
+ * low-resolution map carries the broad colour of the place, so a hillside is
+ * not one photograph repeated a thousand times.
  */
 import * as THREE from 'three';
-import { WORLD, groundColor, heightAt } from './land';
+import { surfaceMaps } from '../scans';
+import { WORLD, groundColor, heightAt, laneMask, woodland } from './land';
 
 const HALF = WORLD.meshHalfSize;
 const CELL = 2.5;
 const N = (HALF * 2) / CELL; // cells per side
 const V = N + 1; // vertices per side
-const TEX = 1024;
+const CONTROL = 1024;
+const MACRO = 512;
+/** Metres one repeat of a ground texture covers. */
+const TILE = 3.2;
 
 export class Terrain {
   readonly mesh: THREE.Mesh;
   private readonly heights = new Float32Array(V * V);
+  private readonly control = new Uint8Array(CONTROL * CONTROL * 4);
+  private readonly controlTexture: THREE.DataTexture;
 
   constructor() {
     const pos = new Float32Array(V * V * 3);
@@ -33,8 +45,9 @@ export class Terrain {
         pos[i * 3] = x;
         pos[i * 3 + 1] = h;
         pos[i * 3 + 2] = z;
-        uv[i * 2] = ix / N;
-        uv[i * 2 + 1] = 1 - iz / N;
+        // Texture coordinates are world metres: the ground textures tile across it.
+        uv[i * 2] = x / TILE;
+        uv[i * 2 + 1] = z / TILE;
       }
     }
     // Every quad is split along the same diagonal; height() relies on it.
@@ -61,8 +74,8 @@ export class Terrain {
     geo.computeVertexNormals();
     geo.computeBoundingSphere();
 
-    const material = new THREE.MeshLambertMaterial({ map: this.bakeColour() });
-    this.mesh = new THREE.Mesh(geo, material);
+    this.controlTexture = this.bakeControl();
+    this.mesh = new THREE.Mesh(geo, this.material(this.bakeMacro()));
     this.mesh.receiveShadow = true;
     this.mesh.name = 'terrain';
   }
@@ -87,34 +100,159 @@ export class Terrain {
   /** Surface normal at (x, z). */
   normal(x: number, z: number, out: THREE.Vector3): THREE.Vector3 {
     const e = 1.0;
-    return out
-      .set(this.height(x - e, z) - this.height(x + e, z), 2 * e, this.height(x, z - e) - this.height(x, z + e))
-      .normalize();
+    return out.set(this.height(x - e, z) - this.height(x + e, z), 2 * e, this.height(x, z - e) - this.height(x, z + e)).normalize();
   }
 
-  private bakeColour(): THREE.Texture {
-    const data = new Uint8Array(TEX * TEX * 4);
+  /**
+   * Darken the ground under things that stand on it. Real shadows only reach
+   * a little way from the camera; this is what keeps a distant wood from
+   * looking as though it floats on a lit lawn.
+   */
+  shade(spots: { x: number; z: number; r: number }[]) {
+    const scale = CONTROL / (HALF * 2);
+    for (const s of spots) {
+      const cx = (s.x + HALF) * scale;
+      const cy = (s.z + HALF) * scale;
+      const r = Math.max(2, s.r * scale);
+      for (let py = Math.max(0, Math.floor(cy - r)); py <= Math.min(CONTROL - 1, Math.ceil(cy + r)); py++) {
+        for (let px = Math.max(0, Math.floor(cx - r)); px <= Math.min(CONTROL - 1, Math.ceil(cx + r)); px++) {
+          const d = Math.hypot(px - cx, py - cy) / r;
+          if (d >= 1) continue;
+          const i = (py * CONTROL + px) * 4 + 2;
+          this.control[i] = Math.max(this.control[i]!, Math.round((1 - d * d) * 200));
+        }
+      }
+    }
+    this.controlTexture.needsUpdate = true;
+  }
+
+  /** Where the lane runs (red) and where the woods stand (green). Blue is shade, painted later. */
+  private bakeControl(): THREE.DataTexture {
+    for (let py = 0; py < CONTROL; py++) {
+      const z = -HALF + ((py + 0.5) / CONTROL) * HALF * 2;
+      for (let px = 0; px < CONTROL; px++) {
+        const x = -HALF + ((px + 0.5) / CONTROL) * HALF * 2;
+        const i = (py * CONTROL + px) * 4;
+        this.control[i] = laneMask(x, z) * 255;
+        this.control[i + 1] = woodland(x, z) * 255;
+        this.control[i + 3] = 255;
+      }
+    }
+    const tex = new THREE.DataTexture(this.control, CONTROL, CONTROL, THREE.RGBAFormat);
+    tex.magFilter = THREE.LinearFilter;
+    tex.minFilter = THREE.LinearFilter;
+    tex.needsUpdate = true;
+    return tex;
+  }
+
+  /** The broad colour of the land: sunlit meadow, damp hollow, sandy shore. */
+  private bakeMacro(): THREE.DataTexture {
+    const data = new Uint8Array(MACRO * MACRO * 4);
     const rgb: [number, number, number] = [0, 0, 0];
-    for (let py = 0; py < TEX; py++) {
-      const z = -HALF + ((py + 0.5) / TEX) * HALF * 2;
-      for (let px = 0; px < TEX; px++) {
-        const x = -HALF + ((px + 0.5) / TEX) * HALF * 2;
+    for (let py = 0; py < MACRO; py++) {
+      const z = -HALF + ((py + 0.5) / MACRO) * HALF * 2;
+      for (let px = 0; px < MACRO; px++) {
+        const x = -HALF + ((px + 0.5) / MACRO) * HALF * 2;
         groundColor(x, z, this.height(x, z), rgb);
-        // DataTexture rows run bottom-up; the mesh's v is flipped to match.
-        const i = ((TEX - 1 - py) * TEX + px) * 4;
+        const i = (py * MACRO + px) * 4;
         data[i] = rgb[0] * 255;
         data[i + 1] = rgb[1] * 255;
         data[i + 2] = rgb[2] * 255;
         data[i + 3] = 255;
       }
     }
-    const tex = new THREE.DataTexture(data, TEX, TEX, THREE.RGBAFormat);
+    const tex = new THREE.DataTexture(data, MACRO, MACRO, THREE.RGBAFormat);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.magFilter = THREE.LinearFilter;
-    tex.minFilter = THREE.LinearMipmapLinearFilter;
-    tex.generateMipmaps = true;
-    tex.anisotropy = 8;
+    tex.minFilter = THREE.LinearFilter;
     tex.needsUpdate = true;
     return tex;
+  }
+
+  private material(macro: THREE.Texture): THREE.MeshStandardMaterial {
+    const meadow = surfaceMaps('leafy_grass');
+    const wood = surfaceMaps('forest_floor');
+    const lane = surfaceMaps('stony_dirt_path');
+    const m = new THREE.MeshStandardMaterial({ map: meadow.diff, normalMap: meadow.nor, roughness: 1, metalness: 0 });
+    m.normalScale.setScalar(1.1);
+    const extra = {
+      tMeadowArm: { value: meadow.arm },
+      tWoodD: { value: wood.diff },
+      tWoodN: { value: wood.nor },
+      tWoodArm: { value: wood.arm },
+      tLaneD: { value: lane.diff },
+      tLaneN: { value: lane.nor },
+      tLaneArm: { value: lane.arm },
+      tControl: { value: this.controlTexture },
+      tMacro: { value: macro },
+    };
+    m.onBeforeCompile = (shader) => {
+      Object.assign(shader.uniforms, extra);
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec2 vLand;')
+        .replace('#include <begin_vertex>', `#include <begin_vertex>\nvLand = (position.xz + ${HALF.toFixed(1)}) / ${(HALF * 2).toFixed(1)};`);
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          '#include <common>',
+          /* glsl */ `#include <common>
+          uniform sampler2D tMeadowArm;
+          uniform sampler2D tWoodD;
+          uniform sampler2D tWoodN;
+          uniform sampler2D tWoodArm;
+          uniform sampler2D tLaneD;
+          uniform sampler2D tLaneN;
+          uniform sampler2D tLaneArm;
+          uniform sampler2D tControl;
+          uniform sampler2D tMacro;
+          varying vec2 vLand;
+          vec3 gArm;
+          vec3 gNormal;`,
+        )
+        .replace(
+          '#include <map_fragment>',
+          /* glsl */ `
+          vec4 ctl = texture2D(tControl, vLand);
+          vec3 macro = texture2D(tMacro, vLand).rgb;
+          // Far from the camera a tiling texture shows its repeat. Blend toward
+          // the same texture at a much larger scale, which has none to show.
+          vec2 near = vMapUv;
+          vec2 wide = vMapUv * 0.19 + 0.37;
+          float far = smoothstep(14.0, 85.0, length(vViewPosition));
+          vec3 dMeadow = mix(texture2D(map, near).rgb, texture2D(map, wide).rgb, 0.25 + 0.6 * far);
+          // The scanned leaf litter is bright and dry; a wood floor in leaf is dark and damp.
+          vec3 dWood = mix(texture2D(tWoodD, near).rgb, texture2D(tWoodD, wide).rgb, 0.25 + 0.6 * far) * vec3(0.5, 0.55, 0.42);
+          // The scanned path is wet, dark earth; this lane is dry and trodden pale.
+          vec3 dLane = texture2D(tLaneD, near * 0.8).rgb * vec3(1.45, 1.38, 1.25);
+          // The edge of the wood and of the lane follows the texture's own
+          // detail, so one material frays into the next instead of fading.
+          float grain = dot(dMeadow, vec3(0.33)) * 1.6 - 0.25;
+          float wWood = smoothstep(0.3, 0.7, ctl.g + (grain - 0.5) * 0.35);
+          float wLane = smoothstep(0.15, 0.6, ctl.r + (grain - 0.5) * 0.7);
+          vec3 albedo = mix(dMeadow, dWood, wWood);
+          // Keep the photograph's detail but pull its overall colour to the land's.
+          float luma = dot(albedo, vec3(0.3, 0.59, 0.11));
+          albedo = mix(albedo, macro * (luma / 0.19), 0.62);
+          albedo = mix(albedo, dLane * vec3(1.05, 0.98, 0.9), wLane);
+          albedo *= mix(1.0, 0.5, ctl.b);
+          diffuseColor.rgb *= albedo;
+
+          gArm = mix(mix(texture2D(tMeadowArm, near).rgb, texture2D(tWoodArm, near).rgb, wWood), texture2D(tLaneArm, near * 0.8).rgb, wLane);
+          gNormal = mix(mix(texture2D(normalMap, near).xyz, texture2D(tWoodN, near).xyz, wWood), texture2D(tLaneN, near * 0.8).xyz, wLane);
+          // Relief fades with distance: far ground should be smooth, not noisy.
+          gNormal = mix(gNormal, vec3(0.5, 0.5, 1.0), far * 0.75);
+          diffuseColor.rgb *= mix(1.0, gArm.r, 0.7);
+          `,
+        )
+        .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = roughness * mix(gArm.g, 1.0, 0.25);')
+        .replace(
+          '#include <normal_fragment_maps>',
+          /* glsl */ `
+          vec3 mapN = gNormal * 2.0 - 1.0;
+          mapN.xy *= normalScale;
+          normal = normalize(tbn * mapN);`,
+        );
+    };
+    m.customProgramCacheKey = () => 'terrain';
+    return m;
   }
 }

@@ -11,14 +11,15 @@ import type { Grass } from './grass';
 
 type Species = keyof Assets['foliage'];
 
+
 /** Leaf colour per species for spring, summer, autumn, winter. sRGB. */
 const LEAVES: Record<Species, [number, number, number, number]> = {
-  normal: [0x8cc94a, 0x6fb03c, 0xd09a34, 0x8f8a5c],
-  birch: [0xb8dc62, 0xa3cc58, 0xe8c23c, 0xa39a62],
-  maple: [0x86c452, 0x67b045, 0xd2562e, 0x8c6a4e],
+  oak: [0x86ab52, 0x7a9a4e, 0xc28a3c, 0x8a7d5c],
+  ash: [0x8cb256, 0x80a24e, 0xd6b84a, 0x958c62],
+  aspen: [0x94bc58, 0x8aad52, 0xe8c040, 0x9c9060],
   // Evergreen: barely changes.
-  pine: [0xa9d6a0, 0x9fcf9a, 0x97c08e, 0x8fb49a],
-  bush: [0x86c048, 0x69aa3c, 0xb8943a, 0x847f55],
+  pine: [0x7c9a68, 0x6f8f62, 0x6b8a5e, 0x667f62],
+  bush: [0x98b85e, 0x86a154, 0xb07a3a, 0x7f7656],
 };
 
 /** What the meadow and the ground are multiplied by. Linear, 1 = as painted. */
@@ -39,7 +40,7 @@ export class Seasons {
   constructor(
     private readonly assets: Assets,
     private readonly grass: Grass,
-    private readonly ground: THREE.MeshLambertMaterial,
+    private readonly ground: THREE.MeshStandardMaterial,
   ) {}
 
   /** @param at 0..4: 0 is the first day of spring, 1.5 high summer, 2.5 mid-autumn. */

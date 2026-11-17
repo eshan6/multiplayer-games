@@ -66,13 +66,13 @@ export class Creature {
       this.model.traverse((o) => {
         const mesh = o as THREE.Mesh;
         if (!mesh.isMesh) return;
-        const src = mesh.material as THREE.MeshLambertMaterial;
+        const src = mesh.material as THREE.MeshStandardMaterial;
         const hex = spec.recolour![src.name];
         if (hex === undefined) return;
         let m = made.get(src);
         if (!m) {
           m = src.clone();
-          (m as THREE.MeshLambertMaterial).color.setHex(hex);
+          (m as THREE.MeshStandardMaterial).color.setHex(hex);
           made.set(src, m);
         }
         mesh.material = m;

@@ -228,14 +228,16 @@ export function groundColor(x: number, z: number, h: number, out: [number, numbe
   const n1 = fbm(x / 34, z / 34, 3, WORLD.seed + 60) * 0.5 + 0.5;
   const n2 = noise2(x / 7, z / 7, WORLD.seed + 61) * 0.5 + 0.5;
   // Sunlit meadow ↔ deeper, damper green.
-  let r = lerp(0.33, 0.5, n1) - n2 * 0.03;
-  let g = lerp(0.52, 0.64, n1) - n2 * 0.04;
-  let b = lerp(0.17, 0.2, n1) - n2 * 0.03;
+  // Deep meadow green, varying between richer and drier patches.
+  let r = lerp(0.2, 0.33, n1) - n2 * 0.03;
+  let g = lerp(0.36, 0.45, n1) - n2 * 0.04;
+  let b = lerp(0.1, 0.14, n1) - n2 * 0.03;
 
   const w = woodland(x, z);
-  r = lerp(r, 0.23, w * 0.75);
-  g = lerp(g, 0.38, w * 0.75);
-  b = lerp(b, 0.15, w * 0.75);
+  // Under the trees: dark, mossy, leaf-littered.
+  r = lerp(r, 0.2, w * 0.75);
+  g = lerp(g, 0.24, w * 0.75);
+  b = lerp(b, 0.12, w * 0.75);
 
   // Damp, darker earth at the water's edge, then pale sand beneath it.
   const shore = smoothstep(-0.42, -0.02, waterDepth(x, z, h));
@@ -245,9 +247,9 @@ export function groundColor(x: number, z: number, h: number, out: [number, numbe
 
   const lane = laneMask(x, z);
   const dirtN = noise2(x * 0.9, z * 0.9, 77) * 0.03;
-  r = lerp(r, 0.67 + dirtN, lane);
-  g = lerp(g, 0.56 + dirtN, lane);
-  b = lerp(b, 0.4 + dirtN, lane);
+  r = lerp(r, 0.5 + dirtN, lane);
+  g = lerp(g, 0.42 + dirtN, lane);
+  b = lerp(b, 0.3 + dirtN, lane);
 
   out[0] = r;
   out[1] = g;

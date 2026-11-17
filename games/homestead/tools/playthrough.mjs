@@ -119,12 +119,15 @@ const result = await page.evaluate(async () => {
   const door = g.structures.door();
   if (door) { g.player.position.x = door.x; g.player.position.z = door.z; run(4); }
   out.doorPrompt = prompt();
-  key('KeyE'); run(4);
+  key('KeyE');
+  // The furniture is fetched the first time anyone goes in.
+  for (let t = 0; t < 120 && !g.player.indoors; t++) await new Promise((r) => setTimeout(r, 250));
+  run(4);
   out.indoors = g.player.indoors;
   key('KeyB'); run(2);
   out.indoorSheet = document.getElementById('sheet-title').textContent + ': ' + [...document.querySelectorAll('#sheet-tabs button')].map((b) => b.textContent).join(',');
   [...document.querySelectorAll('#sheet-tabs button')].find((b) => b.textContent === 'Kitchen').click();
-  [...document.querySelectorAll('#sheet-body .card')].find((b) => b.textContent.includes('Stove')).click();
+  [...document.querySelectorAll('#sheet-body .card')].find((b) => b.textContent.includes('stove')).click();
   g.input.pointer.x = 0; g.input.pointer.y = 0; run(3);
   g.input.clicked = true; run(1); key('Escape'); run(3);
   out.furniture = s.all('furniture').size;

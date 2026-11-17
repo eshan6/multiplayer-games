@@ -28,6 +28,25 @@ what you spend to build. Doing things side by side earns half as much again.
 - **The world** has a day and night every 24 minutes, four seasons that
   recolour the woods, and weather you can set.
 
+## How it looks
+
+The world is built from photographed and photoscanned material (Poly Haven,
+CC0): the ground, the plaster and thatch of the cottage, the stone of the
+well, the floorboards, the grass, ferns, flowers and rocks, the furniture.
+Every surface is physically based (colour, relief, roughness and occlusion)
+and lit by the sky that is actually overhead: a physical model of the
+atmosphere, captured into an environment map as the day turns.
+
+Trees are grown at load from branching rules, at two levels of detail, and
+swap to the lighter one past about 45 metres. A depth-based ambient occlusion
+pass darkens the creases where things meet, and a light film grade and SMAA
+finish the frame.
+
+The animals, the avatars and the crops are still the low-polygon Quaternius
+models, smoothed and given physically based materials. Next to the scanned
+world they are the least realistic thing on screen; see *What it does not do
+yet*.
+
 A list of goals in the corner leads from the tent to a working farm.
 
 ## Playing together
@@ -103,6 +122,9 @@ src/
   world/               land, terrain, grass, woods, sky, weather, seasons,
                        water, effects, and what you have built
 tests/game.test.ts     the rules
+src/scans.ts           photoscanned materials and models
+src/world/trees.ts     trees grown at load, near and far versions
+src/world/placed.ts    buildings, constructed from photographed surfaces
 tools/                 the asset pipeline and two scripted checks
 ```
 
@@ -126,6 +148,16 @@ The lines that matter:
 
 ## What it does not do yet
 
+- **Realistic people and animals.** The avatars, horses, livestock and crops
+  are smoothed low-polygon models. Free realistic, rigged and animated
+  replacements exist but sit behind accounts (Mixamo, Sketchfab) that this
+  project cannot sign in to.
+- **Performance on modest hardware is unmeasured.** A built-up farm is about
+  2.3 million triangles and 1,000 draw calls per frame, with ambient
+  occlusion and 4096-pixel shadows. Detail: Low turns occlusion and bloom off
+  and halves the grass and shadows; the game steps down by itself if frames
+  run slow.
+
 - **Sound.** There is none.
 - **Touch.** It needs a keyboard and a mouse.
 - **Animals are not where your partner sees them.** Which animals exist and
@@ -139,4 +171,6 @@ Verified by tests and by scripted play in a headless browser with a software
 renderer. Not yet measured: frame rate on real graphics hardware, and two
 real people in the published page at once.
 
-Models are Quaternius packs, CC0. See [ASSETS.md](ASSETS.md).
+Surfaces, plants, props and furniture are Poly Haven (CC0); trees are
+generated with ez-tree (MIT); animals, avatars and crops are Quaternius
+(CC0). See [ASSETS.md](ASSETS.md).

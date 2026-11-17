@@ -49,7 +49,7 @@ const ANIMATED = [
   { out: 'avatar_m_adventurer', src: 'men/Adventurer.gltf', keep: HUMAN_CLIPS },
 ];
 
-const STATIC = ['nature', 'props', 'furniture', 'crops'];
+const STATIC = ['crops'];
 
 function report(name, path) {
   console.log(`[models] ${name}.glb ${(statSync(path).size / 1024).toFixed(0)} KB`);
