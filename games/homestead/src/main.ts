@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -243,6 +244,12 @@ async function boot() {
   ao.configuration.halfRes = true;
   ao.setQualityMode('Medium');
   composer.addPass(ao);
+  // The occlusion pass is also what draws the scene, so it cannot simply be
+  // switched off on low detail: that left nothing drawing the world, and the
+  // screen went blank. This plain pass takes over when it is off.
+  const plain = new RenderPass(scene, follow.camera);
+  plain.enabled = false;
+  composer.insertPass(plain, 0);
   const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.22, 0.6, 0.95);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
@@ -271,6 +278,7 @@ async function boot() {
     grass.quality = high ? 1 : 0.45;
     bloom.enabled = high;
     ao.enabled = high;
+    plain.enabled = !high;
     sky.sun.shadow.mapSize.setScalar(high ? 4096 : 2048);
     sky.sun.shadow.map?.dispose();
     sky.sun.shadow.map = null;
@@ -376,6 +384,7 @@ async function boot() {
     const night = 1 - sky.daylight;
     const lit = THREE.MathUtils.smoothstep(night, 0.25, 0.75);
     ao.scene = activeScene();
+    plain.scene = ao.scene;
     if (indoors) {
       interior.update(dt, sky.daylight, sky.fog.color);
       indoorFx.update(dt, null, follow.camera, renderer.domElement.height);

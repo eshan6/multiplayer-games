@@ -148,6 +148,18 @@ const result = await page.evaluate(async () => {
   out.fedDog = s.all('animals').get('dog').fedAt > fed0;
   } catch (e) { out['error8'] = String(e.message || e); }
 
+  try { // 9. Low detail still draws the world. (It once switched off the pass
+  // that draws the scene, and the screen went blank mid-game.)
+  const drawn = () => { g.renderer.info.autoReset = false; g.renderer.info.reset(); run(1); g.renderer.info.autoReset = true; return g.renderer.info.render.calls; };
+  const detail = () => [...document.querySelectorAll('button')].find((b) => /Detail/.test(b.textContent));
+  const high = drawn();
+  detail().click(); run(2);
+  out.lowDetail = detail().textContent;
+  out.lowDrawsWorld = drawn() > high * 0.5;
+  detail().click(); run(2);
+  out.highAgain = drawn() > high * 0.5;
+  } catch (e) { out['error9'] = String(e.message || e); }
+
   out.points = document.getElementById('basket-points').textContent;
   out.goal = document.getElementById('goal').textContent;
   out.level = document.getElementById('basket-level').textContent;

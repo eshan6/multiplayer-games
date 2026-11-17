@@ -169,7 +169,8 @@ export class Grass {
 
           // Thin with distance: low ranks stay and grow to cover for the high
           // ranks, which shrink away rather than vanish in a frame.
-          float frac = keep(dist) * uQuality;
+          // Low detail thins the far grass, never the grass at your feet.
+          float frac = keep(dist) * mix(1.0, uQuality, smoothstep(4.0, 24.0, dist));
           float alive = clamp((frac - aCard.z) / 0.06, 0.0, 1.0);
           float grow = inversesqrt(max(frac, 0.12));
           // And at the very edge of the drawn range, everything sinks into the turf.
@@ -295,7 +296,8 @@ export class Grass {
       // the shader does; this only saves the vertex work for the ones it hides.
       // The camera trails the rider, so judge by the tile's nearest corner.
       const nearest = Math.max(0, d - TILE * 0.72 - 6);
-      tile.geometry.instanceCount = Math.min(tile.count, Math.ceil(tile.count * (kept(nearest) * this.quality + 0.07)));
+      const quality = 1 + (this.quality - 1) * smoothstep(4, 24, nearest);
+      tile.geometry.instanceCount = Math.min(tile.count, Math.ceil(tile.count * (kept(nearest) * quality + 0.07)));
     }
 
     for (const [key, tile] of this.tiles) {
